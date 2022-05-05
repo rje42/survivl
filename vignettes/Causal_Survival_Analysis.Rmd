@@ -1,0 +1,107 @@
+---
+title: "Causal Survival Analysis"
+author: "Robin J. Evans"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Causal_Survival_Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = TRUE
+)
+```
+
+We begin by loading the library.
+
+```{r setup}
+library(survivl)
+```
+
+## Time-Varying Covariates
+
+If the treatment and covariates are allowed to be time-varying, then an ordinary
+Cox model will not have any causal interpretation.  Instead we must use something
+like a Cox _Marginal Structural Model_ (MSM) instead.  This assumes that the 
+set of observed covariates is sufficient to control for confounding at any 
+given timepoint, and that the causal quantity of interest is the marginal effect
+of the treatment only on the outcome.
+
+We can simulate from such a model using a copula for the outcome and 
+covariates.  We select a normal covariate $Z$, a binary treatment $X$, and we 
+must have an exponentially distributed outcome $Y$.  We also use a Gaussian
+copula.
+
+```{r MSM_forms}
+formulas <- list(list(),
+                 Z ~ X_l1,
+                 X ~ Z_l0,
+                 Y ~ X_l0,
+                 cop ~ 1)
+family <- list(integer(0), 1, 5, 3, 1)
+```
+
+The parameters to be specified depends upon the particular families used.
+```{r MSM_pars}
+pars <- list(Z = list(beta=c(1,0.5), phi=1),
+             X = list(beta=c(-0.25,0.5)),
+             Y = list(beta=c(1.1,-0.2), lambda0=0.01),
+             cop = list(beta=1))
+```
+
+Now we call the function `MSM_samp`, which uses rejection sampling to obtain 
+data from this model.
+```{r MSM_datasamp}
+set.seed(123)
+dat <- MSM_samp(1e4, T=2,
+                formulas = formulas, 
+                family = family, 
+                pars = pars,
+                link = list(character(0), "identity", "logit", "inverse"))
+datl <- surv_to_long(dat)
+```
+
+## Fitting the Model
+
+Since this is a time-varying model, we must use inverse probability weighting 
+to obtain the parameters.  We recommend using the `survey` library's `svyglm`
+function for inference.
+
+```{r survey_load}
+library(survey)
+library(dplyr)
+```
+Now, we fit a GLM to obtain the weighting to use with $X$.
+```{r weights}
+modX <- glm(X ~ Z, family=binomial, data=datl)
+summary(modX)
+pred <- predict(modX, type="response")
+datl <- datl %>% mutate(datl, wts = X/pred + (1-X)/(1-pred))
+```
+
+At this point we can fit the model to obtain the coefficients for the effect
+of $X$ on $Y$.
+```{r MSM_fit}
+mod <- svyglm(Y ~ X, 
+              family=binomial(link=log), 
+              design = svydesign(ids=datl$id,
+                                 weights=datl$wts,
+                                 data=datl))
+summary(mod)
+```
+
+## A Naive Approach
+
+If we ignore the fact that the covariates are time-varying, we will obtain a biased estimate of the coefficient of $X$ on $Y$.
+
+```{r naive_fit}
+mod_naive <- svyglm(Y ~ X, 
+              family=binomial(link=log), 
+              design = svydesign(ids=datl$id,
+                                 data=datl))
+summary(mod_naive)
+```
