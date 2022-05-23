@@ -172,7 +172,7 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
     surv[surv] <- (out[[var]][surv] > 1)
     out$T[!is.na(out[[var]]) & !surv] <- t - 1 + out[[var]][!is.na(out[[var]]) & !surv]
     print(var)
-    out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] > 1)
+    out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] <= 1)
   }
 
 #   # cum_haz <- rep(0, n)

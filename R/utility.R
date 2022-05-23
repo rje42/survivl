@@ -17,25 +17,9 @@ rmv_time_stamps <- function (nms) {
 ##' @export
 surv_to_long <- function(dat, lag=0) {#, formulas) {
   nms <- names(dat)
-  # if (!missing(formulas)) {
-  #   if (length(formulas) == 4) {
-  #     LHS_C <- lhs(formulas[[1]])
-  #   }
-  #   else {
-  #     formulas <- c(list(NULL), formulas)
-  #     LHS_C <- character(0L)
-  #   }
-  #
-  #   if (length(formulas) == 4) {
-  #     LHS_Z <- lhs(formulas[[2]])
-  #     LHS_X <- lhs(formulas[[3]])
-  #     LHS_Y <- lhs(formulas[[4]])
-  #   }
-  #   else stop("Must provide 3 or 4 formulas")
-  # }
-
   nms <- nms[nms != "id" & nms != "status"]
 
+  ## determine time-varying vs static covariates
   ts <- rmv_time_stamps(nms)
   Ts <- attr(ts, "times")
   Tmax <- max(Ts)
@@ -66,6 +50,7 @@ surv_to_long <- function(dat, lag=0) {#, formulas) {
     ret
   }
 
+  ## now set values for each timepoint
   for (i in seq_len(Tmax)) {
     nms <- paste0(ts[Ts > 0], "_", i-1)
     out[(seq_len(nrow(dat))-1)*Tmax + i, whStat] <- dat[,ts[Ts == 0]]
@@ -75,6 +60,12 @@ surv_to_long <- function(dat, lag=0) {#, formulas) {
       nms2 <- paste0(ts[Ts > 0], "_", i-l-1)
       out[(seq_len(nrow(dat))-1)*Tmax + i, whTV(l)] <- dat[,nms2]
     }
+  }
+
+  ## reconstruct factors among static covariates
+  chk <- sapply(dat[ts[Ts==0]], is.factor)
+  if (any(chk)) {
+    for (i in which(chk)) out[[ts[Ts==0][i]]] <- factor(out[[ts[Ts==0][i]]], labels = levels(dat[[ts[Ts==0][i]]]))
   }
 
   status <- rep(0, nrow(out))
