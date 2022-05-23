@@ -73,6 +73,7 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
   for (t in seq_len(T)) {
     OK <- rep(FALSE, nrow(out))
     OK[!surv] <- TRUE
+    if (verbose) cat("T = ", t)
 
     while(!all(OK)) {
 
@@ -171,8 +172,7 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
     var <- paste0(LHS_Y[[i]], "_", t-1)
     surv[surv] <- (out[[var]][surv] > 1)
     out$T[!is.na(out[[var]]) & !surv] <- t - 1 + out[[var]][!is.na(out[[var]]) & !surv]
-    print(var)
-    out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] > 1)
+    out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] <= 1)
   }
 
 #   # cum_haz <- rep(0, n)

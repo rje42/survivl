@@ -14,6 +14,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   echo = TRUE
 )
+options(rmarkdown.html_vignette.check_title = FALSE)
 ```
 
 We begin by loading the library.
@@ -57,11 +58,11 @@ Now we call the function `MSM_samp`, which uses rejection sampling to obtain
 data from this model.
 ```{r MSM_datasamp}
 set.seed(123)
-dat <- MSM_samp(1e4, T=2,
-                formulas = formulas, 
-                family = family, 
-                pars = pars,
-                link = list(character(0), "identity", "logit", "inverse"))
+dat <- coxSamp(1e4, T=2,
+               formulas = formulas, 
+               family = family, 
+               pars = pars,
+               link = list(character(0), "identity", "logit", "inverse"))
 datl <- surv_to_long(dat)
 ```
 
@@ -71,7 +72,7 @@ Since this is a time-varying model, we must use inverse probability weighting
 to obtain the parameters.  We recommend using the `survey` library's `svyglm`
 function for inference.
 
-```{r survey_load}
+```{r survey_load, message=FALSE}
 library(survey)
 library(dplyr)
 ```
@@ -86,7 +87,7 @@ datl <- datl %>% mutate(datl, wts = X/pred + (1-X)/(1-pred))
 At this point we can fit the model to obtain the coefficients for the effect
 of $X$ on $Y$.
 ```{r MSM_fit}
-mod <- svyglm(Y ~ X, 
+mod <- svyglm(I(1-Y) ~ X, 
               family=binomial(link=log), 
               design = svydesign(ids=datl$id,
                                  weights=datl$wts,
@@ -94,12 +95,12 @@ mod <- svyglm(Y ~ X,
 summary(mod)
 ```
 
-## A Naive Approach
+## A Naïve Approach
 
 If we ignore the fact that the covariates are time-varying, we will obtain a biased estimate of the coefficient of $X$ on $Y$.
 
 ```{r naive_fit}
-mod_naive <- svyglm(Y ~ X, 
+mod_naive <- svyglm(I(1-Y) ~ X, 
               family=binomial(link=log), 
               design = svydesign(ids=datl$id,
                                  data=datl))
