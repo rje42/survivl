@@ -1,3 +1,13 @@
+##' Data from a survival model
+##'
+##' This class must have columns \code{id}, \code{T}, and \code{status}, for the
+##' individual, their survival time and the form of their final event.  Static
+##' covariates are given as single columns, while time-varying covariates are
+##' suffixed by \code{_t}, where \code{t} is the relevant time-point.
+##'
+##' @name survivl_dat
+NULL
+
 ##' @import causl
 NULL
 
@@ -29,8 +39,7 @@ NULL
 ##' The function currently doesn't support varying the parameters at each
 ##' time-point.
 ##'
-##' @return A \code{data.frame} containing the variable on the left hand side
-##' of each formula.
+##' @return An object of class \code{survivl_dat} containing the simulated data.
 ##'
 ##' @references Young, Hernan, Picciotto and Robins, 2008. Simulation from
 ##' Structural Survival Models under Complex Time-Varying Data Structures,
@@ -147,6 +156,8 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
   out <- cbind(id=seq_len(nrow(out)), out)
   out$status <- 1*surv
   out <- out[names(out) != "Y"]
+
+  class(out) <- "survivl_dat"
 
   return(out)
 }

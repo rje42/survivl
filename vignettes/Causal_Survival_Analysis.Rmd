@@ -58,7 +58,7 @@ Now we call the function `MSM_samp`, which uses rejection sampling to obtain
 data from this model.
 ```{r MSM_datasamp}
 set.seed(123)
-dat <- coxSamp(1e4, T=2,
+dat <- coxSamp(1e4, T=20,
                formulas = formulas, 
                family = family, 
                pars = pars,
@@ -87,7 +87,7 @@ datl <- datl %>% mutate(datl, wts = X/pred + (1-X)/(1-pred))
 At this point we can fit the model to obtain the coefficients for the effect
 of $X$ on $Y$.
 ```{r MSM_fit}
-mod <- svyglm(I(1-Y) ~ X, 
+mod <- svyglm(Y ~ X, 
               family=binomial(link=log), 
               design = svydesign(ids=datl$id,
                                  weights=datl$wts,
@@ -100,7 +100,7 @@ summary(mod)
 If we ignore the fact that the covariates are time-varying, we will obtain a biased estimate of the coefficient of $X$ on $Y$.
 
 ```{r naive_fit}
-mod_naive <- svyglm(I(1-Y) ~ X, 
+mod_naive <- svyglm(Y ~ X, 
               family=binomial(link=log), 
               design = svydesign(ids=datl$id,
                                  data=datl))

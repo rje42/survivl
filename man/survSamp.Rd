@@ -22,8 +22,7 @@ survSamp(n, T, formulas, family, pars, link = NULL, control = list())
 \item{par}{list of parameter values}
 }
 \value{
-A \code{data.frame} containing the variable on the left hand side
-of each formula.
+An object of class \code{survivl_dat} containing the simulated data.
 }
 \description{
 Simulate from a survival model

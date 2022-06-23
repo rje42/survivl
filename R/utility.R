@@ -1,9 +1,22 @@
+##' Manipulate survival data
+##'
+##' @param dat survival dataset
+##'
+##' @details Functions to change the format of survival data as generated
+##' by \code{coxSamp} or \code{coxSamp}.  The function \code{surv_to_long}
+##' maps to one row for each time-point and individual, whereas \code{surv_to_wide}
+##' has precisely one row for each individual.
+##'
+##' @name manipulate_survival
+NULL
+
 rmv_time_stamps <- function (nms) {
   wh2cut <- regexpr("_[0-9]+$", nms)
   stems <- substr(nms[wh2cut > 0], 1, wh2cut[wh2cut > 0]-1)
   tms <- as.numeric(substr(nms[wh2cut > 0], wh2cut[wh2cut > 0]+1, nchar(nms[wh2cut > 0])))
 
   mx_tms <- tapply(tms, factor(stems), FUN = max)
+  mx_tms <- mx_tms[order(match(names(mx_tms), stems))]  # put in original order
   if (any(mx_tms < 0)) stop("Error in format of names, negative number obtained")
   Tmax <- max(mx_tms)
 
@@ -14,6 +27,8 @@ rmv_time_stamps <- function (nms) {
   out
 }
 
+##' @describeIn manipulate_survival change to long format
+##' @param lag number of earlier time-points to include
 ##' @export
 surv_to_long <- function(dat, lag=0) {#, formulas) {
   nms <- names(dat)
@@ -80,3 +95,93 @@ surv_to_long <- function(dat, lag=0) {#, formulas) {
   # out <- mutate(out, t_stop=pmin(out$t+1, out$T), .after=t)
   out
 }
+
+nms_from_zero <- function (x) {
+  tab <- table(x)
+  for (t in seq_along(tab)) {
+    x[x == names(tab)[t]] <- paste(names(tab)[t], seq_len(tab[t])-1, sep="_")
+  }
+  x
+}
+
+##' @importFrom dplyr group_by ungroup summarise_if filter `%>%` full_join
+##' @importFrom tidyr pivot_longer pivot_wider
+##' @describeIn manipulate_survival change to wide format
+##' @param tv_covs,fix_covs time-varying and fixed covariates
+##' @export
+surv_to_wide <- function(dat, tv_covs, fix_covs) {#, formulas) {
+  nms <- names(dat)
+  nms <- nms[nms != "t" & nms != "t_stop" & nms != "status" & nms != "T"]
+
+  ## if not supplied, obtain lists of the time-varying and fixed covariates
+  if (!missing(tv_covs) || !missing(fix_covs)) {
+    if (missing(tv_covs)) tv_covs <- setdiff(nms, fix_covs)
+    else if (missing(fix_covs)) fix_covs <- setdiff(nms, tv_covs)
+    else if (length(intersect(tv_covs, fix_covs)) > 0) stop("Covariates must be either time-varying or static")
+  }
+  else {
+    ## determine time-varying vs static covariates
+    tv_covs_tmp <- dat[nms] %>%
+      group_by(id) %>%
+      summarise_if(.predicate=is.numeric, .funs=var, na.rm=TRUE)
+    if (isTRUE(all.equal(names(tv_covs_tmp), "id"))) {
+      tv_covs <- character(0)
+    }
+    else {
+      tv_covs <- tv_covs_tmp %>%
+        pivot_longer(-id) %>%
+        ungroup %>% group_by(name) %>%
+        summarise(var=var(value, na.rm=TRUE)) %>%
+        filter(var > 0) %>%
+        `$`("name")
+    }
+    ## check for time-varying factors
+    tvf_covs_tmp <- dat[nms] %>%
+      group_by(id) %>%
+      summarise_if(.predicate=is.factor, .funs=function(x) var(as.numeric(x), na.rm=TRUE))
+    if (isTRUE(all.equal(names(tvf_covs_tmp), "id"))) {
+      tvf_covs <- character(0)
+    }
+    else {
+      tvf_covs <- tvf_covs_tmp %>%
+        pivot_longer(-id) %>%
+        ungroup %>% group_by(name) %>%
+        summarise(var=var(value, na.rm=TRUE)) %>%
+        filter(var > 0) %>%
+        `$`("name")
+    }
+
+    ## combine list of covariates
+    tv_covs <- c(tv_covs, tvf_covs)
+
+    fix_covs <- setdiff(nms, c(tv_covs, "id"))
+  }
+
+  ## number of timepoints
+  tms <- max(dat$t)
+
+  # spec <- tibble(.name = c("id", paste(tv_covs, rep(seq_len(tms+1)-1, each=length(tv_covs)), sep="_")),
+  #                .value = c("id", rep(tv_covs, length(tms)+1)))
+  # pivot_wider_spec(spec)
+
+  # static <- vector(mode="list", length=length(fix_covs))
+  ## this approach won't work for factors!
+  static <- rep(list(median), length(fix_covs))
+  names(static) <- fix_covs
+  stat_vals <- dat %>%
+    select(id, fix_covs) %>%
+    group_by(id) %>%
+    summarise(across(fix_covs, median, na.rm=TRUE))
+  # %>%
+  #   summarise(median)
+
+  dat <- dat %>%
+    pivot_wider(id_cols = id, names_from=t, values_from = tv_covs)
+
+  dat <- dat[,c("id", paste(tv_covs, rep(seq_len(tms+1)-1, each=length(tv_covs)), sep="_"))]
+  dat <- full_join(stat_vals, dat, by="id")
+
+  dat
+}
+
+

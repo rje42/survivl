@@ -18,28 +18,42 @@
 ##' confounders and treatments, and then a copula to join the distribution
 ##' of the outcome to that of the confounders.
 ##'
+##' Among the left-hand sides of outcome variables, the variable 'C' has a
+##' special meaning as censoring.  This keyword can be changed to something
+##' else by using the argument \code{censor} in the \code{control} list.
+##'
+##' @return An object of class \code{survivl_dat} containing the simulated data.
+##'
 ##' @export
 coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
 
-  verbose <- FALSE
-  con = list(max_wt = 1, warn = 1, cop="cop")
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="C")
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",
                                    paste(names(control[is.na(matches)]),
                                          sep = ", "))
+  verbose = con$verbose
 
-  for (i in 1:3) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
+  for (i in 1:5) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
 
   LHS_C <- causl:::lhs(formulas[[1]])
   LHS_Z <- causl:::lhs(formulas[[2]])
   LHS_X <- causl:::lhs(formulas[[3]])
   LHS_Y <- causl:::lhs(formulas[[4]])
   LHS_cop <- causl:::lhs(formulas[[5]])
-  nms_t <- c(LHS_Z, LHS_X, LHS_Y)
-  nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"))
+  if (any(duplicated(c(LHS_C, LHS_Z, LHS_X, LHS_Y, LHS_cop)))) stop("Repeated variable names not allowed")
 
-  out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(nms_t)))
+  ## check for censoring
+  censoring <- (con$censor %in% LHS_Y)  # see if censoring variable is in list of Y variables
+  if (censoring) {
+    ## put censoring first if a competing risk
+    LHS_Y <- c(con$censor, setdiff(LHS_Y, con$censor))
+  }
+  nms_t <- c(LHS_Z, LHS_X, LHS_Y)
+  nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"), "status")
+
+  out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(nms_t)), rep(0,n))
   names(out) <- nms
   out$T <- T
 
@@ -108,7 +122,7 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
       out2 <- lag_data(out[!OK,,drop=FALSE], t, vcopd, static=vcops)
 
       ## now compute model matrix
-      copMM <- model.matrix(formulas[[5]][c(1,3)], data=out2)
+      copMM <- model.matrix(formulas[[5]][[1]][c(1,3)], data=out2)
       resp <- paste0(c(LHS_Z, LHS_Y), "_", t-1)
 
       out[!OK,resp] <- causl:::sim_CopVal(out[!OK,resp,drop=FALSE], family[[5]], par=pars$cop, par2=pars$cop$par2, model_matrix = copMM)
@@ -132,14 +146,13 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
         out2 <- lag_data(out[!OK,,drop=FALSE], t, vYd, static=vYs)
 
         ## now compute etas
-        MM <- model.matrix(formulas[[4]][c(1,3)], data=out2)
+        MM <- model.matrix(formulas[[4]][[i]][c(1,3)], data=out2)
         var <- paste0(LHS_Y[[i]], "_", t-1)
 
         out[[var]][!OK] <- causl:::rescaleVar(out[[var]][!OK], X=MM,
                                               family=family[[4]][i], pars=c(pars[[LHS_Y[i]]], list(phi=1)),
                                               link=link[[4]][i])
       }
-
 
       ## now compute new implied X densities
       lden2 <- matrix(0, sum(!OK), length(LHS_X))
@@ -168,11 +181,19 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
       OK[!OK] <- (Us < exp(rat))
       if (verbose) rje::printCount(sum(OK))
     }
-    ## update who is still alive
-    var <- paste0(LHS_Y[[i]], "_", t-1)
-    surv[surv] <- (out[[var]][surv] > 1)
-    out$T[!is.na(out[[var]]) & !surv] <- t - 1 + out[[var]][!is.na(out[[var]]) & !surv]
-    out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] <= 1)
+
+    ## update who is still alive and any censoring
+    vars <- paste0(LHS_Y, "_", t-1)
+    this_T <- apply(out[, vars, drop=FALSE], 1, min)
+    surv[surv] <- (this_T[surv] > 1)
+    new_fail <- !is.na(out[[vars[1]]]) & !surv
+    out$T[new_fail] <- t - 1 + this_T[new_fail]
+    out$status[new_fail] <- apply(out[new_fail,vars,drop=FALSE]==this_T[new_fail], 1, which.max) - censoring
+    for (i in seq_along(vars)) out[[vars[i]]][!is.na(out[[vars[i]]])] <- 1*(out[[vars[i]]][!is.na(out[[vars[i]]])] > 1)
+
+    # surv[surv] <- (out[[var]][surv] > 1)
+    # out$T[!is.na(out[[var]]) & !surv] <- t - 1 + out[[var]][!is.na(out[[var]]) & !surv]
+    # out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] > 1)
   }
 
 #   # cum_haz <- rep(0, n)
@@ -211,7 +232,8 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
 #   }
 
   out <- cbind(id=seq_len(nrow(out)), out)
-  out$status <- 1*surv
+  # out$status <- 1*surv
+  class(out) <- c("survivl_dat", "data.frame")
 
   return(out)
 }
