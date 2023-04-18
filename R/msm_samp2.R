@@ -25,7 +25,7 @@
 ##' @return An object of class \code{survivl_dat} containing the simulated data.
 ##'
 ##' @export
-coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
+coxSamp2 <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
 
   con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="C")
   matches = match(names(control), names(con))
@@ -68,6 +68,7 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
 
   if (is.null(pars$gamma)) pars$gamma <- function(X, beta) X %*% beta
 
+  ## get variables as part of each vector
   tmp <- standardize_formulae(formulas, static=LHS_C)
   var_nms_Z <- tmp$var_nms_Z
   var_nms_X <- tmp$var_nms_X
@@ -85,6 +86,42 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
 
   ## simulate time-varying covariates and survival
   for (t in seq_len(T)) {
+    for (i in seq_along(LHS_Z)) {
+      lden <- matrix(0, sum(!OK), length(LHS_X))
+      # max_lr <- rep(0, length(LHS_X))
+
+      ## now simulate each treatment variable according to formula and pars
+      # out2 <- lag_data(out, t, var_nms_X[[i]], static=LHS_C)
+      vZd <- var_nms_Z[[i]][!is.na(var_nms_Z[[i]]$lag), ]
+      vZs <- var_nms_Z[[i]]$var[is.na(var_nms_Z[[i]]$lag)]
+      outZ <- lag_data(out[!OK,,drop=FALSE], t, vZd, static=vZs)
+      ## change this to replace with something closer to average value
+      outZ <- data.frame(lapply(outZ, function(x) {
+        if (all(is.na(x))) return(rep(0,length(x)))
+        else return(x)
+      }))
+      # out2[paste(LHS_Z, "0", sep="_l")] <- rep(colMeans(out2[paste(LHS_Z, "0", sep="_l")]), each=nrow(out2))
+
+      ## now compute etas
+      eta <- model.matrix(formulas[[1]][[i]][c(1,3)], data=outZ) %*% pars[[LHS_Z[i]]]$beta
+      var <- paste0(LHS_Z[[i]], "_", t-1)
+
+      tmp <- glm_sim(family[[3]][i], eta, link[[3]][i], pars[[LHS_X[[i]]]]$phi)
+      lden[,i] <- attr(tmp, "lden")
+      outZ[[var]][!OK] <- tmp
+      # max_lr[i] <- max(attr(tmp, "lden"))
+
+      ######
+
+      ## now compute etas
+      MM <- model.matrix(formulas[[2]][[i]][c(1,3)], data=out2)
+      var <- paste0(LHS_Z[[i]], "_", t-1)
+
+      out[[var]][!OK] <- causl:::rescaleVar(out[[var]][!OK], X=MM,
+                                            family=family[[2]][i], pars=pars[[LHS_Z[i]]],
+                                            link=link[[2]][i])
+    }
+
     OK <- rep(FALSE, nrow(out))
     OK[!surv] <- TRUE
     if (verbose) cat("T = ", t)
@@ -101,10 +138,10 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
         vXs <- var_nms_X[[i]]$var[is.na(var_nms_X[[i]]$lag)]
         out2 <- lag_data(out[!OK,,drop=FALSE], t, vXd, static=vXs)
         ## change this to replace with something closer to average value
-        out2 <- data.frame(lapply(out2, function(x) {
+        out2 <- lapply(out2, function(x) {
           if (all(is.na(x))) return(rep(0,length(x)))
           else return(x)
-        }))
+        })
         # out2[paste(LHS_Z, "0", sep="_l")] <- rep(colMeans(out2[paste(LHS_Z, "0", sep="_l")]), each=nrow(out2))
 
         ## now compute etas
@@ -196,40 +233,40 @@ coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
     # out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] > 1)
   }
 
-#   # cum_haz <- rep(0, n)
-#   Y_res <- out[[LHS_Y]]
+  #   # cum_haz <- rep(0, n)
+  #   Y_res <- out[[LHS_Y]]
 
   # out$T <- rep(0, n)
   # gam_aft <- rep(NA, n)
   # surv <- rep(TRUE, n)
-#
-#   ## now rescale Y to match C, Z and Xs
-#   ## for now just assume simple time-homogeneous exponential hazard
-#   for (t in seq_len(T)) {
-#     na_vars <- grepl(paste0("_",t-1), names(out))
-#     out[na_vars][!surv,] <- NA
-#
-#     vYd <- var_nms_Y[[i]][!is.na(var_nms_Y[[i]]$lag), ]
-#     vYs <- var_nms_Y[[i]]$var[is.na(var_nms_Y[[i]]$lag)]
-#     out2 <- lag_data(out, t, vYd, static=vYs)
-#     # out2 <- lag_data(out, t, var_nms_Y[[1]], static=LHS_C)
-#
-#     ## now compute etas
-#     MM <- model.matrix(formulas[[4]][c(1,3)], data=out2)
-#     gam_aft[surv] <- pars$gamma(MM, pars[[LHS_Y[1]]]$beta)
-#
-#     tmp <- out$T + surv*pmin(1, Y_res/exp(gam_aft))
-#     out$T[!is.na(tmp)] <- na.omit(tmp)
-#     tmp <- Y_res - exp(gam_aft)
-#     Y_res[!is.na(tmp)] <- na.omit(tmp)
-#
-#     var <- paste0(LHS_Y[[1]], "_", t-1)
-#     out[[var]] <- ifelse(surv, 1*(Y_res < 0), NA)
-#
-#     surv <- surv & Y_res > 0
-#
-#     # cum_haz <- cum_haz + exp(gam_aft)
-#   }
+  #
+  #   ## now rescale Y to match C, Z and Xs
+  #   ## for now just assume simple time-homogeneous exponential hazard
+  #   for (t in seq_len(T)) {
+  #     na_vars <- grepl(paste0("_",t-1), names(out))
+  #     out[na_vars][!surv,] <- NA
+  #
+  #     vYd <- var_nms_Y[[i]][!is.na(var_nms_Y[[i]]$lag), ]
+  #     vYs <- var_nms_Y[[i]]$var[is.na(var_nms_Y[[i]]$lag)]
+  #     out2 <- lag_data(out, t, vYd, static=vYs)
+  #     # out2 <- lag_data(out, t, var_nms_Y[[1]], static=LHS_C)
+  #
+  #     ## now compute etas
+  #     MM <- model.matrix(formulas[[4]][c(1,3)], data=out2)
+  #     gam_aft[surv] <- pars$gamma(MM, pars[[LHS_Y[1]]]$beta)
+  #
+  #     tmp <- out$T + surv*pmin(1, Y_res/exp(gam_aft))
+  #     out$T[!is.na(tmp)] <- na.omit(tmp)
+  #     tmp <- Y_res - exp(gam_aft)
+  #     Y_res[!is.na(tmp)] <- na.omit(tmp)
+  #
+  #     var <- paste0(LHS_Y[[1]], "_", t-1)
+  #     out[[var]] <- ifelse(surv, 1*(Y_res < 0), NA)
+  #
+  #     surv <- surv & Y_res > 0
+  #
+  #     # cum_haz <- cum_haz + exp(gam_aft)
+  #   }
 
   out <- cbind(id=seq_len(nrow(out)), out)
   # out$status <- 1*surv

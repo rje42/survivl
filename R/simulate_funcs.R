@@ -1,6 +1,6 @@
 ##' Simulate single variable
 ##'
-##' @param family family to simulate from
+##' @param family family for simulation
 ##' @param eta linear component
 ##' @param link link function
 ##' @param phi optional dispersion parameter
@@ -107,10 +107,7 @@ glm_sim <- function(family, eta, link, phi) {
 ##' @describeIn glm_sim Get log-density for rejection sampling
 ##'
 ##' @param Y observed value
-##' @param family family simulated from
-##' @param eta linear component
-##' @param link link function
-##' @param phi optional dispersion parameter
+##' @inheritParams glm_sim
 ##'
 ##' @export
 glm_ldens <- function(Y, family, eta, link, phi) {

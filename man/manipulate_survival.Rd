@@ -28,8 +28,8 @@ has precisely one row for each individual.
 }
 \section{Functions}{
 \itemize{
-\item \code{surv_to_long}: change to long format
+\item \code{surv_to_long()}: change to long format
 
-\item \code{surv_to_wide}: change to wide format
+\item \code{surv_to_wide()}: change to wide format
+
 }}
-

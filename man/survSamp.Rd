@@ -49,5 +49,6 @@ time-point.
 \references{
 Young, Hernan, Picciotto and Robins, 2008. Simulation from
 Structural Survival Models under Complex Time-Varying Data Structures,
-\emph{JSM Proceedings, Section on Statistics in Epidemiology: American Statistical Association}.
+\emph{JSM Proceedings, Section on Statistics in Epidemiology: American
+Statistical Association}.
 }

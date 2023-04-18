@@ -10,7 +10,7 @@ glm_sim(family, eta, link, phi)
 glm_ldens(Y, family, eta, link, phi)
 }
 \arguments{
-\item{family}{family simulated from}
+\item{family}{family for simulation}
 
 \item{eta}{linear component}
 
@@ -35,6 +35,6 @@ Link functions are listed in \code{causl:::linksList}.
 }
 \section{Functions}{
 \itemize{
-\item \code{glm_ldens}: Get log-density for rejection sampling
-}}
+\item \code{glm_ldens()}: Get log-density for rejection sampling
 
+}}

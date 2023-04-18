@@ -1,0 +1,66 @@
+---
+title: "Censoring"
+author: "Robin J. Evans"
+date: "31/05/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Censoring
+
+```{r setup}
+library(survivl)
+```
+
+The censoring mechanism is specified as another outcome variable.
+
+```{r MSM_forms}
+formulas <- list(list(),
+                 Z ~ X_l1,
+                 X ~ Z_l0,
+                 list(Y ~ X_l0, C ~ X_l0),
+                 cop ~ 1)
+family <- list(integer(0), 1, 5, list(3,3), 1)
+```
+
+The parameters to be specified depends upon the particular families used.
+```{r MSM_pars}
+pars <- list(Z = list(beta=c(1,0.5), phi=1),
+             X = list(beta=c(-0.25,0.5)),
+             Y = list(beta=c(1.1,-0.2), lambda0=0.01),
+             C = list(beta=c(1.1,-0.2), lambda0=0.01),
+             cop = list(beta=1))
+```
+
+Now we call the function `MSM_samp`, which uses rejection sampling to obtain 
+data from this model.
+```{r MSM_datasamp}
+set.seed(123)
+dat <- coxSamp(1e3, T=5,
+               formulas = formulas, 
+               family = family, 
+               pars = pars,
+               link = list(character(0), "identity", "logit", c("inverse", "inverse")))
+datl <- surv_to_long(dat)
+```
+
+## Fitting the Model
+
+Since this is a time-varying model, we must use inverse probability weighting 
+to obtain the parameters.  We recommend using the `survey` library's `svyglm`
+function for inference.
+
+```{r survey_load, message=FALSE}
+library(survey)
+library(dplyr)
+```
+Now, we fit a GLM to obtain the weighting to use with $X$.
+```{r weights}
+modX <- glm(X ~ Z, family=binomial, data=datl)
+summary(modX)
+pred <- predict(modX, type="response")
+datl <- datl %>% mutate(datl, wts = X/pred + (1-X)/(1-pred))
+```

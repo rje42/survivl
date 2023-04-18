@@ -43,7 +43,8 @@ NULL
 ##'
 ##' @references Young, Hernan, Picciotto and Robins, 2008. Simulation from
 ##' Structural Survival Models under Complex Time-Varying Data Structures,
-##' \emph{JSM Proceedings, Section on Statistics in Epidemiology: American Statistical Association}.
+##' \emph{JSM Proceedings, Section on Statistics in Epidemiology: American
+##' Statistical Association}.
 ##'
 ##' @export
 survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
@@ -55,7 +56,7 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
                                    paste(names(control[is.na(matches)]),
                                          sep = ", "))
 
-  for (i in 1:3) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
+  for (i in 1:4) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
 
   LHS_C <- causl:::lhs(formulas[[1]])
   LHS_Z <- causl:::lhs(formulas[[2]])
