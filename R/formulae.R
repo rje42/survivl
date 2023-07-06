@@ -81,3 +81,41 @@ replace_vars <- function(formula, replace) {
 #   as.formula(form, env = NULL)
 # }
 
+curr_formulae <- function (formulas, t) {
+  start_at <- 1
+  mod_form <- function (form, t) {
+    trms <- terms(form)
+    trm_labs <- attr(trms, "term.labels")
+
+    nos <- regex_extr("_l([0-9]+)", trm_labs)
+    nos <- rapply(nos, function(x) substr(x, 3, nchar(x)))
+    nos <- lapply(nos, as.numeric)
+    drp <- sapply(nos, function(x) any(x > t-start_at))
+    if (any(drp)) {
+      if (all(drp)) return(update.formula(form, . ~ 1))
+      trms <- drop.terms(trms, which(drp), keep.response=TRUE)
+    }
+
+    chr <- as.character(trms)[3]
+    wh <- gregexpr("_l([0-9]+)", chr)[[1]]
+    if (wh[1] < 0) {
+      attributes(trms) <- NULL
+      return(as.formula(trms))
+    }
+    ml <- attr(wh, "match.length")
+
+    nos <- integer(length(wh))
+
+    for (i in seq_along(wh)) {
+      if (ml[i] < 3) stop("All matches should be at least three characters")
+      nos[i] <- as.numeric(substr(chr, wh[i]+2, wh[i]+ml[i]-1))
+    }
+    for (i in seq_along(wh)) {
+      chr <- sub("_l([0-9]+)", paste0("_", t-nos[i]), chr)
+    }
+
+    update.formula(form, paste0(". ~ ", chr))
+  }
+
+  rapply(formulas, mod_form, how = "replace", t=t)
+}

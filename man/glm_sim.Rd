@@ -5,18 +5,18 @@
 \alias{glm_ldens}
 \title{Simulate single variable}
 \usage{
-glm_sim(family, eta, link, phi)
+glm_sim(family, eta, phi, link, par2)
 
-glm_ldens(Y, family, eta, link, phi)
+glm_ldens(Y, family, eta, link, phi, par2)
 }
 \arguments{
 \item{family}{family for simulation}
 
 \item{eta}{linear component}
 
-\item{link}{link function}
-
 \item{phi}{optional dispersion parameter}
+
+\item{link}{link function}
 
 \item{Y}{observed value}
 }

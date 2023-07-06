@@ -184,4 +184,29 @@ surv_to_wide <- function(dat, tv_covs, fix_covs) {#, formulas) {
   dat
 }
 
+##' Extract patterns from a string
+##'
+##' @param pattern regular expression to match
+##' @param x string for pattern extraction; should contain a single capture group
+##' @param sub_patt string to use for replacement
+##'
+##' @details This function is supposed to extract all captured elements from a
+##' string, and return them as a character vector.  It actually returns the
+##' whole match
+##'
+regex_extr <- function (pattern, x, sub_patt="{") {
+
+  subs <- gregexpr(pattern, text=x)
+  ml <- lapply(subs, attr, "match.length")
+  ed <- mapply(`+`, subs, ml, SIMPLIFY = FALSE)
+  # ed <- subs + ml - 1
+  out <- list()
+  for (s in seq_along(x)) {
+    out[[s]] <- character(length(subs[[s]]))
+    for (i in seq_along(subs[[s]])) {
+      out[[s]][i] <- substr(x[[s]], subs[[s]][i], ed[[s]][i]-1)
+    }
+  }
+  out
+}
 

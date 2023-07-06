@@ -13,8 +13,10 @@
 ##'
 ##' @return Returns a numeric vector of the same length as \code{eta}.
 ##'
+##' @importFrom causl glm_sim linksList familyVals
+##'
 ##' @export
-glm_sim <- function(family, eta, link, phi) {
+glm_sim <- function(family, eta, phi, link, par2) {
 
   if (family %in% c(1,2,3,6) && missing(phi)) stop("Must specify a dispersion parameter for this family")
   if (missing(link)) {
@@ -44,19 +46,19 @@ glm_sim <- function(family, eta, link, phi) {
     }
   }
   else if (family == 2) {
-    # out <- sqrt(phi)*qt(U, df=pars$par2) + eta
+    # out <- sqrt(phi)*qt(U, df=par2) + eta
 
     if (link == "identity") {
-      out <- sqrt(phi)*qt(U, df=pars$par2) + eta
-      lden <- dt((out - eta)/sqrt(phi), df=pars$par2, log=TRUE)-log(sqrt(phi))
+      out <- sqrt(phi)*qt(U, df=par2) + eta
+      lden <- dt((out - eta)/sqrt(phi), df=par2, log=TRUE)-log(sqrt(phi))
     }
     else if (link == "log") {
-      out <- sqrt(phi)*qt(U, df=pars$par2) + exp(eta)
-      lden <- dt((out - exp(eta))/sqrt(phi), df=pars$par2, log=TRUE)-log(sqrt(phi))
+      out <- sqrt(phi)*qt(U, df=par2) + exp(eta)
+      lden <- dt((out - exp(eta))/sqrt(phi), df=par2, log=TRUE)-log(sqrt(phi))
     }
     else if (link == "inverse") {
-      out <- sqrt(phi)*qt(U, df=pars$par2) + 1/eta
-      lden <- dt((out - 1/eta)/sqrt(phi), df=pars$par2, log=TRUE)-log(sqrt(phi))
+      out <- sqrt(phi)*qt(U, df=par2) + 1/eta
+      lden <- dt((out - 1/eta)/sqrt(phi), df=par2, log=TRUE)-log(sqrt(phi))
     }
     else stop("invalid link function for t-distribution")
   }
@@ -110,7 +112,7 @@ glm_sim <- function(family, eta, link, phi) {
 ##' @inheritParams glm_sim
 ##'
 ##' @export
-glm_ldens <- function(Y, family, eta, link, phi) {
+glm_ldens <- function(Y, family, eta, link, phi, par2) {
 
   if (family %in% c(1,2,3,6) && missing(phi)) stop("Must specify a dispersion parameter for this family")
   if (missing(link)) {
@@ -137,13 +139,13 @@ glm_ldens <- function(Y, family, eta, link, phi) {
   else if (family == 2) {
 
     if (link == "identity") {
-      lden <- dt((Y - eta)/sqrt(phi), df=pars$par2, log=TRUE)-log(sqrt(phi))
+      lden <- dt((Y - eta)/sqrt(phi), df=par2, log=TRUE)-log(sqrt(phi))
     }
     else if (link == "log") {
-      lden <- dt((Y - exp(eta))/sqrt(phi), df=pars$par2, log=TRUE)-log(sqrt(phi))
+      lden <- dt((Y - exp(eta))/sqrt(phi), df=par2, log=TRUE)-log(sqrt(phi))
     }
     else if (link == "inverse") {
-      lden <- dt((Y - 1/eta)/sqrt(phi), df=pars$par2, log=TRUE)-log(sqrt(phi))
+      lden <- dt((Y - 1/eta)/sqrt(phi), df=par2, log=TRUE)-log(sqrt(phi))
     }
     else stop("invalid link function for t-distribution")
   }
