@@ -38,7 +38,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
 
   ## process inputs
   proc_inputs <- process_inputs(formulas=formulas, pars=pars, family=family,
-                                link=link, control=con)
+                                link=link, T=T, control=con)
   ## extract them again
   formulas <- proc_inputs$formulas; pars <- proc_inputs$pars; family <- proc_inputs$family; link <- proc_inputs$link
 
@@ -98,16 +98,28 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
   surv <- rep(TRUE, nrow(out))
 
   if (method == "inversion") {
+    mod_inputs <- modify_inputs(proc_inputs)
+    formulas <- mod_inputs$formulas
+    done <- unlist(LHS_C)
     for (t in seq_len(T)) {
-      this_time <- data.frame(rep(list(rep(NA,n)), dZ+dX+dY))
-      out <- cbind(out, this_time)
+      # this_time <- data.frame(rep(list(rep(NA,n)), dZ+dX+dY))
+      # names(this_time) <- paste0(var_t, "_", t)
+      # out <- cbind(out, this_time)
 
       ## function to standardize formulae
-      cforms <- curr_formulae(formulas=formulas, t=t)
-      proc_inputs$formulas <- cforms
+      cforms <- curr_formulae(formulas=formulas, pars=pars, ordering=order,
+                              done=done, t=t)
+      mod_inputs$formulas <- cforms
+      tmp_pars <- rapply(mod_inputs$formulas, function(x) attr(x, "beta"), how="list")
+      while (pluck_depth(tmp_pars) > 2) {
+        tmp_pars <- list_flatten(tmp_pars)
+      }
+
+      mod2 <- modify_LHSs(mod_inputs, t=t, done=done)
+      done <- c(done, paste0(var_t, "_", t))
 
       ## use sim_inversion()
-      out <- causl::sim_inversion(out, proc_inputs)
+      out <- causl::sim_inversion(out, mod2)
     }
   }
   else {

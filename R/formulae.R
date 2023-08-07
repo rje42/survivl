@@ -1,3 +1,4 @@
+##' @importFrom purrr list_flatten pluck_depth
 standardize_formulae <- function (formulas, static=character(0)) {
 
   var_nms_Z <- var_nms_X <- var_nms_Y <- var_nms_cop <- list()
@@ -81,26 +82,36 @@ replace_vars <- function(formula, replace) {
 #   as.formula(form, env = NULL)
 # }
 
-curr_formulae <- function (formulas, t) {
+curr_formulae <- function (formulas, pars, t, ordering, done) {
   start_at <- 1
-  mod_form <- function (form, t) {
+  mod_form <- function (form, pars, t) {
     trms <- terms(form)
+    LHS <- lhs(form)
     trm_labs <- attr(trms, "term.labels")
 
-    nos <- regex_extr("_l([0-9]+)", trm_labs)
-    nos <- rapply(nos, function(x) substr(x, 3, nchar(x)))
+    form <- update.formula(form, as.formula(paste0(lhs(form), "_", t, " ~ .")))
+
+    nos <- regex_extr("_l([0-9]+)", trm_labs) # find lagged variables
+    nos <- rapply(nos, function(x) substr(x, 3, nchar(x)))  # extract lags
     nos <- lapply(nos, as.numeric)
     drp <- sapply(nos, function(x) any(x > t-start_at))
     if (any(drp)) {
-      if (all(drp)) return(update.formula(form, . ~ 1))
+      intc <- attr(terms, "intercept")
+      if (all(drp)) {
+        form <- update.formula(form, . ~ 1)
+        pars[[LHS]]$beta <- pars[[LHS]]$beta[intc]
+        attr(form, "beta") <- pars[[LHS]]$beta
+        return(form)
+      }
       trms <- drop.terms(trms, which(drp), keep.response=TRUE)
+      pars[[LHS]]$beta <- pars[[LHS]]$beta[c(intc, which(!drp)+intc)]
     }
 
     chr <- as.character(trms)[3]
     wh <- gregexpr("_l([0-9]+)", chr)[[1]]
     if (wh[1] < 0) {
       attributes(trms) <- NULL
-      return(as.formula(trms))
+      return(as.formula(paste0(lhs(form), " ~ 1")))
     }
     ml <- attr(wh, "match.length")
 
@@ -117,5 +128,40 @@ curr_formulae <- function (formulas, t) {
     update.formula(form, paste0(". ~ ", chr))
   }
 
-  rapply(formulas, mod_form, how = "replace", t=t)
+  ## deal with coefficient vectors
+  ## temporary solution for missing data, just assume 0 contribution
+  trms <- lapply(unlist(formulas), terms)
+  dZ <- length(formulas[[1]])
+  dX <- length(formulas[[2]])
+
+  forms <- c(rapply(formulas[-4], mod_form, pars=pars, how = "replace", t=t),
+             formulas[4])
+
+  ## get list element and make sure cycles correctly
+  for (i in seq_along(ordering)) {
+    LHS <- lhs(trms[[i]])
+    rmv <- setdiff(attr(trms[[i]], "term.labels"), done)
+    if (length(rmv) == 0) next
+    wh <- 1 + 1*(i > dZ) + 1*(i > dZ+dX)
+    norm <- dZ*(wh > 1) + dX*(wh > 2)
+    forms[[wh]][[i-norm]] <- update.formula(forms[[wh]][[i-norm]],
+                                            paste0(". ~ . - (", paste(rmv, collapse = "+"), ")"))
+    kp <- match(attr(terms(forms[[wh]][[i-norm]]), "term.labels"),
+                attr(trms[[i]], "term.labels"),
+                nomatch = 0L)
+    if (attr(trms[[i]], "intercept") > 0) kp <- c(1,kp+1)
+    pars[[LHS]]$beta <- pars[[LHS]]$beta[kp]
+
+    done <- c(done, paste0(LHS, "_", t))
+  }
+
+  LHSs <- rapply(forms, lhs, how = "replace")
+  forms <- mapply(function(x,y) `attr<-`(x, "beta", pars[[y]]$beta),
+                  x=unlist(forms),
+                  y=unlist(LHSs))
+  forms <- list_flatten(forms, skeleton = LHSs)
+  # betas <- rapply(forms, function(x) `attr<-`(x, "beta", ))
+  # pars[lhs] <- betas
+
+  return(forms)
 }

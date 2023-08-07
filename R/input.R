@@ -8,7 +8,7 @@
 ##' @param control control variables
 ## @param ordering logical: should an ordering of variables be computed?
 ##'
-process_inputs <- function (formulas, pars, family, link, control) {
+process_inputs <- function (formulas, pars, family, link, T, control) {
 
   for (i in 1:5) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
 
@@ -105,4 +105,34 @@ process_inputs <- function (formulas, pars, family, link, control) {
   out <- list(formulas=formulas, pars=pars, family=family, link=link,
               LHSs=list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
               std_form=std_form, ordering=ordering, var=nms, var_t=nms_t)
+}
+
+##' Modify inputs for simulation
+modify_inputs <- function (proc_inputs) {
+  proc_inputs$formulas <- proc_inputs$formulas[2:5]
+  proc_inputs$family <- proc_inputs$family[2:5]
+  proc_inputs$link <- proc_inputs$link[2:4]
+  proc_inputs$dim <- lengths(proc_inputs$formulas[1:3])
+
+  return(proc_inputs)
+}
+
+modify_LHSs <- function (proc_inputs, t, done) {
+  ## modify parameter names
+  pnms <- names(proc_inputs$pars)
+  ed <- pnms %in% proc_inputs$var_t
+  pnms[ed] <- paste0(pnms[ed], "_", t)
+  names(proc_inputs$pars) <- pnms
+
+  ## modify LHS expressions
+  proc_inputs$LHSs$LHS_Z <- paste0(proc_inputs$LHSs$LHS_Z, "_", t)
+  proc_inputs$LHSs$LHS_X <- paste0(proc_inputs$LHSs$LHS_X, "_", t)
+  proc_inputs$LHSs$LHS_Y <- paste0(proc_inputs$LHSs$LHS_Y, "_", t)
+  dZ <- proc_inputs$dim[1]
+  dX <- proc_inputs$dim[2]
+
+  ## list of variables
+  proc_inputs$vars <- unlist(proc_inputs$LHSs[-1])
+
+  return(proc_inputs)
 }
