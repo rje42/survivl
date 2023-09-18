@@ -4,7 +4,7 @@
 \alias{process_inputs}
 \title{Process formulas, families and parameters}
 \usage{
-process_inputs(formulas, pars, family, link, control)
+process_inputs(formulas, pars, family, link, T, control)
 }
 \arguments{
 \item{formulas}{list of lists of formulas}

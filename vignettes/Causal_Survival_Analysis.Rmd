@@ -54,23 +54,23 @@ pars <- list(Z = list(beta=c(1,0.5), phi=1),
              cop = list(beta=1))
 ```
 
-Now we call the function `cox_samp`, which uses rejection sampling to obtain 
-data from this model.
+Now we call the function `cox_samp`, which obtains samples from this model.
 ```{r MSM_datasamp}
 set.seed(123)
-dat <- cox_samp(1e2, T=5,
+dat <- cox_samp(1e3, T=5,
                 formulas = formulas, 
                 family = family, 
                 pars = pars,
-                link = list(character(0), "identity", "logit", "inverse"))
+                link = list(character(0), "identity", "logit", "inverse"),
+                method = "rejection")
 datl <- surv_to_long(dat)
 ```
 
 ## Fitting the Model
 
-Since this is a time-varying model, we must use inverse probability weighting 
-to obtain the parameters.  We recommend using the `survey` library's `svyglm`
-function for inference.
+Since this is a time-varying model, the obvious inference method is to use 
+inverse probability weighting.  We recommend using the `survey` library's `svyglm`
+function, since its standard errors account for the re-weighting.
 
 ```{r survey_load, message=FALSE}
 library(survey)
@@ -87,7 +87,7 @@ datl <- datl %>% mutate(datl, wts = X/pred + (1-X)/(1-pred))
 At this point we can fit the model to obtain the coefficients for the effect
 of $X$ on $Y$.
 ```{r MSM_fit}
-mod <- svyglm(Y ~ X, 
+mod <- svyglm(I(1-Y) ~ X, 
               family=binomial(link=log), 
               design = svydesign(ids=datl$id,
                                  weights=datl$wts,
@@ -100,7 +100,7 @@ summary(mod)
 If we ignore the fact that the covariates are time-varying, we will obtain a biased estimate of the coefficient of $X$ on $Y$.
 
 ```{r naive_fit}
-mod_naive <- svyglm(Y ~ X, 
+mod_naive <- svyglm(I(1-Y) ~ X, 
               family=binomial(link=log), 
               design = svydesign(ids=datl$id,
                                  data=datl))

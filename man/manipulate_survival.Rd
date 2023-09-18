@@ -22,7 +22,7 @@ Manipulate survival data
 }
 \details{
 Functions to change the format of survival data as generated
-by \code{coxSamp} or \code{coxSamp}.  The function \code{surv_to_long}
+by \code{coxSamp} or \code{cox_samp}.  The function \code{surv_to_long}
 maps to one row for each time-point and individual, whereas \code{surv_to_wide}
 has precisely one row for each individual.
 }

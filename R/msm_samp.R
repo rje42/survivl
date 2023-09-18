@@ -28,13 +28,14 @@
 cox_samp <- function (n, T, formulas, family, pars, link=NULL,
                       method="inversion", control=list()) {
 
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="C")
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="C", start_at=0)
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",
                                    paste(names(control[is.na(matches)]),
                                          sep = ", "))
-  verbose = con$verbose
+  verbose <- con$verbose
+  kwd <- con$cop
 
   ## process inputs
   proc_inputs <- process_inputs(formulas=formulas, pars=pars, family=family,
@@ -43,10 +44,11 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
   formulas <- proc_inputs$formulas; pars <- proc_inputs$pars; family <- proc_inputs$family; link <- proc_inputs$link
 
   LHS_C <- proc_inputs$LHSs$LHS_C; LHS_Z <- proc_inputs$LHSs$LHS_Z; LHS_X <- proc_inputs$LHSs$LHS_X; LHS_Y <- proc_inputs$LHSs$LHS_Y
-  dZ <- length(LHS_Z); dX <- length(LHS_X); dY <- length(LHS_Y)
+  dC <- length(LHS_C); dZ <- length(LHS_Z); dX <- length(LHS_X); dY <- length(LHS_Y)
   var_nms_Z <- proc_inputs$std_form$var_nms_Z
   var_nms_X <- proc_inputs$std_form$var_nms_X
   var_nms_Y <- proc_inputs$std_form$var_nms_Y
+  var_nms_cop <- proc_inputs$std_form$var_nms_cop
   order <- proc_inputs$ordering
   var_t <- proc_inputs$var_t; var <- proc_inputs$var
 
@@ -58,14 +60,14 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
   # dZ <- length(LHS_Z); dX <- length(LHS_X); dY <- length(LHS_Y)
   # if (any(duplicated(c(LHS_C, LHS_Z, LHS_X, LHS_Y, LHS_cop)))) stop("Repeated variable names not allowed")
 
-  # ## check for censoring
-  # censoring <- (con$censor %in% LHS_Y)  # see if censoring variable is in list of Y variables
-  # if (censoring) {
-  #   ## put censoring first if a competing risk
-  #   LHS_Y <- c(con$censor, setdiff(LHS_Y, con$censor))
-  # }
-  # nms_t <- c(LHS_Z, LHS_X, LHS_Y)
-  # nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"), "status")
+  ## check for censoring
+  censoring <- (con$censor %in% LHS_Y)  # see if censoring variable is in list of Y variables
+  if (censoring) {
+    ## put censoring first if a competing risk
+    LHS_Y <- c(con$censor, setdiff(LHS_Y, con$censor))
+  }
+  nms_t <- c(LHS_Z, LHS_X, LHS_Y)
+  nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"), "status")
 
   out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(var_t)), rep(0,n))
   names(out) <- var
@@ -101,25 +103,54 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
     mod_inputs <- modify_inputs(proc_inputs)
     formulas <- mod_inputs$formulas
     done <- unlist(LHS_C)
-    for (t in seq_len(T)) {
+    qtls <- out[integer(0)]  # data frame of quantiles
+    for (t in seq_len(T)-1) {
       # this_time <- data.frame(rep(list(rep(NA,n)), dZ+dX+dY))
       # names(this_time) <- paste0(var_t, "_", t)
       # out <- cbind(out, this_time)
 
       ## function to standardize formulae
-      cforms <- curr_formulae(formulas=formulas, pars=pars, ordering=order,
-                              done=done, t=t)
-      mod_inputs$formulas <- cforms
-      tmp_pars <- rapply(mod_inputs$formulas, function(x) attr(x, "beta"), how="list")
-      while (pluck_depth(tmp_pars) > 2) {
-        tmp_pars <- list_flatten(tmp_pars)
-      }
+      mod_inputs$t <- t
+      cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
+                          done=done, t=t, var_t=var_t, kwd=kwd)
+      mod_inputs$formulas <- cinp$formulas
+      mod_inputs$pars <- cinp$pars
+      # tmp_pars <- rapply(mod_inputs$formulas, function(x) attr(x, "beta"), how="list")
+      # while (pluck_depth(tmp_pars) > 2) {
+      #   tmp_pars <- list_flatten(tmp_pars)
+      # }
 
-      mod2 <- modify_LHSs(mod_inputs, t=t, done=done)
+      mod2 <- modify_LHSs(mod_inputs, t=t)
       done <- c(done, paste0(var_t, "_", t))
 
       ## use sim_inversion()
-      out <- causl::sim_inversion(out, mod2)
+      tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
+      out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
+
+      ## determine if the individual had an event
+      indYt <- dC + (t-con$start_at)*length(var_t) + dZ + dX + seq_len(dY)  # indices of responses
+      if (dY == 1) {
+        surv_this <- out[surv, indYt] > 1
+      }
+      else {
+        surv_this <- do.call(all, lapply(out[surv, indYt], `>`, 1))
+      }
+      ## get time of event and which one
+      out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
+      wh_fail <- max.col(-out[surv,][!surv_this, indYt, drop=FALSE])
+      out$status[surv][!surv_this] <- wh_fail
+
+      ## record 0 for intervals survived, and 1 for intervals not survived
+      out[surv, indYt] <- 0L
+      out[cbind(which(surv)[!surv_this], indYt[wh_fail])] <- 1L
+
+      ## update list of survivors
+      surv[surv] <- surv[surv] & surv_this
+      # out <- causl::sim_inversion(out, mod2)
+      # qZ <- cbind(qZ, attr(out, "qZs"))
+
+      ## if no-one has survived, then end the simulation
+      if (!any(surv)) break
     }
   }
   else {
@@ -151,7 +182,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           eta <- model.matrix(formulas[[3]][[i]][c(1,3)], data=out2) %*% pars[[LHS_X[i]]]$beta
           var <- paste0(LHS_X[[i]], "_", t-1)
 
-          tmp <- glm_sim(family[[3]][i], eta, link[[3]][i], pars[[LHS_X[[i]]]]$phi)
+          tmp <- glm_sim(family[[3]][i], eta, pars[[LHS_X[[i]]]]$phi, link=link[[3]][i])
           lden[,i] <- attr(tmp, "lden")
           out[[var]][!OK] <- tmp
           # max_lr[i] <- max(attr(tmp, "lden"))
@@ -230,7 +261,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
       new_fail <- !is.na(out[[vars[1]]]) & !surv
       out$T[new_fail] <- t - 1 + this_T[new_fail]
       out$status[new_fail] <- apply(out[new_fail,vars,drop=FALSE]==this_T[new_fail], 1, which.max) - censoring
-      for (i in seq_along(vars)) out[[vars[i]]][!is.na(out[[vars[i]]])] <- 1*(out[[vars[i]]][!is.na(out[[vars[i]]])] > 1)
+      for (i in seq_along(vars)) out[[vars[i]]][!is.na(out[[vars[i]]])] <- 1*(out[[vars[i]]][!is.na(out[[vars[i]]])] < 1)
 
       # surv[surv] <- (out[[var]][surv] > 1)
       # out$T[!is.na(out[[var]]) & !surv] <- t - 1 + out[[var]][!is.na(out[[var]]) & !surv]

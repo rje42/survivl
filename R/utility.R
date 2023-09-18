@@ -3,17 +3,18 @@
 ##' @param dat survival dataset
 ##'
 ##' @details Functions to change the format of survival data as generated
-##' by \code{coxSamp} or \code{coxSamp}.  The function \code{surv_to_long}
+##' by \code{coxSamp} or \code{cox_samp}.  The function \code{surv_to_long}
 ##' maps to one row for each time-point and individual, whereas \code{surv_to_wide}
 ##' has precisely one row for each individual.
 ##'
 ##' @name manipulate_survival
 NULL
 
+##' Add or remove time stamps to variable names
 rmv_time_stamps <- function (nms) {
   wh2cut <- regexpr("_[0-9]+$", nms)
   stems <- substr(nms[wh2cut > 0], 1, wh2cut[wh2cut > 0]-1)
-  tms <- as.numeric(substr(nms[wh2cut > 0], wh2cut[wh2cut > 0]+1, nchar(nms[wh2cut > 0])))
+  tms <- as.numeric(substr(nms[wh2cut > 0], wh2cut[wh2cut > 0]+1, nchar(nms[wh2cut > 0]))) # time stamps
 
   mx_tms <- tapply(tms, factor(stems), FUN = max)
   mx_tms <- mx_tms[order(match(names(mx_tms), stems))]  # put in original order
@@ -26,6 +27,24 @@ rmv_time_stamps <- function (nms) {
   attr(out, "times") <- c(rep(0,sum(wh2cut < 0)), mx_tms+1)
   out
 }
+
+##' @describeIn rmv_time_stamps replace lags with time stamps
+add_time_stamps <- function (nms, t, start_at=0) {
+  wh2cut <- regexpr("_l[0-9]+$", nms)
+  stems <- substr(nms[wh2cut > 0], 1, wh2cut[wh2cut > 0]-1)
+
+  tms <- as.numeric(substr(nms[wh2cut > 0], wh2cut[wh2cut > 0]+2, nchar(nms[wh2cut > 0])))
+
+  ## add in time points, setting to NA if prior to start_at
+  stems <- paste0(stems, "_", t-tms)
+  stems[which(t - tms < start_at)] <- NA_character_
+
+  ## set variable names and return
+  nms[wh2cut > 0] <- stems
+
+  return(nms)
+}
+
 
 ##' @describeIn manipulate_survival change to long format
 ##' @param lag number of earlier time-points to include
@@ -210,3 +229,19 @@ regex_extr <- function (pattern, x, sub_patt="{") {
   out
 }
 
+
+##' Remove time or lag suffices
+##'
+##' @param x vector to trim
+##'
+remove_time <- function (x) {
+  rx <- regexpr("_[0-9]+$", x)
+  x[rx > 0] <- substr(x, 1, rx[rx > 0]-1)
+  return(x)
+}
+
+remove_lag <- function (x) {
+  rx <- regexpr("_l[0-9]+$", x)
+  x[rx > 0] <- substr(x, 1, rx[rx > 0]-1)
+  return(x)
+}

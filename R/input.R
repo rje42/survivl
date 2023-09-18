@@ -16,9 +16,10 @@ process_inputs <- function (formulas, pars, family, link, T, control) {
   LHS_Z <- causl:::lhs(formulas[[2]])
   LHS_X <- causl:::lhs(formulas[[3]])
   LHS_Y <- causl:::lhs(formulas[[4]])
-  LHS_cop <- causl:::lhs(formulas[[5]])
+  # LHS_cop <- causl:::lhs(formulas[[5]])
   dZ <- length(LHS_Z); dX <- length(LHS_X); dY <- length(LHS_Y)
-  if (any(duplicated(c(LHS_C, LHS_Z, LHS_X, LHS_Y, LHS_cop)))) stop("Repeated variable names not allowed")
+  if (any(duplicated(c(LHS_C, LHS_Z, LHS_X, LHS_Y)))) stop("Repeated variable names not allowed")
+  # if (any(duplicated(c(LHS_C, LHS_Z, LHS_X, LHS_Y, LHS_cop)))) stop("Repeated variable names not allowed")
 
   if (missing(family)) {
     ## assume everything is Gaussian
@@ -114,10 +115,12 @@ modify_inputs <- function (proc_inputs) {
   proc_inputs$link <- proc_inputs$link[2:4]
   proc_inputs$dim <- lengths(proc_inputs$formulas[1:3])
 
+  # proc_inputs$formulas[[4]] <- list(proc_inputs$formulas[[4]])
+
   return(proc_inputs)
 }
 
-modify_LHSs <- function (proc_inputs, t, done) {
+modify_LHSs <- function (proc_inputs, t) {
   ## modify parameter names
   pnms <- names(proc_inputs$pars)
   ed <- pnms %in% proc_inputs$var_t
@@ -136,3 +139,4 @@ modify_LHSs <- function (proc_inputs, t, done) {
 
   return(proc_inputs)
 }
+
