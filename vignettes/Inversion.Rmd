@@ -82,7 +82,7 @@ summary(mod)
 If we ignore the fact that the covariates are time-varying, we will obtain a biased estimate of the coefficient of $X$ on $Y$.
 
 ```{r naive_fit}
-mod_naive <- svyglm(Y ~ X, 
+mod_naive <- svyglm(I(1-Y) ~ X, 
               family=binomial(link=log), 
               design = svydesign(ids=datl$id,
                                  data=datl))

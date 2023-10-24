@@ -1,3 +1,5 @@
+##' @importFrom causl sim_variable
+
 sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
   ## unpack proc_inputs

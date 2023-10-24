@@ -90,11 +90,16 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
   # var_nms_Y <- tmp$var_nms_Y
   # var_nms_cop <- tmp$var_nms_cop
 
+  qtls <- out[integer(0)]  # data frame of quantiles
+
   ## simulate static covariates
   for (i in seq_along(LHS_C)) {
     ## now compute etas
     eta <- model.matrix(formulas[[1]][[i]][c(1,3)], data=out) %*% pars[[LHS_C[i]]]$beta
-    out[[LHS_C[[i]]]] <- glm_sim(family[[1]][i], eta, link[[1]][i], pars[[LHS_C[[i]]]]$phi)
+    tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
+                          link=link[[1]][i])
+    out[[LHS_C[[i]]]] <- tmp
+    qtls[[LHS_C[[i]]]] <- attr(tmp, "quantiles")
   }
 
   surv <- rep(TRUE, nrow(out))
@@ -103,7 +108,6 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
     mod_inputs <- modify_inputs(proc_inputs)
     formulas <- mod_inputs$formulas
     done <- unlist(LHS_C)
-    qtls <- out[integer(0)]  # data frame of quantiles
     for (t in seq_len(T)-1) {
       # this_time <- data.frame(rep(list(rep(NA,n)), dZ+dX+dY))
       # names(this_time) <- paste0(var_t, "_", t)
@@ -182,7 +186,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           eta <- model.matrix(formulas[[3]][[i]][c(1,3)], data=out2) %*% pars[[LHS_X[i]]]$beta
           var <- paste0(LHS_X[[i]], "_", t-1)
 
-          tmp <- glm_sim(family[[3]][i], eta, pars[[LHS_X[[i]]]]$phi, link=link[[3]][i])
+          tmp <- causl::glm_sim(family[[3]][i], eta, phi=pars[[LHS_X[[i]]]]$phi, link=link[[3]][i])
           lden[,i] <- attr(tmp, "lden")
           out[[var]][!OK] <- tmp
           # max_lr[i] <- max(attr(tmp, "lden"))
