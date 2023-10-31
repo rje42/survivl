@@ -2,6 +2,7 @@
 
 export(cox_samp)
 export(glm_ldens)
+export(glm_sim)
 export(ll_surv)
 export(survSamp)
 export(surv_to_long)

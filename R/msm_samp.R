@@ -118,6 +118,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
       cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
                           done=done, t=t, var_t=var_t, kwd=kwd)
       mod_inputs$formulas <- cinp$formulas
+      # print(mod_inputs$formulas)
       mod_inputs$pars <- cinp$pars
       # tmp_pars <- rapply(mod_inputs$formulas, function(x) attr(x, "beta"), how="list")
       # while (pluck_depth(tmp_pars) > 2) {
@@ -187,9 +188,9 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           var <- paste0(LHS_X[[i]], "_", t-1)
 
           tmp <- causl::glm_sim(family[[3]][i], eta, phi=pars[[LHS_X[[i]]]]$phi, link=link[[3]][i])
-          lden[,i] <- attr(tmp, "lden")
+          lden[,i] <- attr(tmp, "quantile")
           out[[var]][!OK] <- tmp
-          # max_lr[i] <- max(attr(tmp, "lden"))
+          # max_lr[i] <- max(attr(tmp, "quantile"))
         }
 
         vcopd <- var_nms_cop[[i]][!is.na(var_nms_cop[[i]]$lag), ]

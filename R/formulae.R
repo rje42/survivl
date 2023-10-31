@@ -84,6 +84,8 @@ replace_vars <- function(formula, replace) {
 
 curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
   start_at <- 0
+
+  ## function to modify arguments
   mod_args <- function (form, beta, t, modLHS=FALSE) {
     trms <- terms(form)
     LHS <- lhs(form)
@@ -105,16 +107,16 @@ curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
       else LHS_new <- paste0(LHS, "_", t)
       form <- update.formula(form, paste0(LHS_new, " ~ ."))
     }
-    nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
+    # nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
     # form <- update.formula(form, as.formula(paste0(lhs(form), "_", t, " ~ .")))
 
     nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
     nos <- rapply(nos, function(x) substr(x, 3, nchar(x)))  # extract lags
     nos <- lapply(nos, as.numeric)
     drp <- sapply(nos, function(x) any(x > t-start_at))
-    if (any(drp)) {
+    if (any(na.omit(drp))) {
       intc <- attr(trms, "intercept")
-      if (all(drp)) {
+      if (!any(is.na(drp)) && all(drp)) {
         if (intc > 0) form <- update.formula(form, . ~ 1)
         else form <- update.formula(form, . ~ 0)
         beta <- beta[intc]
@@ -126,10 +128,10 @@ curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
     }
 
     chr <- as.character(trms)[3]
-    wh <- gregexpr("_l([0-9]+)$", chr)[[1]]
+    wh <- gregexpr("_l([0-9]+)", chr)[[1]]
     if (wh[1] < 0) {
-      attributes(trms) <- NULL
-      return(as.formula(paste0(lhs(form), " ~ 1")))
+      # attributes(trms) <- list(class="formula")
+      return(list(form=form, beta=beta))
     }
     ml <- attr(wh, "match.length")
     if (any(ml < 3)) stop("All matches should be at least three characters")
@@ -139,7 +141,7 @@ curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
       nos[i] <- as.numeric(substr(chr, wh[i]+2, wh[i]+ml[i]-1))
     }
     for (i in seq_along(wh)) {
-      chr <- sub("_l([0-9]+)$", paste0("_", t-nos[i]), chr)
+      chr <- sub("_l([0-9]+)", paste0("_", t-nos[i]), chr)
     }
 
     list(form=update.formula(form, paste0(". ~ ", chr)), beta=beta)
@@ -181,7 +183,6 @@ curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
     norm <- dZ*(wh > 1) + dX*(wh > 2)
 
     frm <- formulas[[wh]][[i2]]
-    trm <- terms(frm)
     LHS <- lhs(frm)
     prs <- pars[[LHS]]$beta
 

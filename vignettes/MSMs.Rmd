@@ -1,0 +1,110 @@
+---
+title: "Marginal Structural Survival Models"
+author: "Robin Evans"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Marginal Structural Models
+
+In this vignette we consider _marginal structural models_ for time-to-event 
+data.  Begin by loading the library.
+```{r load}
+library(survivl)
+```
+
+Then we define our formulas and family variables.  We will have one baseline
+variable, and a single time-varying covariate, treatment and outcome.  More 
+specifically, let:
+\begin{align*}
+W &\sim \operatorname{Gamma}(5/2, \, 2)  \\
+Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1} &\sim N(0.7 Z_{t-1} + 0.2 X_t, \, 1)\\
+X_t \mid \overline{Z}_{t}, \overline{X}_{t-1} &\sim \operatorname{Bernoulli}(\operatorname{expit}(0.5 X_t + 0.25 Z_{t-1}))\\ 
+P(Y_t = 1 \mid do(\overline{X}_{t}), W) &= \exp\{ - X_t + W/10\},
+\end{align*}
+and assume that there is a Gaussian pair-copula linking $Y_t$ with $Z_{t-1},Z_t$,
+which also depends upon $W$.  We assume that the parameter for the $Y_t$-$Z_{t-1}$
+interaction is 0.2, and that for $Y_t$-$Z_{t}$ given $Z_{t-1}$ is 0.3.
+
+```{r formulas}
+forms <- list(W ~ 1,
+              Z ~ Z_l1 + X_l1,
+              X ~ X_l1 + Z_l0,
+              Y ~ W + X_l0,
+              list(Y = list(Z ~ W)))
+fams <- list(3, 1, 5, 3, c(1))
+pars <- list(W = list(beta=log(5), phi=1/2),
+             Z = list(beta=c(0,0.7,0.2), phi=1),
+             X = list(beta=c(0,0.25,0.5)), 
+             Y = list(beta=c(2,-1/10,1/5), phi=1),
+             cop = list(Y=list(Z=list(beta=c(0.5,0.5))))
+)
+```
+We can now simulate $n=10^3$ observations from the model over 10 time points.
+```{r sim_data}
+n <- 1e3
+set.seed(123)
+dat <- cox_samp(n, T = 10, formulas = forms, family = fams, pars = pars, 
+                method = "inversion")
+datl <- surv_to_long(dat, lag=1)
+```
+### Checking the fit
+
+We can check that our simulation has the correct parametric distributions.  We
+use a Kolmogorov-Smirnov test to check the distribution of $W$, and then 
+regressions to test the distributions of the $Z$s and $X$s.
+
+```{r check_fits}
+ks.test(dat$W, "pgamma", scale=5/2, shape=2)
+summary(glm(Z ~ W + Z_l1 + X_l1, data=datl))
+summary(glm(X ~ W + X_l1 + Z, data=datl, family=binomial))
+```
+Indeed, each of these variables is consistent with the parameters we used.  For
+the survival outcome, we can use inverse probability weighting.  The `survey` 
+package can account for the additional uncertainty introduced by weighting.
+```{r survey}
+library(survey)
+```
+Now we estimate the propensity scores, and fit the IPW model.
+```{r ipw}
+ps <- predict(glm(X ~ W + X_l1 + Z, data=datl, family=binomial), type = "response")
+wt <- datl$X/ps + (1-datl$X)/(1-ps)
+svyglm(Y ~ W + X, design=svydesign(~1, data=datl, family=binomial(log), weights=wt))
+```
+
+# Multiple time-varying covariates
+
+We may well be interested in simulating more than one time-varying covariate. We
+can easily allow for this, first by simply specifying another formula in the second 
+element of our list...
+
+```{r mv_forms}
+forms2 <- forms
+forms2[[2]] <- list(Z1 ~ Z1_l1 + Z2_l1 + X_l1, 
+                    Z2 ~ Z2_l1 + X_l1 + Z1_l0)
+forms2[[3]] <- X ~ W + Z1_l0 + Z2_l0
+fams2 <- fams
+fams2[[2]] <- c(1,1)
+pars2 <- pars
+pars2 <- c(pars2,
+           list(Z1 = list(beta=c(0,0.7,0.3,0.2), phi=1),
+                Z2 = list(beta=c(0,0.5,0.2,0.1), phi=1)))
+pars2$X <- list(beta = c(0,0.25,0.1,0.3))
+```
+... and then by modifying the elements relating to the copula.
+```{r mf_cop}
+forms2[[5]] <- list(Y = list(Z1 ~ W, Z2 ~ W))
+fams2[[5]] <- c(1, 1)
+pars2$cop <- list(Y=list(Z1=list(beta=c(0.5,0.2)),
+                         Z2=list(beta=c(0.25,0))))
+```
+We can then simulate as before.
+```{r sim_dat_mv}
+dat2 <-  cox_samp(n, T = 10, formulas = forms2, family = fams2, pars = pars2, 
+                method = "inversion")
+dat2l <- surv_to_long(dat2, lag=1)
+```

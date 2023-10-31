@@ -21,7 +21,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     curr_link <- link[[j]][i]
 
     curr_form <- formulas[[j]][[i]]
-    curr_fam <- family[[j]][i]
+    curr_fam <- family[[j]][[i]]
 
     trm <- terms(curr_form)
     # curr_form2 <- delete.response(terms(curr_form))
@@ -42,7 +42,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   }
 
   vnm <- lhs(formulas[[3]])
-  vnm_stm <- remove_time(vnm)
+  vnm_stm <- rmv_time(vnm)
   # vnm_t <- paste0(vnm, "_", proc_inputs$t)
 
   ## code to get Y quantiles conditional on different Zs

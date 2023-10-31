@@ -48,20 +48,28 @@ process_inputs <- function (formulas, pars, family, link, T, control) {
   formsY <- lapply(formulas[[4]], terms)
   tmsY <- lapply(formsY, attr, "term.labels")
 
+  RHS_vars <- rmv_lag(unlist(c(tmsC, tmsZ, tmsX, tmsY)))
+
+  if (!all(RHS_vars %in% c(LHS_C, LHS_Z, LHS_X, LHS_Y))) {
+    wh <- RHS_vars[!RHS_vars %in% c(LHS_C, LHS_Z, LHS_X, LHS_Y)]
+    wh <- unique.default(wh)
+    stop(paste0("Variables ", paste(wh, collapse=", "), " appear on right hand side but are not simulated"))
+  }
+
   for (i in seq_along(formulas[[1]])) {
-    npar <- length(tmsC) + attr(formsC[[i]], "intercept")
+    npar <- length(tmsC[[i]]) + attr(formsC[[i]], "intercept")
     if (length(pars[[LHS_C[i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHS_C[i], " does not match number of coefficients provided"))
   }
   for (i in seq_along(formulas[[2]])) {
-    npar <- length(tmsZ) + attr(formsZ[[i]], "intercept")
+    npar <- length(tmsZ[[i]]) + attr(formsZ[[i]], "intercept")
     if (length(pars[[LHS_Z[i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHS_Z[i], " does not match number of coefficients provided"))
   }
   for (i in seq_along(formulas[[3]])) {
-    npar <- length(tmsX) + attr(formsX[[i]], "intercept")
+    npar <- length(tmsX[[i]]) + attr(formsX[[i]], "intercept")
     if (length(pars[[LHS_X[i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHS_X[i], " does not match number of coefficients provided"))
   }
   for (i in seq_along(formulas[[4]])) {
-    npar <- length(tmsY) + attr(formsY[[i]], "intercept")
+    npar <- length(tmsY[[i]]) + attr(formsY[[i]], "intercept")
     if (length(pars[[LHS_Y[i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHS_Y[i], " does not match number of coefficients provided"))
   }
 
@@ -90,17 +98,22 @@ process_inputs <- function (formulas, pars, family, link, T, control) {
   for (i in seq_along(LHS_Z)) {
     tab <- std_form$var_nms_Z[[i]]
     A[i,] <- 1*(nms_t %in% tab$var[tab$lag == 0])
+    if (any(A[i,dZ+seq_len(dX+dY)] > 0)) stop("Time-varying confounders should not depend upon current treatments and survival outcome")
   }
   for (i in seq_along(LHS_X)) {
     tab <- std_form$var_nms_X[[i]]
     A[i+dZ,] <- 1*(nms_t %in% tab$var[tab$lag == 0])
+    if (any(A[i+dZ,dZ+dX+seq_len(dY)] > 0)) stop("Treatment should not depend upon current survival outcome")
   }
   for (i in seq_along(LHS_Y)) {
     tab <- std_form$var_nms_Y[[i]]
     A[i+dZ+dX,] <- 1*(nms_t %in% tab$var[tab$lag == 0])
   }
 
-  ordering <- causl:::topOrd(A)
+  ordZ <- causl:::topOrd(A[seq_len(dZ),seq_len(dZ),drop=FALSE])
+  ordX <- causl:::topOrd(A[dZ + seq_len(dX),dZ + seq_len(dX),drop=FALSE])
+  ordY <- causl:::topOrd(A[dZ + dX + seq_len(dY),dZ + dX + seq_len(dY),drop=FALSE])
+  ordering <- c(ordZ, dZ + ordX, dZ + dX + ordY)
   if (any(is.na(ordering))) stop("Cyclic dependence in formulae provided")
 
   out <- list(formulas=formulas, pars=pars, family=family, link=link,

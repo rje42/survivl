@@ -86,7 +86,7 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
   for (i in seq_along(LHS_C)) {
     ## now compute etas
     eta <- model.matrix(formulas[[1]][[i]][c(1,3)], data=out) %*% pars[[LHS_C[i]]]$beta
-    out[[LHS_C[[i]]]] <- causl::glm_sim(family[[1]][i], eta, phi=pars[[LHS_C[[i]]]]$phi, link=link[[1]][i])
+    out[[LHS_C[[i]]]] <- glm_sim(family[[1]][i], eta, link[[1]][i], pars[[LHS_C[[i]]]]$phi)
   }
 
   ## simulate time-varying covariates and survival
@@ -102,7 +102,7 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
       eta <- model.matrix(formulas[[2]][[i]][c(1,3)], data=out2) %*% pars[[LHS_Z[i]]]$beta
       var <- paste0(LHS_Z[[i]], "_", t-1)
 
-      out[[var]] <- causl::glm_sim(family[[2]][i], eta, phi=pars[[LHS_Z[[i]]]]$phi, link=link[[2]][i])
+      out[[var]] <- glm_sim(family[[2]][i], eta, link[[2]][i], pars[[LHS_Z[[i]]]]$phi)
     }
     for (i in seq_along(LHS_X)) {
       # out2 <- lag_data(out, t, var_nms_X[[i]], static=LHS_C)
@@ -115,7 +115,7 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
       eta <- model.matrix(formulas[[3]][[i]][c(1,3)], data=out2) %*% pars[[LHS_X[i]]]$beta
       var <- paste0(LHS_X[[i]], "_", t-1)
 
-      out[[var]] <- causl::glm_sim(family[[3]][i], eta, phi=pars[[LHS_X[[i]]]]$phi, link=link[[3]][i])
+      out[[var]] <- glm_sim(family[[3]][i], eta, link[[3]][i], pars[[LHS_X[[i]]]]$phi)
     }
   }
 

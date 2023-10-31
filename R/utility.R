@@ -230,18 +230,18 @@ regex_extr <- function (pattern, x, sub_patt="{") {
 }
 
 
-##' Remove time or lag suffices
+##' Remove time or lag suffix
 ##'
 ##' @param x vector to trim
 ##'
-remove_time <- function (x) {
+rmv_time <- function (x) {
   rx <- regexpr("_[0-9]+$", x)
-  x[rx > 0] <- substr(x, 1, rx[rx > 0]-1)
+  x[rx > 0] <- substr(x[rx > 0], 1, rx[rx > 0]-1)
   return(x)
 }
 
-remove_lag <- function (x) {
+rmv_lag <- function (x) {
   rx <- regexpr("_l[0-9]+$", x)
-  x[rx > 0] <- substr(x, 1, rx[rx > 0]-1)
+  x[rx > 0] <- substr(x[rx > 0], 1, rx[rx > 0]-1)
   return(x)
 }
