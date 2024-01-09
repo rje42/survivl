@@ -4,7 +4,7 @@
 \alias{process_inputs}
 \title{Process formulas, families and parameters}
 \usage{
-process_inputs(formulas, pars, family, link, T, control)
+process_inputs(formulas, pars, family, link, T, control, method)
 }
 \arguments{
 \item{formulas}{list of lists of formulas}
@@ -16,6 +16,8 @@ process_inputs(formulas, pars, family, link, T, control)
 \item{link}{list of link functions}
 
 \item{control}{control variables}
+
+\item{method}{method to be used for sampling}
 }
 \description{
 Process formulas, families and parameters

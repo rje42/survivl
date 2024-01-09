@@ -1,4 +1,5 @@
 ##' @importFrom causl sim_variable
+##' @importFrom causl `lhs<-`
 
 sim_block <- function (out, proc_inputs, quantiles, kwd) {
 

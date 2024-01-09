@@ -39,7 +39,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
 
   ## process inputs
   proc_inputs <- process_inputs(formulas=formulas, pars=pars, family=family,
-                                link=link, T=T, control=con)
+                                link=link, T=T, control=con, method=method)
   ## extract them again
   formulas <- proc_inputs$formulas; pars <- proc_inputs$pars; family <- proc_inputs$family; link <- proc_inputs$link
 
@@ -95,7 +95,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
   ## simulate static covariates
   for (i in seq_along(LHS_C)) {
     ## now compute etas
-    eta <- model.matrix(formulas[[1]][[i]][c(1,3)], data=out) %*% pars[[LHS_C[i]]]$beta
+    eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
     tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
                           link=link[[1]][i])
     out[[LHS_C[[i]]]] <- tmp
@@ -184,7 +184,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           # out2[paste(LHS_Z, "0", sep="_l")] <- rep(colMeans(out2[paste(LHS_Z, "0", sep="_l")]), each=nrow(out2))
 
           ## now compute etas
-          eta <- model.matrix(formulas[[3]][[i]][c(1,3)], data=out2) %*% pars[[LHS_X[i]]]$beta
+          eta <- model.matrix(update(formulas[[3]][[i]], NULL ~ .), data=out2) %*% pars[[LHS_X[i]]]$beta
           var <- paste0(LHS_X[[i]], "_", t-1)
 
           tmp <- causl::glm_sim(family[[3]][i], eta, phi=pars[[LHS_X[[i]]]]$phi, link=link[[3]][i])
@@ -198,7 +198,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
         out2 <- lag_data(out[!OK,,drop=FALSE], t, vcopd, static=vcops)
 
         ## now compute model matrix
-        copMM <- model.matrix(formulas[[5]][[1]][c(1,3)], data=out2)
+        copMM <- model.matrix(update(formulas[[5]][[1]], NULL ~ .), data=out2)
         resp <- paste0(c(LHS_Z, LHS_Y), "_", t-1)
 
         out[!OK,resp] <- causl:::sim_CopVal(out[!OK,resp,drop=FALSE], family[[5]], par=pars$cop, par2=pars$cop$par2, model_matrix = copMM)
@@ -209,7 +209,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           out2 <- lag_data(out[!OK,,drop=FALSE], t, vZd, static=vZs)
 
           ## now compute etas
-          MM <- model.matrix(formulas[[2]][[i]][c(1,3)], data=out2)
+          MM <- model.matrix(update(formulas[[2]][[i]], NULL ~ .), data=out2)
           var <- paste0(LHS_Z[[i]], "_", t-1)
 
           out[[var]][!OK] <- causl:::rescaleVar(out[[var]][!OK], X=MM,
@@ -222,7 +222,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           out2 <- lag_data(out[!OK,,drop=FALSE], t, vYd, static=vYs)
 
           ## now compute etas
-          MM <- model.matrix(formulas[[4]][[i]][c(1,3)], data=out2)
+          MM <- model.matrix(update(formulas[[4]][[i]], NULL ~ .), data=out2)
           var <- paste0(LHS_Y[[i]], "_", t-1)
 
           out[[var]][!OK] <- causl:::rescaleVar(out[[var]][!OK], X=MM,
@@ -243,7 +243,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           out2 <- lag_data(out[!OK,,drop=FALSE], t, vXd, static=vXs)
 
           ## now compute etas
-          eta <- model.matrix(formulas[[3]][[i]][c(1,3)], data=out2) %*% pars[[LHS_X[i]]]$beta
+          eta <- model.matrix(updaate(formulas[[3]][[i]], NULL ~ .), data=out2) %*% pars[[LHS_X[i]]]$beta
           var <- paste0(LHS_X[[i]], "_", t-1)
 
           lden2[,i] <- glm_ldens(out[[var]][!OK], family[[3]][i], eta, link[[3]][i], pars[[LHS_X[[i]]]]$phi)

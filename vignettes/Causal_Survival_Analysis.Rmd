@@ -46,23 +46,32 @@ formulas <- list(list(),
 family <- list(integer(0), 1, 5, 3, 1)
 ```
 
-The parameters to be specified depends upon the particular families used.
+The parameters to be specified will depend upon the particular families used.  Note
+that all the following distributions are conditional on $Y_{t-1} = 0$.  We
+take 
+\begin{align*}
+Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1}  &\sim N(1 + X_{t-1}/2, \, 1)\\
+X_t \mid \overline{Z}_{t}, \overline{X}_{t-1}  &\sim \operatorname{Bern}(-1 + Z_t)\\
+Y_t \mid do(\overline{X}_{t}) &= \mathbb{I}\{Y^*_t < 0\} \mid do(\overline{X}_{t})\\
+Y^*_t \mid do(\overline{X}_{t}) &\sim \operatorname{Exp}(\exp\{1.1-X_t/2\}),
+\end{align*}
+and use a Gaussian copula with correlation $2\operatorname{expit}(1) - 1 = 0.462$ between 
+$Z_t$ and $Y_t^*$.  
 ```{r MSM_pars}
 pars <- list(Z = list(beta=c(1,0.5), phi=1),
-             X = list(beta=c(-0.25,0.5)),
-             Y = list(beta=c(1.1,-0.5), lambda0=0.01),
+             X = list(beta=c(-1,1)),
+             Y = list(beta=c(1.1,-0.5), lambda0=1),
              cop = list(beta=1))
 ```
 
 Now we call the function `cox_samp`, which obtains samples from this model.
 ```{r MSM_datasamp}
 set.seed(123)
-dat <- cox_samp(1e3, T=5,
+dat <- cox_samp(1e4, T=5,
                 formulas = formulas, 
                 family = family, 
                 pars = pars,
-                link = list(character(0), "identity", "logit", "inverse"),
-                method = "rejection")
+                link = list(character(0), "identity", "logit", "inverse"))
 datl <- surv_to_long(dat)
 ```
 
@@ -75,11 +84,12 @@ function, since its standard errors account for the re-weighting.
 ```{r survey_load, message=FALSE}
 library(survey)
 library(dplyr)
+options(digits=5)
 ```
 Now, we fit a GLM to obtain the weighting to use with $X$.
 ```{r weights}
 modX <- glm(X ~ Z, family=binomial, data=datl)
-summary(modX)
+summary(modX)$coefficients
 pred <- predict(modX, type="response")
 datl <- datl %>% mutate(datl, wts = X/pred + (1-X)/(1-pred))
 ```
@@ -92,17 +102,34 @@ mod <- svyglm(I(1-Y) ~ X,
               design = svydesign(ids=datl$id,
                                  weights=datl$wts,
                                  data=datl))
-summary(mod)
+summary(mod)$coefficients
 ```
 
-## A Naïve Approach
+## Naïve Approaches
 
 If we ignore the fact that the covariates are time-varying, we will obtain a biased estimate of the coefficient of $X$ on $Y$.
 
-```{r naive_fit}
+```{r naive_fit, warning=FALSE}
 mod_naive <- svyglm(I(1-Y) ~ X, 
               family=binomial(link=log), 
               design = svydesign(ids=datl$id,
+                                 weights=~1,
                                  data=datl))
-summary(mod_naive)
+summary(mod_naive)$coefficients
 ```
+
+Alternatively we can fit a conditional model.  Again, the estimate we obtain
+is biased.
+
+```{r cond_fit, warning=FALSE}
+start <- mod_naive$coefficients
+start <- c(start[1], 0, start[2])
+mod_cond <- svyglm(I(1-Y) ~ Z + X, 
+                   start = start,
+                   family = binomial(link=log), 
+                   design = svydesign(ids=datl$id,
+                                      weights=~1,
+                                      data=datl))
+summary(mod_cond)$coefficients
+```
+

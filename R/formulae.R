@@ -124,14 +124,14 @@ curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
         return(list(form=form, beta=beta))
       }
       trms <- drop.terms(trms, which(drp), keep.response=TRUE)
-      beta <- beta[c(intc, which(!drp)+intc)]
+      beta <- beta[c(intc, which(!drp | is.na(drp))+intc)]
     }
 
     chr <- as.character(trms)[3]
     wh <- gregexpr("_l([0-9]+)", chr)[[1]]
     if (wh[1] < 0) {
       # attributes(trms) <- list(class="formula")
-      return(list(form=form, beta=beta))
+      return(list(form=update.formula(form, paste0(". ~ ", chr)), beta=beta))
     }
     ml <- attr(wh, "match.length")
     if (any(ml < 3)) stop("All matches should be at least three characters")
@@ -207,7 +207,7 @@ curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
 
   ## adjust parameter names
   nms <- names(pars)
-  wh <- which(nms != kwd)
+  wh <- which(nms != kwd & nms %in% var_t)
   nms[wh] <- paste0(nms[wh], "_", t)
   names(pars) <- nms
 

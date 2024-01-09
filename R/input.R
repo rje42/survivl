@@ -6,9 +6,10 @@
 ##' @param link list of link functions
 ## @param kwd keyword for copula
 ##' @param control control variables
+##' @param method method to be used for sampling
 ## @param ordering logical: should an ordering of variables be computed?
 ##'
-process_inputs <- function (formulas, pars, family, link, T, control) {
+process_inputs <- function (formulas, pars, family, link, T, control, method) {
 
   for (i in 1:5) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
 
@@ -22,7 +23,6 @@ process_inputs <- function (formulas, pars, family, link, T, control) {
   # if (any(duplicated(c(LHS_C, LHS_Z, LHS_X, LHS_Y, LHS_cop)))) stop("Repeated variable names not allowed")
 
   if (missing(family)) {
-    ## assume everything is Gaussian
     stop("Families must be specified")
   }
   else if (is.list(family)) {
@@ -47,6 +47,8 @@ process_inputs <- function (formulas, pars, family, link, T, control) {
   tmsX <- lapply(formsX, attr, "term.labels")
   formsY <- lapply(formulas[[4]], terms)
   tmsY <- lapply(formsY, attr, "term.labels")
+  # formsCop <- lapply(formulas[[5]], terms)
+  # tmsCop <- lapply(formsCop, attr, "term.labels")
 
   RHS_vars <- rmv_lag(unlist(c(tmsC, tmsZ, tmsX, tmsY)))
 
@@ -108,6 +110,73 @@ process_inputs <- function (formulas, pars, family, link, T, control) {
   for (i in seq_along(LHS_Y)) {
     tab <- std_form$var_nms_Y[[i]]
     A[i+dZ+dX,] <- 1*(nms_t %in% tab$var[tab$lag == 0])
+  }
+
+  if (method == 'inversion') {
+    ## get formulas in right format
+    if (!is.list(formulas[[5]])) {
+      formulas[[5]] <- rep(list(formulas[[5]]), dY)
+    }
+    else if (length(formulas[[5]]) != dY) {
+      formulas[[5]] <- rep(formulas[[5]][], dY)
+    }
+    if (!all(sapply(formulas[[5]], is.list)) || any(lengths(formulas[[5]]) < dZ+seq_len(dY)-1)) {
+      for (i in seq_len(dY)) {
+        if (is.list(formulas[[5]][[i]])) {
+          formulas[[5]][[i]] <- rep(formulas[[5]][[i]], dZ+i-1)
+        }
+        else {
+          formulas[[5]][[i]] <- rep(list(formulas[[5]][[i]]), dZ+i-1)
+        }
+        lhs(formulas[[5]][[i]]) <- c(LHS_Z, LHS_Y[seq_len(i-1)])
+        ## update to allow some Zs to come after Ys
+      }
+    }
+    names(formulas[[5]]) <- LHS_Y
+
+    ## get families in right format
+    if (!is.list(family[[5]]) || length(family[[5]]) != dY) {
+      if (is.list(family[[5]])) {
+        family[[5]] <- rep(family[[5]], dY)
+      }
+      if (!is.list(family[[5]])) {
+        if (length(family[[5]]) == dY) {
+          family[[5]] <- as.list(family[[5]])
+        }
+        else  {
+          family[[5]] <- rep(as.list(family[[5]]), dY)
+        }
+      }
+    }
+    if (any(lengths(family[[5]]) != lengths(formulas[[5]]))) {
+      family[[5]] <- mapply(function(x, y) rep(x, y), family[[5]], dZ+seq_len(dY)-1)
+    }
+  }
+
+  kwd <- control$cop
+
+  ## get copula parameters in correct format
+  if (!setequal(names(pars[[kwd]]), LHS_Y)) {
+    if ("beta" %in% names(pars[[kwd]])) {
+      pars[[kwd]] <- rep(list(list(list(beta=pars[[kwd]]$beta))), length(LHS_Y))
+      names(pars[[kwd]]) <- LHS_Y
+      # if (dZ > 1 || dY > 1) {
+      for (i in seq_len(dY)) {
+        vnm <- LHS_Y[i]
+        pars[[kwd]][[vnm]] <- rep(pars[[kwd]][[vnm]], dZ+i-1)
+        names(pars[[kwd]][[vnm]]) <- c(LHS_Z, LHS_Y[dZ+dX+seq_len(i-1)])
+      }
+      # }
+    }
+    else {
+      nrep <- setdiff(LHS_Y, names(pars[[kwd]]))
+      if (length(nrep) > 0) stop(paste0("Variable ", paste(nrep, collapse=", "),
+                                        "not represented in the copula parameters list"))
+      rep <- setdiff(names(pars[[kwd]]), LHS_Y)
+      if (length(rep) > 0) stop(paste0("Variable ", paste(rep, collapse=", "),
+                                       "represented in copula parameters list but not a response variable"))
+      stop("Shouldn't get here")
+    }
   }
 
   ordZ <- causl:::topOrd(A[seq_len(dZ),seq_len(dZ),drop=FALSE])

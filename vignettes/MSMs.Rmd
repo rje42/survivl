@@ -15,13 +15,14 @@ In this vignette we consider _marginal structural models_ for time-to-event
 data.  Begin by loading the library.
 ```{r load}
 library(survivl)
+options(digits=4)
 ```
 
 Then we define our formulas and family variables.  We will have one baseline
 variable, and a single time-varying covariate, treatment and outcome.  More 
 specifically, let:
 \begin{align*}
-W &\sim \operatorname{Gamma}(5/2, \, 2)  \\
+W &\sim \operatorname{Gamma}(1/2, \, 2)  \\
 Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1} &\sim N(0.7 Z_{t-1} + 0.2 X_t, \, 1)\\
 X_t \mid \overline{Z}_{t}, \overline{X}_{t-1} &\sim \operatorname{Bernoulli}(\operatorname{expit}(0.5 X_t + 0.25 Z_{t-1}))\\ 
 P(Y_t = 1 \mid do(\overline{X}_{t}), W) &= \exp\{ - X_t + W/10\},
@@ -37,19 +38,20 @@ forms <- list(W ~ 1,
               Y ~ W + X_l0,
               list(Y = list(Z ~ W)))
 fams <- list(3, 1, 5, 3, c(1))
-pars <- list(W = list(beta=log(5), phi=1/2),
+pars <- list(W = list(beta=0, phi=1/2),
              Z = list(beta=c(0,0.7,0.2), phi=1),
-             X = list(beta=c(0,0.25,0.5)), 
+             X = list(beta=c(-0.5,0.25,0.5)), 
              Y = list(beta=c(2,-1/10,1/5), phi=1),
-             cop = list(Y=list(Z=list(beta=c(0.5,0.5))))
+             cop = list(Y=list(Z=list(beta=c(0.5, 0.0))))
 )
+link <- list("log", "identity", "logit", "inverse")
 ```
 We can now simulate $n=10^3$ observations from the model over 10 time points.
 ```{r sim_data}
-n <- 1e3
-set.seed(123)
-dat <- cox_samp(n, T = 10, formulas = forms, family = fams, pars = pars, 
-                method = "inversion")
+n <- 1e5
+set.seed(124)
+dat <- cox_samp(n, T = 10, formulas = forms, family = fams, pars = pars, link=link) 
+                # method = "rejection")
 datl <- surv_to_long(dat, lag=1)
 ```
 ### Checking the fit
@@ -59,28 +61,28 @@ use a Kolmogorov-Smirnov test to check the distribution of $W$, and then
 regressions to test the distributions of the $Z$s and $X$s.
 
 ```{r check_fits}
-ks.test(dat$W, "pgamma", scale=5/2, shape=2)
-summary(glm(Z ~ W + Z_l1 + X_l1, data=datl))
-summary(glm(X ~ W + X_l1 + Z, data=datl, family=binomial))
+ks.test(dat$W, "pgamma", scale=1/2, shape=2)
+summary(glm(Z ~ W + Z_l1 + X_l1, data=datl))$coefficients
+summary(glm(X ~ W + X_l1 + Z, data=datl, family=binomial))$coefficients
 ```
 Indeed, each of these variables is consistent with the parameters we used.  For
 the survival outcome, we can use inverse probability weighting.  The `survey` 
 package can account for the additional uncertainty introduced by weighting.
-```{r survey}
+```{r survey, message=FALSE}
 library(survey)
 ```
 Now we estimate the propensity scores, and fit the IPW model.
 ```{r ipw}
 ps <- predict(glm(X ~ W + X_l1 + Z, data=datl, family=binomial), type = "response")
 wt <- datl$X/ps + (1-datl$X)/(1-ps)
-svyglm(Y ~ W + X, design=svydesign(~1, data=datl, family=binomial(log), weights=wt))
+summary(svyglm(I(1-Y) ~ W + X, family=binomial(log), start=c(-2,1/10,-1/5), design=svydesign(~1, data=datl, weights=wt)))$coefficients
 ```
 
 # Multiple time-varying covariates
 
 We may well be interested in simulating more than one time-varying covariate. We
-can easily allow for this, first by simply specifying another formula in the second 
-element of our list...
+can easily allow for this, first by simply specifying another formula in the 
+second element of our list...
 
 ```{r mv_forms}
 forms2 <- forms
@@ -94,17 +96,34 @@ pars2 <- c(pars2,
            list(Z1 = list(beta=c(0,0.7,0.3,0.2), phi=1),
                 Z2 = list(beta=c(0,0.5,0.2,0.1), phi=1)))
 pars2$X <- list(beta = c(0,0.25,0.1,0.3))
+link[[2]] <- rep("identity", 2)
 ```
 ... and then by modifying the elements relating to the copula.
 ```{r mf_cop}
 forms2[[5]] <- list(Y = list(Z1 ~ W, Z2 ~ W))
-fams2[[5]] <- c(1, 1)
+fams2[[5]] <- list(c(1, 1))
 pars2$cop <- list(Y=list(Z1=list(beta=c(0.5,0.2)),
                          Z2=list(beta=c(0.25,0))))
 ```
 We can then simulate as before.
 ```{r sim_dat_mv}
 dat2 <-  cox_samp(n, T = 10, formulas = forms2, family = fams2, pars = pars2, 
-                method = "inversion")
+                  link = link, method = "inversion")
 dat2l <- surv_to_long(dat2, lag=1)
 ```
+
+Checking the distributions, these all seem fine.
+```{r check_ZX_mv}
+summary(glm(Z1 ~ W + Z1_l1 + Z2_l1 + X_l1, data=dat2l))$coef
+summary(glm(Z2 ~ W + Z2_l1 + X_l1 + Z1, data=dat2l))$coef
+summary(glm(X ~ W + X_l1 + Z1 + Z2, data=dat2l, family=binomial))$coef
+```
+
+For the outcome, we again apply IPW, and obtain:
+```{r check_XY_mv, eval=TRUE}
+ps <- predict(glm(X ~ W + X_l1 + Z1 + Z2, data=dat2l, family=binomial), type="response")
+wt <- dat2l$X/ps + (1-dat2l$X)/(1-ps)
+svyglm(I(1-Y) ~ W + X, family=binomial(log), design=svydesign(~1, weights=wt, data=dat2l))
+```
+
+
