@@ -4,7 +4,7 @@ This package allows for simulation of survival data from additive hazard and Cox
 
 Current features:
 
-* Simulation of survival models.
+* Simulation of Cox MSM survival models.
 
 To install and load the package, run the commands
 ```
