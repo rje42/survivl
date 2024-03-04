@@ -27,8 +27,8 @@ ll_surv <- function (dat, formulas, family, pars, link, control) {
 
   ## tidy up the formulae
   forms <- tidy_formulas(formulas, kwd=kwd)
-  fam_cop <- last(family)
-  link <- linkSetUp(link, family = family[-length(family)])
+  fam_cop <- rje::last(family)
+  link <- causl::link_setup(link, family = family[-length(family)])
 
   LHS <- lhs(forms[-length(forms)])
   full_form <- merge_formulas(forms)
@@ -36,8 +36,8 @@ ll_surv <- function (dat, formulas, family, pars, link, control) {
   mm <- model.matrix(full_form$formula, data=dat)
 
   ## get initial parameters
-  pars2 <- initializeParamsSurv(dat, formulas=forms, family=family, pars=pars,
-                                link=link, full_form=full_form, kwd=kwd)
+  pars2 <- initialize_params_surv(dat, formulas=forms, family=family, pars=pars,
+                                  link=link, full_form=full_form, kwd=kwd)
   # theta_st <- c(beta_start2$beta[beta_start2$beta_m > 0],
   #               beta_start2$phi[beta_start2$phi_m > 0])
   #

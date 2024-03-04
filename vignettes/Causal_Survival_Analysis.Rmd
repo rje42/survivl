@@ -26,8 +26,8 @@ library(survivl)
 ## Time-Varying Covariates
 
 If the treatment and covariates are allowed to be time-varying, then an ordinary
-Cox model will not have any causal interpretation.  Instead we must use something
-like a Cox _Marginal Structural Model_ (MSM) instead.  This assumes that the 
+Cox proportional hazards model will not have any causal interpretation.  Instead 
+we must use something like a Cox _Marginal Structural Model_ (MSM) instead.  This assumes that the 
 set of observed covariates is sufficient to control for confounding at any 
 given timepoint, and that the causal quantity of interest is the marginal effect
 of the treatment only on the outcome.
@@ -64,10 +64,10 @@ pars <- list(Z = list(beta=c(1,0.5), phi=1),
              cop = list(beta=1))
 ```
 
-Now we call the function `cox_samp`, which obtains samples from this model.
+Now we call the function `msm_samp`, which obtains samples from this model.
 ```{r MSM_datasamp}
 set.seed(123)
-dat <- cox_samp(1e4, T=5,
+dat <- msm_samp(1e4, T=5,
                 formulas = formulas, 
                 family = family, 
                 pars = pars,

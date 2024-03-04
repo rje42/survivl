@@ -2,10 +2,19 @@
 % Please edit documentation in R/model_matrix.R
 \name{lag_data}
 \alias{lag_data}
-\title{Get lagged version of a dataset for a particular timepoint}
+\title{Get lagged version of a dataset for a particular time point}
 \usage{
 lag_data(dat, t, var_nms, static = character(0))
 }
+\arguments{
+\item{dat}{data set}
+
+\item{t}{current time point}
+
+\item{var_nms}{table output from \code{standardize_formulas}}
+
+\item{static}{character vector of static variables}
+}
 \description{
-Get lagged version of a dataset for a particular timepoint
+Get lagged version of a dataset for a particular time point
 }

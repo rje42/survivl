@@ -5,10 +5,12 @@
 ##' covariates are given as single columns, while time-varying covariates are
 ##' suffixed by \code{_t}, where \code{t} is the relevant time-point.
 ##'
+##'
 ##' @name survivl_dat
 NULL
 
 ##' @import causl
+##' @importFrom lifecycle deprecate_soft
 NULL
 
 ##' Simulate from a survival model
@@ -17,7 +19,7 @@ NULL
 ##' @param T number of time-points
 ##' @param formulas formulae for model
 ##' @param family families of distributions
-##' @param par list of parameter values
+##' @param pars list of parameter values
 ##' @param link list of link functions
 ##' @param control list of options for the algorithm
 ##'
@@ -47,7 +49,7 @@ NULL
 ##' Statistical Association}.
 ##'
 ##' @export
-survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
+surv_samp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
 
   con = list(max_wt = 1, warn = 1, cop="cop")
   matches = match(names(control), names(con))
@@ -56,22 +58,26 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
                                    paste(names(control[is.na(matches)]),
                                          sep = ", "))
 
-  for (i in 1:4) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
+  for (i in 1:3) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
+  if (is.list(formulas[[4]])) {
+    if (length(formulas[[4]]) > 1) stop("Only one outcome variable permitted")
+    formulas[[4]] <- unlist(formulas[[4]])
+  }
 
-  LHS_C <- causl:::lhs(formulas[[1]])
-  LHS_Z <- causl:::lhs(formulas[[2]])
-  LHS_X <- causl:::lhs(formulas[[3]])
-  LHS_Y <- causl:::lhs(formulas[[4]])
+  LHS_C <- causl::lhs(formulas[[1]])
+  LHS_Z <- causl::lhs(formulas[[2]])
+  LHS_X <- causl::lhs(formulas[[3]])
+  LHS_Y <- causl::lhs(formulas[[4]])
   nms_t <- c(LHS_Z, LHS_X, LHS_Y)
   nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"))
 
   out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(nms_t)))
   names(out) <- nms
 
-  RHS_Z <- causl:::rhs_vars(formulas[[1]])
-  RHS_X <- causl:::rhs_vars(formulas[[2]])
+  RHS_Z <- causl::rhs_vars(formulas[[1]])
+  RHS_X <- causl::rhs_vars(formulas[[2]])
 
-  link <- causl:::linkSetUp(link, family = family, vars=list(LHS_C,LHS_Z,LHS_X,LHS_Y))
+  link <- causl::link_setup(link, family = family, vars=list(LHS_C,LHS_Z,LHS_X,LHS_Y))
 
   if (family[[4]] == 3) out[[LHS_Y]] <- rgamma(n, shape=1, rate=pars[[LHS_Y]]$lambda)
   if (is.null(pars$gamma)) pars$gamma <- function(X, beta) X %*% beta
@@ -86,7 +92,8 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
   for (i in seq_along(LHS_C)) {
     ## now compute etas
     eta <- model.matrix(formulas[[1]][[i]][c(1,3)], data=out) %*% pars[[LHS_C[i]]]$beta
-    out[[LHS_C[[i]]]] <- glm_sim(family[[1]][i], eta, link[[1]][i], pars[[LHS_C[[i]]]]$phi)
+    out[[LHS_C[[i]]]][] <- causl::glm_sim(family[[1]][i], eta, phi=pars[[LHS_C[[i]]]],
+                                           other_pars=pars[[LHS_C[[i]]]], link[[1]][i])
   }
 
   ## simulate time-varying covariates and survival
@@ -100,9 +107,10 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
 
       ## now compute etas
       eta <- model.matrix(formulas[[2]][[i]][c(1,3)], data=out2) %*% pars[[LHS_Z[i]]]$beta
-      var <- paste0(LHS_Z[[i]], "_", t-1)
+      vars <- paste0(LHS_Z[[i]], "_", t-1)
 
-      out[[var]] <- glm_sim(family[[2]][i], eta, link[[2]][i], pars[[LHS_Z[[i]]]]$phi)
+      out[[vars]][] <- causl::glm_sim(family[[2]][i], eta, phi=pars[[LHS_Z[[i]]]]$phi,
+                                      other_pars=pars[[LHS_Z[[i]]]], link[[2]][i])
     }
     for (i in seq_along(LHS_X)) {
       # out2 <- lag_data(out, t, var_nms_X[[i]], static=LHS_C)
@@ -113,9 +121,10 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
 
       ## now compute etas
       eta <- model.matrix(formulas[[3]][[i]][c(1,3)], data=out2) %*% pars[[LHS_X[i]]]$beta
-      var <- paste0(LHS_X[[i]], "_", t-1)
+      vars <- paste0(LHS_X[[i]], "_", t-1)
 
-      out[[var]] <- glm_sim(family[[3]][i], eta, link[[3]][i], pars[[LHS_X[[i]]]]$phi)
+      out[[vars]][] <- causl::glm_sim(family[[3]][i], eta, phi=pars[[LHS_X[[i]]]]$phi,
+                                      other_pars=pars[[LHS_X[[i]]]], link[[3]][i])
     }
   }
 
@@ -138,7 +147,7 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
     # out2 <- lag_data(out, t, var_nms_Y[[1]], static=LHS_C)
 
     ## now compute etas
-    MM <- model.matrix(formulas[[4]][c(1,3)], data=out2)
+    MM <- model.matrix(drop_LHS(formulas[[4]]), data=out2)
     gam_aft[surv] <- pars$gamma(MM, pars[[LHS_Y[1]]]$beta)
 
     tmp <- out$T + surv*pmin(1, Y_res/exp(gam_aft))
@@ -146,8 +155,8 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
     tmp <- Y_res - exp(gam_aft)
     Y_res[!is.na(tmp)] <- na.omit(tmp)
 
-    var <- paste0(LHS_Y[[1]], "_", t-1)
-    out[[var]] <- ifelse(surv, 1*(Y_res < 0), NA)
+    vars <- paste0(LHS_Y[[1]], "_", t-1)
+    out[[vars]] <- ifelse(surv, 1*(Y_res < 0), NA)
 
     surv <- surv & Y_res > 0
 
@@ -158,7 +167,14 @@ survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
   out$status <- 1*surv
   out <- out[names(out) != "Y"]
 
-  class(out) <- "survivl_dat"
+  class(out) <- c("survivl_dat", class(out))
 
   return(out)
+}
+
+##' @describeIn surv_samp Old name
+##' @export
+survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
+  deprecate_soft(when = "0.3.1", what = "survSamp", with = "surv_samp")
+  surv_samp(n, T, formulas, family, pars, link=link, control=control)
 }

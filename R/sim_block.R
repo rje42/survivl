@@ -12,7 +12,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   LHS_Z <- proc_inputs$LHSs$LHS_Z; LHS_X <- proc_inputs$LHSs$LHS_X; LHS_Y <- proc_inputs$LHSs$LHS_Y
   # famZ <- proc_inputs$family[[1]]; famX <- proc_inputs$family[[2]]; famY <- proc_inputs$family[[3]]; famCop <- proc_inputs$family[[4]]
 
-  vars <- paste0(proc_inputs$var_t, "_", proc_inputs$t)
+  vars <- paste0(proc_inputs$vars_t, "_", proc_inputs$t)
 
   d <- lengths(formulas)
 
@@ -37,7 +37,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     eta <- MM %*% pars[[vnm]]$beta
     curr_phi <- pars[[vnm]]$phi
     tmp <- causl::glm_sim(fam=curr_fam, eta=eta, phi=curr_phi, link=curr_link,
-                          par2=pars[[vnm]]$par2)
+                          other_pars=pars[[vnm]])
     out[[vnm]] <- tmp
     quantiles[[vnm]] <- attr(tmp, "quantile")
   }
@@ -76,11 +76,11 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
       #   curr_fam <- family[[4]][wh,j]
       #   curr_par <- pars[[kwd]]$beta[[wh]][[j]]
       #   # eta <- X %*% curr_par
-      #   qY <- rescaleCop(cbind(curr_qZ,qY), X=X, pars=curr_par, family=curr_fam) #, link=link[[4]][i,j])
+      #   qY <- rescale_cop(cbind(curr_qZ,qY), X=X, pars=curr_par, family=curr_fam) #, link=link[[4]][i,j])
       # }
       # ##
       # X <- model.matrix(formulas[[3]][[wh]], data=out)
-      # qY <- rescaleVar(qY, X=X, family=famY[wh], pars=pars[[LHS_Y[wh]]],
+      # qY <- rescale_var(qY, X=X, family=famY[wh], pars=pars[[LHS_Y[wh]]],
       #                  link=link[[3]][wh])
       #
       # out[[vars[order[i]]]] <- qY
