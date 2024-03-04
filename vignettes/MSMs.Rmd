@@ -3,6 +3,10 @@ title: "Marginal Structural Survival Models"
 author: "Robin Evans"
 date: "`r Sys.Date()`"
 output: html_document
+vignette: >
+  %\VignetteIndexEntry{MSMs}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -41,16 +45,16 @@ fams <- list(3, 1, 5, 3, c(1))
 pars <- list(W = list(beta=0, phi=1/2),
              Z = list(beta=c(0,0.7,0.2), phi=1),
              X = list(beta=c(-0.5,0.25,0.5)), 
-             Y = list(beta=c(2,-1/10,1/5), phi=1),
+             Y = list(beta=c(1,-1/10,1/5), phi=1),
              cop = list(Y=list(Z=list(beta=c(0.5, 0.0))))
 )
 link <- list("log", "identity", "logit", "inverse")
 ```
-We can now simulate $n=10^3$ observations from the model over 10 time points.
+We can now simulate $n=10^5$ observations from the model over 10 time points.
 ```{r sim_data}
 n <- 1e5
 set.seed(124)
-dat <- cox_samp(n, T = 10, formulas = forms, family = fams, pars = pars, link=link) 
+dat <- msm_samp(n, T = 10, formulas = forms, family = fams, pars = pars, link=link) 
                 # method = "rejection")
 datl <- surv_to_long(dat, lag=1)
 ```
@@ -107,7 +111,7 @@ pars2$cop <- list(Y=list(Z1=list(beta=c(0.5,0.2)),
 ```
 We can then simulate as before.
 ```{r sim_dat_mv}
-dat2 <-  cox_samp(n, T = 10, formulas = forms2, family = fams2, pars = pars2, 
+dat2 <-  msm_samp(n, T = 10, formulas = forms2, family = fams2, pars = pars2, 
                   link = link, method = "inversion")
 dat2l <- surv_to_long(dat2, lag=1)
 ```
@@ -120,10 +124,12 @@ summary(glm(X ~ W + X_l1 + Z1 + Z2, data=dat2l, family=binomial))$coef
 ```
 
 For the outcome, we again apply IPW, and obtain:
-```{r check_XY_mv, eval=TRUE}
+```{r check_XY_mv, eval=TRUE, warn=FALSE}
 ps <- predict(glm(X ~ W + X_l1 + Z1 + Z2, data=dat2l, family=binomial), type="response")
 wt <- dat2l$X/ps + (1-dat2l$X)/(1-ps)
-svyglm(I(1-Y) ~ W + X, family=binomial(log), design=svydesign(~1, weights=wt, data=dat2l))
+glmY <- svyglm(I(1-Y) ~ W + X, family=binomial(log), start=c(-1,1/10,-1/5), 
+               design=svydesign(~1, weights=wt, data=dat2l))
+summary(glmY)$coefficients
 ```
 
 

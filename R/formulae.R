@@ -82,7 +82,17 @@ replace_vars <- function(formula, replace) {
 #   as.formula(form, env = NULL)
 # }
 
-curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
+##' Obtain reduced formulas and parameter vectors for earlier time-points
+##'
+##' @inheritParams process_inputs
+##' @param ordering an ordering for simulation of variables
+##' @param t the current time-point
+##' @param done character vector of variables already simulated
+##' @param vars_t stems for time-varying variables
+##' @param kwd keyword for the copula
+##'
+##'
+curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
   start_at <- 0
 
   ## function to modify arguments
@@ -207,15 +217,15 @@ curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
 
   ## adjust parameter names
   nms <- names(pars)
-  wh <- which(nms != kwd & nms %in% var_t)
+  wh <- which(nms != kwd & nms %in% vars_t)
   nms[wh] <- paste0(nms[wh], "_", t)
   names(pars) <- nms
 
-  # pars <- list_names(pars2, var_t, t=t, kwd=kwd, start_at=start_at)
+  # pars <- list_names(pars2, vars_t, t=t, kwd=kwd, start_at=start_at)
 
   # LHSs <- rapply(forms, lhs, how = "replace")
   # nms <- names(pars)
-  # wh <- nms %in% var_t # <- paste0(names(pars), "_", t)
+  # wh <- nms %in% vars_t # <- paste0(names(pars), "_", t)
   # nms[wh] <- paste0(nms[wh], "_", t)
   # names(pars) <- nms
   #
@@ -235,30 +245,31 @@ curr_inputs <- function (formulas, pars, t, ordering, done, var_t, kwd) {
   return(list(formulas=formulas, pars=pars))
 }
 
-list_names <- function (x, var_t, t, kwd, start_at=0) {
-  ## rename for univariate parameter vectors
-  wh_cop <- which(names(x) == kwd)
-  univ <- x[-wh_cop]
-  wh <- which(names(univ) %in% var_t)
-  nms <- names(univ)
-  nms <- paste0(nms[wh], "_", t)
-  names(univ) <- nms
-
-  ## now consider copula parameters
-  cop_pars <- x[[kwd]]
-  names(cop_pars) <- paste0(names(cop_pars), "_", t)
-
-  ## apply time stamps to pair-copula parameters
-  cop_pars <- lapply(cop_pars, function(x) {
-    names(x) <- add_time_stamps(names(x), t=t, start_at=start_at)
-    return(x)
-  })
-
-  ## recreate pars object
-  out <- c(univ, list(cop_pars))
-  nms <- names(out)
-  nms[length(nms)] <- kwd
-  names(out) <- nms
-
-  return(out)
-}
+# ##' Adds time-points to variable names given as names of a vector
+# list_names <- function (x, vars_t, t, kwd, start_at=0) {
+#   ## rename for univariate parameter vectors
+#   wh_cop <- which(names(x) == kwd)
+#   univ <- x[-wh_cop]
+#   wh <- which(names(univ) %in% vars_t)
+#   nms <- names(univ)
+#   nms <- paste0(nms[wh], "_", t)
+#   names(univ) <- nms
+#
+#   ## now consider copula parameters
+#   cop_pars <- x[[kwd]]
+#   names(cop_pars) <- paste0(names(cop_pars), "_", t)
+#
+#   ## apply time stamps to pair-copula parameters
+#   cop_pars <- lapply(cop_pars, function(x) {
+#     names(x) <- add_time_stamps(names(x), t=t, start_at=start_at)
+#     return(x)
+#   })
+#
+#   ## recreate pars object
+#   out <- c(univ, list(cop_pars))
+#   nms <- names(out)
+#   nms[length(nms)] <- kwd
+#   names(out) <- nms
+#
+#   return(out)
+# }

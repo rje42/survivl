@@ -10,7 +10,23 @@
 ##' @name manipulate_survival
 NULL
 
+##' Drop left hand side from a formula
+##'
+##' @param formula object to remove LHS of
+##'
+##' @export
+drop_LHS <- function (formula) {
+  formula(delete.response(terms(formula)))
+}
+
 ##' Add or remove time stamps to variable names
+##'
+##' @name time_stamps
+NULL
+
+##' @describeIn time_stamps remove time stamps
+##' @param nms names to add or remove time stamps from
+##'
 rmv_time_stamps <- function (nms) {
   wh2cut <- regexpr("_[0-9]+$", nms)
   stems <- substr(nms[wh2cut > 0], 1, wh2cut[wh2cut > 0]-1)
@@ -28,7 +44,28 @@ rmv_time_stamps <- function (nms) {
   out
 }
 
-##' @describeIn rmv_time_stamps replace lags with time stamps
+##' Remove time or lag suffix
+##'
+##' @param x vector to trim
+##'
+rmv_time <- function (x) {
+  rx <- regexpr("_[0-9]+$", x)
+  x[rx > 0] <- substr(x[rx > 0], 1, rx[rx > 0]-1)
+  return(x)
+}
+
+rmv_lag <- function (x) {
+  rx <- regexpr("_l[0-9]+$", x)
+  x[rx > 0] <- substr(x[rx > 0], 1, rx[rx > 0]-1)
+  return(x)
+}
+
+
+
+##' @describeIn time_stamps replace lags with time stamps
+##' @param t time point for adding
+##' @param start_at first time point
+##'
 add_time_stamps <- function (nms, t, start_at=0) {
   wh2cut <- regexpr("_l[0-9]+$", nms)
   stems <- substr(nms[wh2cut > 0], 1, wh2cut[wh2cut > 0]-1)
@@ -123,7 +160,7 @@ nms_from_zero <- function (x) {
   x
 }
 
-##' @importFrom dplyr group_by ungroup summarise_if filter `%>%` full_join
+##' @importFrom dplyr group_by ungroup summarise_if `%>%` full_join
 ##' @importFrom tidyr pivot_longer pivot_wider
 ##' @describeIn manipulate_survival change to wide format
 ##' @param tv_covs,fix_covs time-varying and fixed covariates
@@ -141,32 +178,32 @@ surv_to_wide <- function(dat, tv_covs, fix_covs) {#, formulas) {
   else {
     ## determine time-varying vs static covariates
     tv_covs_tmp <- dat[nms] %>%
-      group_by(id) %>%
-      summarise_if(.predicate=is.numeric, .funs=var, na.rm=TRUE)
+      dplyr::group_by(id) %>%
+      dplyr::summarise_if(.predicate=is.numeric, .funs=var, na.rm=TRUE)
     if (isTRUE(all.equal(names(tv_covs_tmp), "id"))) {
       tv_covs <- character(0)
     }
     else {
       tv_covs <- tv_covs_tmp %>%
-        pivot_longer(-id) %>%
-        ungroup %>% group_by(name) %>%
-        summarise(var=var(value, na.rm=TRUE)) %>%
-        filter(var > 0) %>%
+        tidyr::pivot_longer(-id) %>%
+        dplyr::ungroup %>% group_by(name) %>%
+        dplyr::summarise(var=var(value, na.rm=TRUE)) %>%
+        dplyr::filter(var > 0) %>%
         `$`("name")
     }
     ## check for time-varying factors
     tvf_covs_tmp <- dat[nms] %>%
-      group_by(id) %>%
-      summarise_if(.predicate=is.factor, .funs=function(x) var(as.numeric(x), na.rm=TRUE))
+      dplyr::group_by(id) %>%
+      dplyr::summarise_if(.predicate=is.factor, .funs=function(x) var(as.numeric(x), na.rm=TRUE))
     if (isTRUE(all.equal(names(tvf_covs_tmp), "id"))) {
       tvf_covs <- character(0)
     }
     else {
       tvf_covs <- tvf_covs_tmp %>%
-        pivot_longer(-id) %>%
-        ungroup %>% group_by(name) %>%
-        summarise(var=var(value, na.rm=TRUE)) %>%
-        filter(var > 0) %>%
+        tidyr::pivot_longer(-id) %>%
+        dplyr::ungroup %>% group_by(name) %>%
+        dplyr::summarise(var=var(value, na.rm=TRUE)) %>%
+        dplyr::filter(var > 0) %>%
         `$`("name")
     }
 
@@ -188,17 +225,17 @@ surv_to_wide <- function(dat, tv_covs, fix_covs) {#, formulas) {
   static <- rep(list(median), length(fix_covs))
   names(static) <- fix_covs
   stat_vals <- dat %>%
-    select(id, fix_covs) %>%
-    group_by(id) %>%
-    summarise(across(fix_covs, median, na.rm=TRUE))
+    dplyr::select(id, fix_covs) %>%
+    dplyr::group_by(id) %>%
+    dplyr::summarise(dplyr::across(fix_covs, median, na.rm=TRUE))
   # %>%
   #   summarise(median)
 
   dat <- dat %>%
-    pivot_wider(id_cols = id, names_from=t, values_from = tv_covs)
+    tidyr::pivot_wider(id_cols = id, names_from=t, values_from = tv_covs)
 
   dat <- dat[,c("id", paste(tv_covs, rep(seq_len(tms+1)-1, each=length(tv_covs)), sep="_"))]
-  dat <- full_join(stat_vals, dat, by="id")
+  dat <- dplyr::full_join(stat_vals, dat, by="id")
 
   dat
 }
@@ -230,18 +267,21 @@ regex_extr <- function (pattern, x, sub_patt="{") {
 }
 
 
-##' Remove time or lag suffix
-##'
-##' @param x vector to trim
-##'
-rmv_time <- function (x) {
-  rx <- regexpr("_[0-9]+$", x)
-  x[rx > 0] <- substr(x[rx > 0], 1, rx[rx > 0]-1)
-  return(x)
-}
+# ## functions relating to testing that a name is valid
+# is_valid_name <- function(string) {
+#   grepl("^((([[:alpha:]]|[.][._[:alpha:]])[._[:alnum:]]*)|[.])$", string)
+# }
+#
+# is_valid_unreserved <- function(string) {
+#   make.names(string) == string
+# }
+#
+# test_validity <- function(string) {
+#   valid <- is_valid_name(string)
+#   unreserved <- is_valid_unreserved(string)
+#   reserved <- (valid & ! unreserved)
+#   list("Valid"=valid,
+#        "Unreserved"=unreserved,
+#        "Reserved"=reserved)
+# }
 
-rmv_lag <- function (x) {
-  rx <- regexpr("_l[0-9]+$", x)
-  x[rx > 0] <- substr(x[rx > 0], 1, rx[rx > 0]-1)
-  return(x)
-}

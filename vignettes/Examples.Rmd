@@ -3,6 +3,10 @@ title: "Examples"
 author: "Robin J. Evans"
 date: "24/05/2022"
 output: html_document
+vignette: >
+  %\VignetteIndexEntry{Examples}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -40,7 +44,7 @@ pars <- list(C = list(beta=0),
 ```{r sim_dat1}
 set.seed(123)
 n <- 1e4
-dat <- coxSamp(n, T=20, formulas=formulas, family=family, pars=pars, link=link)
+dat <- msm_samp(n, T=20, formulas=formulas, family=family, pars=pars, link=link)
 datl <- surv_to_long(dat)
 ```
 
@@ -107,7 +111,7 @@ pars <- list(C = list(beta=0),
 
 ```{r sim_dat2}
 set.seed(123)
-dat <- coxSamp(1e4, T=20, formulas=formulas, family=family, pars=pars, link=link)
+dat <- msm_samp(1e4, T=20, formulas=formulas, family=family, pars=pars, link=link)
 datl <- surv_to_long(dat)
 ```
 
@@ -125,7 +129,7 @@ datl <- datl %>% mutate(wt=dgamma(datl$X,shape=1/pars$X$phi, rate=1/(sum(pars$X$
 # datl$wt[is.na(datl$wt)] <- 0
 ```
 
-```{r glms2a}
+```{r glms2b}
 library(survey)
 mod_w <- svyglm(I(1-Y) ~ X + C, family=binomial(link=log), start=c(0,-.2,-.05),
                 design=svydesign(ids=~1, data=datl, weights=rep(1,nrow(datl))))

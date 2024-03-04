@@ -9,7 +9,7 @@
 ##
 ## @details Computes the log-likelihood for a Cox MSM model
 ##
-initializeParamsSurv <- function(dat, formulas, family=rep(1,nv), pars, link, #init=FALSE,
+initialize_params_surv <- function(dat, formulas, family=rep(1,nv), pars, link, #init=FALSE,
                                  full_form, kwd, notInCop) {
   nv <- length(formulas) - 1
 
@@ -35,7 +35,7 @@ initializeParamsSurv <- function(dat, formulas, family=rep(1,nv), pars, link, #i
     LHSc <- setdiff(LHS, notInCop)
   }
   nc <- length(LHSc)
-  c2 <- combn(nc, 2)
+  c2 <- utils::combn(nc, 2)
   colnms <- c(LHS, mapply(function(x,y) paste0(kwd,"_",LHSc[x],"_",LHSc[y]), c2[1,],c2[2,]))
 
   beta <- beta_m <- matrix(0, nrow=max(unlist(wh)), ncol=nv+choose(nc,2), dimnames = list(labs,colnms))

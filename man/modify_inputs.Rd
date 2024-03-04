@@ -2,10 +2,13 @@
 % Please edit documentation in R/input.R
 \name{modify_inputs}
 \alias{modify_inputs}
-\title{Modify inputs for simulation}
+\title{Obtain only time-varying inputs}
 \usage{
 modify_inputs(proc_inputs)
 }
+\arguments{
+\item{proc_inputs}{output of \code{process_inputs}}
+}
 \description{
-Modify inputs for simulation
+Obtain only time-varying inputs
 }

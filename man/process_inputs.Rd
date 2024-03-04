@@ -4,20 +4,24 @@
 \alias{process_inputs}
 \title{Process formulas, families and parameters}
 \usage{
-process_inputs(formulas, pars, family, link, T, control, method)
+process_inputs(formulas, pars, family, link, dat, T, method, control)
 }
 \arguments{
-\item{formulas}{list of lists of formulas}
+\item{formulas}{list of formulas to use}
 
-\item{pars}{list of lists of parameters}
+\item{pars}{list of parameter settings to use}
 
-\item{family}{families for Z,X,Y and copula}
+\item{family}{list of families to use}
 
-\item{link}{list of link functions}
+\item{link}{link functions for GLM-like models}
 
-\item{control}{control variables}
+\item{dat}{optional data frame for plasmode simulation}
 
-\item{method}{method to be used for sampling}
+\item{T}{number of time points}
+
+\item{method}{sampling method (defaults to \code{"inversion"})}
+
+\item{control}{list of control parameters}
 }
 \description{
 Process formulas, families and parameters

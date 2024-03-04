@@ -3,6 +3,10 @@ title: "Censoring"
 author: "Robin J. Evans"
 date: "31/05/2022"
 output: html_document
+vignette: >
+  %\VignetteIndexEntry{Censoring}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -11,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Censoring
 
-```{r setup}
+```{r load}
 library(survivl)
 ```
 
@@ -21,7 +25,7 @@ The censoring mechanism is specified as another outcome variable.
 formulas <- list(list(),
                  Z ~ X_l1,
                  X ~ Z_l0,
-                 list(Y ~ X_l0, C ~ X_l0),
+                 list(Y ~ X_l0, Cen ~ X_l0),
                  cop ~ 1)
 family <- list(integer(0), 1, 5, list(3,3), 1)
 ```
@@ -31,15 +35,15 @@ The parameters to be specified depends upon the particular families used.
 pars <- list(Z = list(beta=c(1,0.5), phi=1),
              X = list(beta=c(-0.25,0.5)),
              Y = list(beta=c(1.1,-0.2), lambda0=0.01),
-             C = list(beta=c(1.1,-0.2), lambda0=0.01),
+             Cen = list(beta=c(1.1,-0.2), lambda0=0.01),
              cop = list(beta=1))
 ```
 
-Now we call the function `MSM_samp`, which uses rejection sampling to obtain 
-data from this model.
+Now we call the function `msm_samp`, which uses inversion sampling to obtain 
+data from a marginal structural model with the specified parameters.
 ```{r MSM_datasamp}
 set.seed(123)
-dat <- cox_samp(1e3, T=5,
+dat <- msm_samp(1e3, T=5,
                 formulas = formulas, 
                 family = family, 
                 pars = pars,
@@ -49,9 +53,9 @@ datl <- surv_to_long(dat)
 
 ## Fitting the Model
 
-Since this is a time-varying model, we must use inverse probability weighting 
-to obtain the parameters.  We recommend using the `survey` library's `svyglm`
-function for inference.
+Since this is a time-varying model, we use inverse probability weighting to 
+adjust for the observed confounding caused by `Z`.  We recommend using the 
+`survey` library's `svyglm` function for inference.
 
 ```{r survey_load, message=FALSE}
 library(survey)

@@ -4,31 +4,35 @@
 ##' using the frugal parameterization.
 ##'
 ##' @param n number of samples
+##' @param dat optional data frame for plasmode simulation
 ##' @param T number of time points
 ##' @param formulas list of formulas to use
 ##' @param family list of families to use
 ##' @param pars list of parameter settings to use
 ##' @param link link functions for GLM-like models
 ##' @param control list of control parameters
+##' @param method sampling method (defaults to `"inversion"`)
 ##'
-##' @details Samples from a Cox Marginal Structural Model specified
+##' @details Samples from a Marginal Structural Model specified
 ##' by a frugal parameterization; that is, one must specify the
 ##' marginal model (i.e. the dependence of the outcome on the
 ##' treatments), the distribution of the covariates, observed
 ##' confounders and treatments, and then a copula to join the distribution
 ##' of the outcome to that of the confounders.
 ##'
-##' Among the left-hand sides of outcome variables, the variable 'C' has a
+##' Among the left-hand sides of outcome variables, the variable 'Cen' has a
 ##' special meaning as censoring.  This keyword can be changed to something
 ##' else by using the argument \code{censor} in the \code{control} list.
 ##'
 ##' @return An object of class \code{survivl_dat} containing the simulated data.
 ##'
+##' @importFrom survival Surv
+##'
 ##' @export
-cox_samp <- function (n, T, formulas, family, pars, link=NULL,
+msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
                       method="inversion", control=list()) {
 
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="C", start_at=0)
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0)
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",
@@ -37,9 +41,18 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
   verbose <- con$verbose
   kwd <- con$cop
 
+  ## infer sample size from dat if possible
+  datNULL <- is.null(dat)
+  if (datNULL && missing(n)) stop("Must specify a sample size or supply a data frame")
+  else if (missing(n)) n <- nrow(dat)
+  else if (!datNULL && n != nrow(dat)) {
+    warning("Dimension of supplied data does not match n, using size of supplied data frame")
+    n <- nrow(dat)
+  }
+
   ## process inputs
   proc_inputs <- process_inputs(formulas=formulas, pars=pars, family=family,
-                                link=link, T=T, control=con, method=method)
+                                link=link, dat=dat, T=T, control=con, method=method)
   ## extract them again
   formulas <- proc_inputs$formulas; pars <- proc_inputs$pars; family <- proc_inputs$family; link <- proc_inputs$link
 
@@ -50,13 +63,13 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
   var_nms_Y <- proc_inputs$std_form$var_nms_Y
   var_nms_cop <- proc_inputs$std_form$var_nms_cop
   order <- proc_inputs$ordering
-  var_t <- proc_inputs$var_t; var <- proc_inputs$var
+  vars_t <- proc_inputs$vars_t; vars <- proc_inputs$vars
 
-  # LHS_C <- causl:::lhs(formulas[[1]])
-  # LHS_Z <- causl:::lhs(formulas[[2]])
-  # LHS_X <- causl:::lhs(formulas[[3]])
-  # LHS_Y <- causl:::lhs(formulas[[4]])
-  # LHS_cop <- causl:::lhs(formulas[[5]])
+  # LHS_C <- causl::lhs(formulas[[1]])
+  # LHS_Z <- causl::lhs(formulas[[2]])
+  # LHS_X <- causl::lhs(formulas[[3]])
+  # LHS_Y <- causl::lhs(formulas[[4]])
+  # LHS_cop <- causl::lhs(formulas[[5]])
   # dZ <- length(LHS_Z); dX <- length(LHS_X); dY <- length(LHS_Y)
   # if (any(duplicated(c(LHS_C, LHS_Z, LHS_X, LHS_Y, LHS_cop)))) stop("Repeated variable names not allowed")
 
@@ -66,20 +79,20 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
     ## put censoring first if a competing risk
     LHS_Y <- c(con$censor, setdiff(LHS_Y, con$censor))
   }
-  nms_t <- c(LHS_Z, LHS_X, LHS_Y)
-  nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"), "status")
+  # nms_t <- c(LHS_Z, LHS_X, LHS_Y)
+  # nms <- c(LHS_C, outer(vars_t, seq_len(T)-1, paste, sep="_"), "status")
 
-  out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(var_t)), rep(0,n))
-  names(out) <- var
+  out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(vars_t)), rep(0,n))
+  names(out) <- vars
   out$T <- T
 
-  # RHS_Z <- causl:::rhs_vars(formulas[[2]])
-  # RHS_X <- causl:::rhs_vars(formulas[[3]])
+  # RHS_Z <- causl::rhs_vars(formulas[[2]])
+  # RHS_X <- causl::rhs_vars(formulas[[3]])
 
   # ## make sure family entries have a vector of integers
   # if (any(sapply(family, is.null))) family[sapply(family, is.null)] <- list(integer(0))
   # ## now set up link functions
-  # link <- causl:::linkSetUp(link, family = family[-(5)], vars=list(LHS_C,LHS_Z,LHS_X,LHS_Y))
+  # link <- causl::link_setup(link, family = family[-(5)], vars=list(LHS_C,LHS_Z,LHS_X,LHS_Y))
   # # link[[4]] <- "inverse"
   #
   # if (is.null(pars$gamma)) pars$gamma <- function(X, beta) X %*% beta
@@ -97,7 +110,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
     ## now compute etas
     eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
     tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
-                          link=link[[1]][i])
+                          other_pars=pars[[LHS_C[[i]]]], link=link[[1]][i])
     out[[LHS_C[[i]]]] <- tmp
     qtls[[LHS_C[[i]]]] <- attr(tmp, "quantiles")
   }
@@ -110,13 +123,13 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
     done <- unlist(LHS_C)
     for (t in seq_len(T)-1) {
       # this_time <- data.frame(rep(list(rep(NA,n)), dZ+dX+dY))
-      # names(this_time) <- paste0(var_t, "_", t)
+      # names(this_time) <- paste0(vars_t, "_", t)
       # out <- cbind(out, this_time)
 
       ## function to standardize formulae
       mod_inputs$t <- t
       cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
-                          done=done, t=t, var_t=var_t, kwd=kwd)
+                          done=done, t=t, vars_t=vars_t, kwd=kwd)
       mod_inputs$formulas <- cinp$formulas
       # print(mod_inputs$formulas)
       mod_inputs$pars <- cinp$pars
@@ -126,19 +139,19 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
       # }
 
       mod2 <- modify_LHSs(mod_inputs, t=t)
-      done <- c(done, paste0(var_t, "_", t))
+      done <- c(done, paste0(vars_t, "_", t))
 
       ## use sim_inversion()
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
       out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
 
       ## determine if the individual had an event
-      indYt <- dC + (t-con$start_at)*length(var_t) + dZ + dX + seq_len(dY)  # indices of responses
+      indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
       if (dY == 1) {
         surv_this <- out[surv, indYt] > 1
       }
       else {
-        surv_this <- do.call(all, lapply(out[surv, indYt], `>`, 1))
+        surv_this <- apply(out[surv, indYt] > 1, 1, all)
       }
       ## get time of event and which one
       out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
@@ -158,7 +171,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
       if (!any(surv)) break
     }
   }
-  else {
+  else if (method == "rejection") {
     ## simulate time-varying covariates and survival
     for (t in seq_len(T)) {
       OK <- rep(FALSE, nrow(out))
@@ -187,7 +200,8 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           eta <- model.matrix(update(formulas[[3]][[i]], NULL ~ .), data=out2) %*% pars[[LHS_X[i]]]$beta
           var <- paste0(LHS_X[[i]], "_", t-1)
 
-          tmp <- causl::glm_sim(family[[3]][i], eta, phi=pars[[LHS_X[[i]]]]$phi, link=link[[3]][i])
+          tmp <- causl::glm_sim(family[[3]][i], eta, phi=pars[[LHS_X[[i]]]]$phi,
+                                other_pars=pars[[LHS_X[[i]]]], link=link[[3]][i])
           lden[,i] <- attr(tmp, "quantile")
           out[[var]][!OK] <- tmp
           # max_lr[i] <- max(attr(tmp, "quantile"))
@@ -201,7 +215,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
         copMM <- model.matrix(update(formulas[[5]][[1]], NULL ~ .), data=out2)
         resp <- paste0(c(LHS_Z, LHS_Y), "_", t-1)
 
-        out[!OK,resp] <- causl:::sim_CopVal(out[!OK,resp,drop=FALSE], family[[5]], par=pars$cop, par2=pars$cop$par2, model_matrix = copMM)
+        out[!OK,resp] <- causl::sim_copula(out[!OK,resp,drop=FALSE], family[[5]], par=pars$cop, par2=pars$cop$par2, model_matrix = copMM)
 
         for (i in seq_along(LHS_Z)) {
           vZd <- var_nms_Z[[i]][!is.na(var_nms_Z[[i]]$lag), ]
@@ -212,9 +226,9 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           MM <- model.matrix(update(formulas[[2]][[i]], NULL ~ .), data=out2)
           var <- paste0(LHS_Z[[i]], "_", t-1)
 
-          out[[var]][!OK] <- causl:::rescaleVar(out[[var]][!OK], X=MM,
-                                                family=family[[2]][i], pars=pars[[LHS_Z[i]]],
-                                                link=link[[2]][i])
+          out[[var]][!OK] <- causl::rescale_var(out[[var]][!OK], X=MM,
+                                                 family=family[[2]][i], pars=pars[[LHS_Z[i]]],
+                                                 link=link[[2]][i])
         }
         for (i in seq_along(LHS_Y)) {
           vYd <- var_nms_Y[[i]][!is.na(var_nms_Y[[i]]$lag), ]
@@ -225,10 +239,10 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           MM <- model.matrix(update(formulas[[4]][[i]], NULL ~ .), data=out2)
           var <- paste0(LHS_Y[[i]], "_", t-1)
 
-          out[[var]][!OK] <- causl:::rescaleVar(out[[var]][!OK], X=MM,
-                                                family=family[[4]][i],
-                                                pars=c(pars[[LHS_Y[i]]], list(phi=1)),
-                                                link=link[[4]][i])
+          out[[var]][!OK] <- causl::rescale_var(out[[var]][!OK], X=MM,
+                                                 family=family[[4]][i],
+                                                 pars=c(pars[[LHS_Y[i]]], list(phi=1)),
+                                                 link=link[[4]][i])
         }
 
         ## now compute new implied X densities
@@ -243,7 +257,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
           out2 <- lag_data(out[!OK,,drop=FALSE], t, vXd, static=vXs)
 
           ## now compute etas
-          eta <- model.matrix(updaate(formulas[[3]][[i]], NULL ~ .), data=out2) %*% pars[[LHS_X[i]]]$beta
+          eta <- model.matrix(update(formulas[[3]][[i]], NULL ~ .), data=out2) %*% pars[[LHS_X[i]]]$beta
           var <- paste0(LHS_X[[i]], "_", t-1)
 
           lden2[,i] <- glm_ldens(out[[var]][!OK], family[[3]][i], eta, link[[3]][i], pars[[LHS_X[[i]]]]$phi)
@@ -273,6 +287,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
       # out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] > 1)
     }
   }
+  else stop("'method' should be \"inversion\" or \"rejection\"")
 
 #   # cum_haz <- rep(0, n)
 #   Y_res <- out[[LHS_Y]]
@@ -301,7 +316,7 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
 #     tmp <- Y_res - exp(gam_aft)
 #     Y_res[!is.na(tmp)] <- na.omit(tmp)
 #
-#     var <- paste0(LHS_Y[[1]], "_", t-1)
+#     vars <- paste0(LHS_Y[[1]], "_", t-1)
 #     out[[var]] <- ifelse(surv, 1*(Y_res < 0), NA)
 #
 #     surv <- surv & Y_res > 0
@@ -316,8 +331,15 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL,
   return(out)
 }
 
+##' @describeIn msm_samp old name
 coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
-  .Deprecated(new = "cox_samp", msg = "This function is deprecated, please use cox_samp()")
-  cox_samp(n, T, formulas, family, pars, link=NULL, control=list())
+  .Deprecated(new = "msm_samp", msg = "This function is deprecated and will be removed in version 0.4.0, please use msm_samp()")
+  msm_samp(n, T, formulas, family, pars, link=NULL, control=list())
 }
 
+##' @describeIn msm_samp old name
+cox_samp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
+  deprecate_soft(when = "0.3.1", what = "cox_samp", with = "msm_samp")
+  # .Deprecated(new = "msm_samp", msg = "This function is deprecated, please use msm_samp()")
+  msm_samp(n, T, formulas, family, pars, link=NULL, control=list())
+}

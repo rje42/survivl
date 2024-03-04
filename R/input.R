@@ -1,26 +1,36 @@
 ##' Process formulas, families and parameters
 ##'
-##' @param formulas list of lists of formulas
-##' @param pars list of lists of parameters
-##' @param family families for Z,X,Y and copula
-##' @param link list of link functions
+## @param formulas list of lists of formulas
+## @param pars list of lists of parameters
+## @param family families for Z,X,Y and copula
+## @param link list of link functions
 ## @param kwd keyword for copula
-##' @param control control variables
-##' @param method method to be used for sampling
+##' @inheritParams msm_samp
+## @param control control variables
+## @param method method to be used for sampling
 ## @param ordering logical: should an ordering of variables be computed?
 ##'
-process_inputs <- function (formulas, pars, family, link, T, control, method) {
+process_inputs <- function (formulas, pars, family, link, dat, T, method, control) {
 
   for (i in 1:5) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
 
-  LHS_C <- causl:::lhs(formulas[[1]])
-  LHS_Z <- causl:::lhs(formulas[[2]])
-  LHS_X <- causl:::lhs(formulas[[3]])
-  LHS_Y <- causl:::lhs(formulas[[4]])
-  # LHS_cop <- causl:::lhs(formulas[[5]])
+  ## check for censoring
+  cens <- check_censoring (formulas[[4]], pars, cns_kwd = control$censor)
+  censoring <- cens$censoring
+  if (censoring) {
+    formulas[[4]] <- cens$formulas
+    pars <- cens$pars
+  }
+
+  LHSs <- lapply(formulas[1:4], causl::lhs)
+  LHS_C <- LHSs[[1]]; LHS_Z <- LHSs[[2]]; LHS_X <- LHSs[[3]]; LHS_Y <- LHSs[[4]]
+  # LHS_C <- causl::lhs(formulas[[1]])
+  # LHS_Z <- causl::lhs(formulas[[2]])
+  # LHS_X <- causl::lhs(formulas[[3]])
+  # LHS_Y <- causl::lhs(formulas[[4]])
+
   dZ <- length(LHS_Z); dX <- length(LHS_X); dY <- length(LHS_Y)
-  if (any(duplicated(c(LHS_C, LHS_Z, LHS_X, LHS_Y)))) stop("Repeated variable names not allowed")
-  # if (any(duplicated(c(LHS_C, LHS_Z, LHS_X, LHS_Y, LHS_cop)))) stop("Repeated variable names not allowed")
+  if (any(duplicated(unlist(LHSs)))) stop("Repeated variable names not allowed")
 
   if (missing(family)) {
     stop("Families must be specified")
@@ -31,166 +41,82 @@ process_inputs <- function (formulas, pars, family, link, T, control, method) {
   else if (length(family) == 5) family <- as.list(family)
   else stop("family should be a list or vector of length 5")
 
-  ## extract families
-  famC <- family[[1]]
-  famZ <- family[[2]]
-  famX <- family[[3]]
-  famY <- family[[4]]
-  famCop <- family[[5]]
 
   ## check right number of parameters supplied
-  formsC <- lapply(formulas[[1]], terms)
-  tmsC <- lapply(formsC, attr, "term.labels")
-  formsZ <- lapply(formulas[[2]], terms)
-  tmsZ <- lapply(formsZ, attr, "term.labels")
-  formsX <- lapply(formulas[[3]], terms)
-  tmsX <- lapply(formsX, attr, "term.labels")
-  formsY <- lapply(formulas[[4]], terms)
-  tmsY <- lapply(formsY, attr, "term.labels")
-  # formsCop <- lapply(formulas[[5]], terms)
-  # tmsCop <- lapply(formsCop, attr, "term.labels")
+  forms <- lapply(formulas[1:4], function (x) lapply(x, terms))
+  tms <- lapply(forms, function(x) lapply(x,  attr, "term.labels"))
 
-  RHS_vars <- rmv_lag(unlist(c(tmsC, tmsZ, tmsX, tmsY)))
+  ## get response variables list
+  RHS_vars <- rmv_lag(unlist(tms))
 
-  if (!all(RHS_vars %in% c(LHS_C, LHS_Z, LHS_X, LHS_Y))) {
-    wh <- RHS_vars[!RHS_vars %in% c(LHS_C, LHS_Z, LHS_X, LHS_Y)]
+  if (!all(RHS_vars %in% unlist(LHSs))) {
+    wh <- RHS_vars[!RHS_vars %in% unlist(LHSs)]
     wh <- unique.default(wh)
     stop(paste0("Variables ", paste(wh, collapse=", "), " appear on right hand side but are not simulated"))
   }
 
-  for (i in seq_along(formulas[[1]])) {
-    npar <- length(tmsC[[i]]) + attr(formsC[[i]], "intercept")
-    if (length(pars[[LHS_C[i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHS_C[i], " does not match number of coefficients provided"))
+  ## make sure family entries have a vector of integers
+  if (any(sapply(family, is.list))) {
+    whL <- which(sapply(family, is.list))
+    family[whL] <- lapply(family[whL], unlist)
   }
-  for (i in seq_along(formulas[[2]])) {
-    npar <- length(tmsZ[[i]]) + attr(formsZ[[i]], "intercept")
-    if (length(pars[[LHS_Z[i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHS_Z[i], " does not match number of coefficients provided"))
-  }
-  for (i in seq_along(formulas[[3]])) {
-    npar <- length(tmsX[[i]]) + attr(formsX[[i]], "intercept")
-    if (length(pars[[LHS_X[i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHS_X[i], " does not match number of coefficients provided"))
-  }
-  for (i in seq_along(formulas[[4]])) {
-    npar <- length(tmsY[[i]]) + attr(formsY[[i]], "intercept")
-    if (length(pars[[LHS_Y[i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHS_Y[i], " does not match number of coefficients provided"))
+  if (any(sapply(family, is.null))) family[sapply(family, is.null)] <- list(integer(0))
+  ## now set up link functions
+  link <- causl::link_setup(link, family = family[-(5)], vars=LHSs)
+  # link[[4]] <- "inverse"
+
+  ## introduce code from causl
+  dims <- lengths(formulas)
+  # LHSs <- list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y)
+  dummy_dat <- causl::gen_dummy_dat(family=family, pars=pars, dat=dat, LHSs=LHSs, dims=dims)
+  # causl::check_pars(formulas=formulas, family=family, pars=pars, dummy_dat=dummy_dat, LHSs=LHSs, kwd=control$cop, dims=dims)
+
+  ## naive check for number of parameters
+  for (j in seq_along(LHSs)) for (i in seq_along(formulas[[j]])) {
+    npar <- length(tms[[j]][[i]]) + attr(forms[[j]][[i]], "intercept")
+    if (length(pars[[LHSs[[j]][i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHSs[[j]][i], " does not match number of coefficients provided"))
   }
 
-  ## check for censoring
-  censoring <- (control$censor %in% LHS_Y)  # see if censoring variable is in list of Y variables
-  if (censoring) {
-    ## put censoring first if a competing risk
-    LHS_Y <- c(control$censor, setdiff(LHS_Y, control$censor))
-  }
+  ## useful summaries
   nms_t <- c(LHS_Z, LHS_X, LHS_Y)
   nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"), "status")
 
-  ## make sure family entries have a vector of integers
-  if (any(sapply(family, is.null))) family[sapply(family, is.null)] <- list(integer(0))
-  ## now set up link functions
-  link <- causl:::link_setup(link, family = family[-(5)], vars=list(LHS_C,LHS_Z,LHS_X,LHS_Y))
-  # link[[4]] <- "inverse"
-
   if (is.null(pars$gamma)) pars$gamma <- function(X, beta) X %*% beta
 
-  std_form <- standardize_formulae(formulas, static=LHS_C)
+  ## get a variable ordering for simulation and 'standardized' formulas
+  tmp <- var_order(formulas=formulas, nms_t=nms_t, LHSs=LHSs, dims=dims)
+  ord <- tmp$ordering
+  std_form <- tmp$std_form
 
-  ## get ordering for terms
-  A <- matrix(0,dZ+dX+dY,dZ+dX+dY)
-
-  for (i in seq_along(LHS_Z)) {
-    tab <- std_form$var_nms_Z[[i]]
-    A[i,] <- 1*(nms_t %in% tab$var[tab$lag == 0])
-    if (any(A[i,dZ+seq_len(dX+dY)] > 0)) stop("Time-varying confounders should not depend upon current treatments and survival outcome")
-  }
-  for (i in seq_along(LHS_X)) {
-    tab <- std_form$var_nms_X[[i]]
-    A[i+dZ,] <- 1*(nms_t %in% tab$var[tab$lag == 0])
-    if (any(A[i+dZ,dZ+dX+seq_len(dY)] > 0)) stop("Treatment should not depend upon current survival outcome")
-  }
-  for (i in seq_along(LHS_Y)) {
-    tab <- std_form$var_nms_Y[[i]]
-    A[i+dZ+dX,] <- 1*(nms_t %in% tab$var[tab$lag == 0])
-  }
-
-  if (method == 'inversion') {
-    ## get formulas in right format
-    if (!is.list(formulas[[5]])) {
-      formulas[[5]] <- rep(list(formulas[[5]]), dY)
-    }
-    else if (length(formulas[[5]]) != dY) {
-      formulas[[5]] <- rep(formulas[[5]][], dY)
-    }
-    if (!all(sapply(formulas[[5]], is.list)) || any(lengths(formulas[[5]]) < dZ+seq_len(dY)-1)) {
-      for (i in seq_len(dY)) {
-        if (is.list(formulas[[5]][[i]])) {
-          formulas[[5]][[i]] <- rep(formulas[[5]][[i]], dZ+i-1)
-        }
-        else {
-          formulas[[5]][[i]] <- rep(list(formulas[[5]][[i]]), dZ+i-1)
-        }
-        lhs(formulas[[5]][[i]]) <- c(LHS_Z, LHS_Y[seq_len(i-1)])
-        ## update to allow some Zs to come after Ys
-      }
-    }
-    names(formulas[[5]]) <- LHS_Y
-
-    ## get families in right format
-    if (!is.list(family[[5]]) || length(family[[5]]) != dY) {
-      if (is.list(family[[5]])) {
-        family[[5]] <- rep(family[[5]], dY)
-      }
-      if (!is.list(family[[5]])) {
-        if (length(family[[5]]) == dY) {
-          family[[5]] <- as.list(family[[5]])
-        }
-        else  {
-          family[[5]] <- rep(as.list(family[[5]]), dY)
-        }
-      }
-    }
-    if (any(lengths(family[[5]]) != lengths(formulas[[5]]))) {
-      family[[5]] <- mapply(function(x, y) rep(x, y), family[[5]], dZ+seq_len(dY)-1)
-    }
-  }
-
+  ## copula related things
   kwd <- control$cop
 
-  ## get copula parameters in correct format
-  if (!setequal(names(pars[[kwd]]), LHS_Y)) {
-    if ("beta" %in% names(pars[[kwd]])) {
-      pars[[kwd]] <- rep(list(list(list(beta=pars[[kwd]]$beta))), length(LHS_Y))
-      names(pars[[kwd]]) <- LHS_Y
-      # if (dZ > 1 || dY > 1) {
-      for (i in seq_len(dY)) {
-        vnm <- LHS_Y[i]
-        pars[[kwd]][[vnm]] <- rep(pars[[kwd]][[vnm]], dZ+i-1)
-        names(pars[[kwd]][[vnm]]) <- c(LHS_Z, LHS_Y[dZ+dX+seq_len(i-1)])
-      }
-      # }
-    }
-    else {
-      nrep <- setdiff(LHS_Y, names(pars[[kwd]]))
-      if (length(nrep) > 0) stop(paste0("Variable ", paste(nrep, collapse=", "),
-                                        "not represented in the copula parameters list"))
-      rep <- setdiff(names(pars[[kwd]]), LHS_Y)
-      if (length(rep) > 0) stop(paste0("Variable ", paste(rep, collapse=", "),
-                                       "represented in copula parameters list but not a response variable"))
-      stop("Shouldn't get here")
-    }
+  if (method == 'inversion') {
+
+    tmp <- causl::pair_copula_setup(formulas=formulas[[5]], family=family[[5]], pars=pars[[kwd]],
+                                     LHSs=LHSs, quans=character(0), ord=ord)
+    formulas[[5]] <- tmp$formulas
+    family[[5]] <- tmp$family
+    pars[[kwd]] <- tmp$pars
+
   }
 
-  ordZ <- causl:::topOrd(A[seq_len(dZ),seq_len(dZ),drop=FALSE])
-  ordX <- causl:::topOrd(A[dZ + seq_len(dX),dZ + seq_len(dX),drop=FALSE])
-  ordY <- causl:::topOrd(A[dZ + dX + seq_len(dY),dZ + dX + seq_len(dY),drop=FALSE])
-  ordering <- c(ordZ, dZ + ordX, dZ + dX + ordY)
-  if (any(is.na(ordering))) stop("Cyclic dependence in formulae provided")
+
+  ## check that outcomes are OK for time-to-event
+  if (any(!is_surv_outcome(family[[4]]))) {
+    whn <- which(!is_surv_outcome(family[[4]]))[1]
+    stop(paste0("outcome '", LHSs[[4]][whn], "' must be of survival type (non-negative and continuous)"))
+  }
 
   out <- list(formulas=formulas, pars=pars, family=family, link=link,
               LHSs=list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
-              std_form=std_form, ordering=ordering, var=nms, var_t=nms_t)
+              std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t)
 }
 
-##' Modify inputs for simulation
+##' Obtain only time-varying inputs
+##'
+##' @param proc_inputs output of `process_inputs`
+##'
 modify_inputs <- function (proc_inputs) {
   proc_inputs$formulas <- proc_inputs$formulas[2:5]
   proc_inputs$family <- proc_inputs$family[2:5]
@@ -205,7 +131,7 @@ modify_inputs <- function (proc_inputs) {
 modify_LHSs <- function (proc_inputs, t) {
   ## modify parameter names
   pnms <- names(proc_inputs$pars)
-  ed <- pnms %in% proc_inputs$var_t
+  ed <- pnms %in% proc_inputs$vars_t
   pnms[ed] <- paste0(pnms[ed], "_", t)
   names(proc_inputs$pars) <- pnms
 
@@ -222,3 +148,88 @@ modify_LHSs <- function (proc_inputs, t) {
   return(proc_inputs)
 }
 
+##' Check for censoring among outcome formulas
+##'
+##' @param formulas formulas only for outcome variables
+##' @param pars list of parameters
+##' @param cns_kwd word used to denote censoring
+##'
+##' @return A list containing (possibly) edited `formulas`, `pars`, and a
+##' logical `censoring` indicating the presence of censoring.
+##'
+check_censoring <- function (formulas, pars, cns_kwd) {
+
+  LHS_Y <- causl::lhs(formulas, surv = TRUE)
+
+  if (is.list(LHS_Y)) {
+    censoring <- TRUE
+
+    ## deal with censored variables
+    lY <- lengths(LHS_Y)
+    cenY <- which(lY == 2)
+    LHS_Y <- c(cns_kwd, sapply(LHS_Y, function(x) x[[1]]))
+
+    cens_form <- merge_formulas(formulas[cenY])
+    formulas <- c(cens_form$formula, formulas)
+    cenY <- cenY + 1
+    causl::lhs(formulas) <- LHS_Y
+
+    ## add in parameters
+    if (is.null(pars[[cns_kwd]])) {
+      if (length(cenY) == 1) {
+        pars[[cns_kwd]] <- pars[[LHS_Y[cenY]]]
+      }
+      else if (length(cenY > 1)) {
+        message("Multiple censoring specifications: attempting to construct merged parameter values")
+        refs <- cens_form$reforms
+        whF <- cens_form$wh
+        trms <- terms(cens_form$formula)
+        ntrms <- length(attr(trms, "order")) + attr(trms, "intercept")
+
+        has_all <- sapply(whF, function (x) setequal(x,seq_len(ntrms)))
+        if (any(has_all)) {
+          wh_ha <- which(has_all)
+          pars[[cns_kwd]] <- pars[[LHS_Y[cenY][wh_ha]]]
+          message(paste0("Used parameters from outcome ", LHS_Y[cenY][wh_ha], " for censoring parameters"))
+        }
+        else stop("Censoring distribution not inferable from input")
+      }
+    }
+  }
+  else if (cns_kwd %in% LHS_Y) {
+    censoring <- TRUE
+
+    wh <- match(cns_kwd, LHS_Y)
+
+    ## put censoring first if a competing risk
+    LHS_Y <- LHS_Y[c(wh,seq_along(LHS_Y)[-wh])]
+    formulas <- formulas[c(wh,seq_along(LHS_Y)[-wh])]
+  }
+  else censoring <- FALSE
+
+  return(list(formulas=formulas, pars=pars, censoring=censoring))
+}
+
+var_order <- function (formulas, nms_t, LHSs, dims) {
+  std_form <- standardize_formulae(formulas, static=LHSs[[1]])
+
+  ## get ordering for terms
+  A <- matrix(0,sum(dims[2:4]),sum(dims[2:4]))
+
+  d_C <- dims[-1]
+
+  for (j in 2:4) for (i in seq_along(LHSs[[j]])) {
+    tab <- std_form[[j-1]][[i]]
+    A[sum(d_C[seq_len(j-2)]) + i, ] <- 1*(nms_t %in% tab$var[tab$lag == 0])
+  }
+
+  ## get appropriate ordering
+  ord <- causl:::topOrd(A)
+
+  if (any(is.na(ord))) stop("Cyclic dependence in formulae provided")
+
+  return(list(ordering=ord, std_form=std_form))
+}
+
+##' @importFrom causl gen_dummy_dat pair_copula_setup check_pars
+NULL
