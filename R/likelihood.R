@@ -4,7 +4,7 @@
 ##'
 ##' @param dat data frame of class \code{survivl_dat}
 ##' @param control list of control parameters
-##' @inheritParams cox_samp
+##' @inheritParams msm_samp
 ##'
 ##' @details The only valid argument for \code{control} is \code{cop}, which
 ##' changes the keyword for the copula from its default (\code{"cop"}).

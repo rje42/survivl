@@ -32,15 +32,6 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   dZ <- length(LHS_Z); dX <- length(LHS_X); dY <- length(LHS_Y)
   if (any(duplicated(unlist(LHSs)))) stop("Repeated variable names not allowed")
 
-  if (missing(family)) {
-    stop("Families must be specified")
-  }
-  else if (is.list(family)) {
-    if (!all(lengths(family[1:4]) == lengths(formulas[1:4]))) stop("mismatch in family and formulae specifications")
-  }
-  else if (length(family) == 5) family <- as.list(family)
-  else stop("family should be a list or vector of length 5")
-
 
   ## check right number of parameters supplied
   forms <- lapply(formulas[1:4], function (x) lapply(x, terms))
@@ -55,18 +46,15 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
     stop(paste0("Variables ", paste(wh, collapse=", "), " appear on right hand side but are not simulated"))
   }
 
-  ## make sure family entries have a vector of integers
-  if (any(sapply(family, is.list))) {
-    whL <- which(sapply(family, is.list))
-    family[whL] <- lapply(family[whL], unlist)
-  }
-  if (any(sapply(family, is.null))) family[sapply(family, is.null)] <- list(integer(0))
-  ## now set up link functions
-  link <- causl::link_setup(link, family = family[-(5)], vars=LHSs)
-  # link[[4]] <- "inverse"
-
   ## introduce code from causl
   dims <- lengths(formulas)
+  family <- causl::process_family(family=family, dims=dims, func_return=get_surv_family)
+
+  ## now set up link functions
+  link <- causl::link_setup(link, family = family[-(5)], vars=LHSs,
+                            sources=c(links_list, surv_links_list))
+  # link[[4]] <- "inverse"
+
   # LHSs <- list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y)
   dummy_dat <- causl::gen_dummy_dat(family=family, pars=pars, dat=dat, LHSs=LHSs, dims=dims)
   # causl::check_pars(formulas=formulas, family=family, pars=pars, dummy_dat=dummy_dat, LHSs=LHSs, kwd=control$cop, dims=dims)
@@ -112,6 +100,7 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
               LHSs=list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
               std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t)
 }
+
 
 ##' Obtain only time-varying inputs
 ##'
