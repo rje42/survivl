@@ -76,7 +76,7 @@ package can account for the additional uncertainty introduced by weighting.
 library(survey)
 ```
 Now we estimate the propensity scores, and fit the IPW model.
-```{r ipw}
+```{r ipw, warn=FALSE}
 ps <- predict(glm(X ~ W + X_l1 + Z, data=datl, family=binomial), type = "response")
 wt <- datl$X/ps + (1-datl$X)/(1-ps)
 summary(svyglm(I(1-Y) ~ W + X, family=binomial(log), start=c(-2,1/10,-1/5), design=svydesign(~1, data=datl, weights=wt)))$coefficients

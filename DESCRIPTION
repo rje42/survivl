@@ -1,7 +1,7 @@
 Package: survivl
 Type: Package
 Title: Package for causal survival simulation and analysis
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: c(
   person("Robin", "Evans", , "evans@stats.ox.ac.uk", role = c("aut", "cre")))
 Description: Uses methods of Young et al. (2009) to simulate from structural
@@ -12,7 +12,7 @@ LazyData: true
 RoxygenNote: 7.3.1
 Roxygen: list(markdown = TRUE)
 Requires:
-    causl (>=0.8.2.9000)
+    causl (>=0.8.5.9000)
 Imports:
     causl,
     dplyr,

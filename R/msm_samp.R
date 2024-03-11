@@ -334,12 +334,12 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
 ##' @describeIn msm_samp old name
 coxSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
   .Deprecated(new = "msm_samp", msg = "This function is deprecated and will be removed in version 0.4.0, please use msm_samp()")
-  msm_samp(n, T, formulas, family, pars, link=NULL, control=list())
+  msm_samp(n=n, T=T, formulas=formulas, family=family, pars=pars, link=NULL, control=list())
 }
 
 ##' @describeIn msm_samp old name
 cox_samp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
-  deprecate_soft(when = "0.3.1", what = "cox_samp", with = "msm_samp")
+  deprecate_soft(when = "0.3.1", what = "cox_samp()", with = "msm_samp()")
   # .Deprecated(new = "msm_samp", msg = "This function is deprecated, please use msm_samp()")
-  msm_samp(n, T, formulas, family, pars, link=NULL, control=list())
+  msm_samp(n=n, T=T, formulas=formulas, family=family, pars=pars, link=NULL, control=list())
 }
