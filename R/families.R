@@ -13,7 +13,7 @@
 ##'
 ##' @export
 surv_family_vals <- data.frame(val=1:2,
-                               family=c("exponential", "weibull"))
+                               family=c("exp", "weibull"))
 
 ##' @describeIn surv_family_vals List of links for each family
 ##' @format `surv_links_list` is a list of length 2
@@ -224,11 +224,11 @@ exp_surv_fam <- function (link) {
 is_surv_outcome <- function (x) {
   if (is.atomic(x)) {
     if(is.numeric(x)) return(x %in% c(3,6))
-    else if (is.character(x)) return(x %in% c("Gamma", "weibull", "lognormal"))
+    else if (is.character(x)) return(x %in% c("exp", "Gamma", "weibull", "lognormal"))
   }
   else if (methods::is(x[[1]], "causl_family")) {
     nms <- sapply(x, function(y) y$name)
-    return(nms %in% c("Gamma", "weibull", "lognormal"))
+    return(nms %in% c("exp", "Gamma", "weibull", "lognormal"))
   }
   else stop("Not a valid family representation")
 }

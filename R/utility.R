@@ -89,6 +89,7 @@ add_time_stamps <- function (nms, t, start_at=0) {
 surv_to_long <- function(dat, lag=0) {#, formulas) {
   nms <- names(dat)
   nms <- nms[nms != "id" & nms != "status"]
+  n <- nrow(dat)
 
   ## determine time-varying vs static covariates
   ts <- rmv_time_stamps(nms)
@@ -98,16 +99,16 @@ surv_to_long <- function(dat, lag=0) {#, formulas) {
 
   ## set up a blank data frame
   out <- c(list(id=rep(dat$id, each=Tmax),
-           t=rep.int(seq_len(Tmax)-1, nrow(dat))),
-           rep(list(rep.int(NA, Tmax*nrow(dat))), sum(Ts == 0)),
-           rep(list(rep.int(NA, Tmax*nrow(dat))), (lag+1)*sum(Ts > 0)))
+           t=rep.int(seq_len(Tmax)-1, n)),
+           rep(list(rep.int(NA, Tmax*n)), sum(Ts == 0)),
+           rep(list(rep.int(NA, Tmax*n)), (lag+1)*sum(Ts > 0)))
   # out <- vector(mode="list", length=2+length(ts))
   nms <- c("id", "t", ts[Ts==0], ts[Ts > 0])
   if (lag > 0) nms <- c(nms, outer(ts[Ts > 0], seq_len(lag), paste, sep="_l"))
   names(out) <- nms
 
   out <- data.frame(out)
-  # out$t <- rep(seq_len(Tmax)-1, nrow(dat))
+  # out$t <- rep(seq_len(Tmax)-1, n)
 
   # out <- cbind(out, Ts > 0)
 
@@ -124,12 +125,12 @@ surv_to_long <- function(dat, lag=0) {#, formulas) {
   ## now set values for each timepoint
   for (i in seq_len(Tmax)) {
     nms <- paste0(ts[Ts > 0], "_", i-1)
-    out[(seq_len(nrow(dat))-1)*Tmax + i, whStat] <- dat[,ts[Ts == 0]]
-    out[(seq_len(nrow(dat))-1)*Tmax + i, whTV(0)] <- dat[,nms]
+    out[(seq_len(n)-1)*Tmax + i, whStat] <- dat[,ts[Ts == 0]]
+    out[(seq_len(n)-1)*Tmax + i, whTV(0)] <- dat[,nms]
 
     for (l in seq_len(min(i-1, lag))) {
       nms2 <- paste0(ts[Ts > 0], "_", i-l-1)
-      out[(seq_len(nrow(dat))-1)*Tmax + i, whTV(l)] <- dat[,nms2]
+      out[(seq_len(n)-1)*Tmax + i, whTV(l)] <- dat[,nms2]
     }
   }
 
@@ -139,9 +140,13 @@ surv_to_long <- function(dat, lag=0) {#, formulas) {
     for (i in which(chk)) out[[ts[Ts==0][i]]] <- factor(out[[ts[Ts==0][i]]], labels = levels(dat[[ts[Ts==0][i]]]))
   }
 
-  status <- rep(0, nrow(out))
-  status[Tmax*(seq_len(nrow(dat))-1) + ceiling(dat$T)] <- dat$status
-  out$status <- status
+  ## record individual endpoints
+  endpt <- rep(0, nrow(out))
+  endpt[Tmax*(seq_len(n)-1) + ceiling(dat$T)] <- dat$status
+  out$endpt <- endpt
+
+  ## record overall status
+  out$status <- rep(dat$status, each=Tmax)
 
   out <- out[!apply(out, 1, function(x) any(is.na(x))),]
 
@@ -167,7 +172,7 @@ nms_from_zero <- function (x) {
 ##' @export
 surv_to_wide <- function(dat, tv_covs, fix_covs) {#, formulas) {
   nms <- names(dat)
-  nms <- nms[nms != "t" & nms != "t_stop" & nms != "status" & nms != "T"]
+  nms <- nms[nms != "t" & nms != "t_stop" & nms != "status" & nms != "T" & nms != "endpt"]
 
   ## if not supplied, obtain lists of the time-varying and fixed covariates
   if (!missing(tv_covs) || !missing(fix_covs)) {

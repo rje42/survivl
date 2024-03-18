@@ -156,9 +156,9 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       ## get time of event and which one
       out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
       wh_fail <- max.col(-out[surv,][!surv_this, indYt, drop=FALSE])
-      out$status[surv][!surv_this] <- wh_fail
+      out$status[surv][!surv_this] <- wh_fail - (censoring)
 
-      ## record 0 for intervals survived, and 1 for intervals not survived
+      ## record 0 for intervals survived/censored, and i for failure due to ith competing risk
       out[surv, indYt] <- 0L
       out[cbind(which(surv)[!surv_this], indYt[wh_fail])] <- 1L
 
