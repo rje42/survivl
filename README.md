@@ -29,18 +29,12 @@ flowchart LR
         C(Y)
         A(Z)
   end
- subgraph subgraph_xvj607dza["L-2"]
-        G(X)
-        H(Y)
-        I(Z)
   end
     A --> B & C
     B --> C & D
     D --> E & F
     E --> F
-    I --> H & G
-    G --> H & A
-    CC("C") -.-> A & B & C & D & E & F & G & H & I
+    CC("C") -.-> A & B & C & D & E & F
 ```
 
 One example of the preceding graph would be to set our background covariates $C = \text{Bern}(\text{expit}(0.5))$. We can set 
