@@ -1,0 +1,10 @@
+pandoc: 3.1.11.1
+pkgdown: 2.0.9
+pkgdown_sha: ~
+articles:
+  Causal_Survival_Analysis: Causal_Survival_Analysis.html
+  Censoring: Censoring.html
+  Examples: Examples.html
+  MSMs: MSMs.html
+last_built: 2024-07-12T14:55Z
+

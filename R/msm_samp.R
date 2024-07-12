@@ -125,7 +125,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       # this_time <- data.frame(rep(list(rep(NA,n)), dZ+dX+dY))
       # names(this_time) <- paste0(vars_t, "_", t)
       # out <- cbind(out, this_time)
-
+      
       ## function to standardize formulae
       mod_inputs$t <- t
       cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
@@ -137,14 +137,14 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       # while (pluck_depth(tmp_pars) > 2) {
       #   tmp_pars <- list_flatten(tmp_pars)
       # }
-
+      
       mod2 <- modify_LHSs(mod_inputs, t=t)
       done <- c(done, paste0(vars_t, "_", t))
-
+      
       ## use sim_inversion()
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
       out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
-
+      
       ## determine if the individual had an event
       indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
       if (dY == 1) {
@@ -157,21 +157,20 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
       wh_fail <- max.col(-out[surv,][!surv_this, indYt, drop=FALSE])
       out$status[surv][!surv_this] <- wh_fail - (censoring)
-
+      
       ## record 0 for intervals survived/censored, and i for failure due to ith competing risk
       out[surv, indYt] <- 0L
       out[cbind(which(surv)[!surv_this], indYt[wh_fail])] <- 1L
-
+      
       ## update list of survivors
       surv[surv] <- surv[surv] & surv_this
       # out <- causl::sim_inversion(out, mod2)
       # qZ <- cbind(qZ, attr(out, "qZs"))
-
+      
       ## if no-one has survived, then end the simulation
       if (!any(surv)) break
     }
-  }
-  else if (method == "rejection") {
+  }else if (method == "rejection") {
     ## simulate time-varying covariates and survival
     for (t in seq_len(T)) {
       OK <- rep(FALSE, nrow(out))
