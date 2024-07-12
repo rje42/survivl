@@ -18,12 +18,11 @@ library(survivl)
 ## Example:
 
 ```mermaid
-graph TD
-    A(Z_{L-1}) --> B(X_{L-1})
-    B --> C(Y_{L-1})
-    A --> C
-    B --> D
-    D(Z_{L}) --> E(X_{L})
-    E --> F(Y_{L})
-    D --> F
-```
+graph TD;
+    A[Z_{L-1}] --> B[X_{L-1}];
+    B --> C[Y_{L-1}];
+    A --> C;
+    B --> D;
+    D[Z_{L}] --> E[X_{L}];
+    E --> F[Y_{L}];
+    D --> F;
