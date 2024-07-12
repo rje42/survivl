@@ -62,28 +62,8 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
                                dat=out, quantiles=quantiles)
     quantiles <- attr(out, "quantiles")
     attr(out, "quantiles") <- NULL
-      # out[[vars[dZ+dX+i]]] <- causl:::sim_Y(n, formulas=formulas[[4]][[i]],
-      #                                       family=family[[4]][[i]],
-      #                                       pars=pars[[kwd]]$beta[[i]],
-      #                                       formY = formulas[[3]][[i]],
-      #                                       famY=family[[3]][i], parsY=pars[[LHS_Y[i]]],
-      #                                       linkY=link[[3]][i], qZ=quantiles, vars=vars,
-      #                                       dat=out)
+
   }
-      # for (j in seq_len(dZ)) {
-      #   curr_qZ <- qZs[[vars[j]]]
-      #   X <- model.matrix(formulas[[4]][[wh]][[j]], data=out)
-      #   curr_fam <- family[[4]][wh,j]
-      #   curr_par <- pars[[kwd]]$beta[[wh]][[j]]
-      #   # eta <- X %*% curr_par
-      #   qY <- rescale_cop(cbind(curr_qZ,qY), X=X, pars=curr_par, family=curr_fam) #, link=link[[4]][i,j])
-      # }
-      # ##
-      # X <- model.matrix(formulas[[3]][[wh]], data=out)
-      # qY <- rescale_var(qY, X=X, family=famY[wh], pars=pars[[LHS_Y[wh]]],
-      #                  link=link[[3]][wh])
-      #
-      # out[[vars[order[i]]]] <- qY
 
   return(list(dat=out, quantiles=quantiles))
 }

@@ -40,10 +40,11 @@ One example of the preceding graph would be to set our background covariates $C 
 $Z_{L} \mid X_{L-1}, C \sim N(-\frac{1}{2} + \frac{1}{2} X_{L-1} - \frac{1}{2}C)$ and 
 set $X_{L} \mid Z_{L}, C \sim \text{Bern}\left(\text{expit}(\frac{1}{2}* Z_{L} + \frac{1}{10}C)\right)$.
 
-Finally, we can set $Y_{L} \mid do(X_{L}), C \sim \text{Exp}\left(\left(0.05 + 0.5 * X_{L} + 0.05 * C\right)^{-1}\right)$.
+Then, we can set $Y_{L} \mid do(X_{L}), C \sim \text{Exp}\left(\left(0.05 + 0.5 * X_{L} + 0.05 * C\right)^{-1}\right)$.
 
+Finally,we set a Gaussian copula between $Y_L, Z_L$ to have correlation $0.4 = 2 * \text{expit}(0.85) - 1$
 
-You can simulate from the graph as follows:
+You can simulate from the graph for 20 time steps as follows:
 
 ```
 library(survivl)

@@ -79,7 +79,7 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   ## copula related things
   kwd <- control$cop
 
-  if (method == 'inversion') {
+  if (method == 'inversion' || method == 'bootstrap') {
 
     tmp <- causl::pair_copula_setup(formulas=formulas[[5]], family=family[[5]], pars=pars[[kwd]],
                                      LHSs=LHSs, quans=character(0), ord=ord)

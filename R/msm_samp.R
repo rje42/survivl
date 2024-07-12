@@ -32,7 +32,9 @@
 msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
                       method="inversion", control=list()) {
 
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0)
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", 
+             start_at=0,risk_h = function(x, b, l) sum(x) + sum(b) + sum(l), eps = 0.05,
+             bootsims = 5000)
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",
@@ -284,6 +286,94 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       # surv[surv] <- (out[[var]][surv] > 1)
       # out$T[!is.na(out[[var]]) & !surv] <- t - 1 + out[[var]][!is.na(out[[var]]) & !surv]
       # out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] > 1)
+    }
+  } else if(method == 'bootstrap'){
+    mod_inputs <- modify_inputs(proc_inputs)
+    formulas <- mod_inputs$formulas
+    done <- unlist(LHS_C)
+
+    riskH <- con$risk_h
+    eps <- con$eps
+    M <- con$bootsims
+    for (t in seq_len(T)-1) {
+      
+      ## function to standardize formulae
+      mod_inputs$t <- t
+      cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
+                          done=done, t=t, vars_t=vars_t, kwd=kwd)
+      mod_inputs$formulas <- cinp$formulas
+
+      mod_inputs$pars <- cinp$pars
+      
+      mod2 <- modify_LHSs(mod_inputs, t=t)
+      done <- c(done, paste0(vars_t, "_", t))
+      
+      ## simulate A_l, Z_l
+      tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
+      
+      # get scalar H
+      H <- tmp$dat[[paste0("Y_",t)]]
+      
+      ## simulate M times
+
+      emperical_ys <- list()
+      for(j in 1:M){
+        tmp_j <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
+        emperical_ys[[j]] <-tmp_j$dat[['Y_0']]
+      }
+      
+      emperical_ys <- data.frame(emperical_ys)
+      colnames(emperical_ys) <- seq(M)
+
+      ecdfs <- apply(emperical_ys, 1, function(x) ecdf(x))
+
+      # apply ith ecdf to ith entry of H
+      us <- c()
+      for (i in 1:length(ecdfs)) {
+        us <- c(us, ecdfs[[i]](H[i]))
+      }
+
+      # then use emperical cdf to get the quantile
+      # truncate if above or below
+      us[which(us >= 1)] <- 1-eps
+      us[which(us <= 0)] <- eps
+      
+      # now with quantile and correlation coef, use copula, to get probability
+      rho <-0.2
+      normalize <- function(x) {
+        return ((x - min(x)) / (max(x) - min(x)))
+      }
+      cor_us <- (qnorm(normalize(H)) - rho * qnorm(us)) / sqrt(1 - rho^2)
+      probs <- pnorm(cor_us)
+      
+      # now with probability, can sample next value
+      y_k1 <- sapply(probs, function(x) rbinom(1, 1, x))
+      tmp$dat[[paste0("Y_", t)]] <- y_k1
+      
+      out[surv,] <- tmp$dat
+
+      ## determine if the individual had an event
+      indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
+      if (dY == 1) {
+        surv_this <- out[surv, indYt] == 0
+      }
+      else {
+        surv_this <- apply(out[surv, indYt] == 0, 1, all)
+      }
+      ## get time of event and which one
+      out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
+      wh_fail <- max.col(-out[surv,][!surv_this, indYt, drop=FALSE])
+      out$status[surv][!surv_this] <- wh_fail - (censoring)
+      
+      ## record 0 for intervals survived/censored, and i for failure due to ith competing risk
+      out[surv, indYt] <- 0L
+      out[cbind(which(surv)[!surv_this], indYt[wh_fail])] <- 1L
+      
+      ## update list of survivors
+      surv[surv] <- surv[surv] & surv_this
+      
+      ## if no-one has survived, then end the simulation
+      if (!any(surv)) break
     }
   }
   else stop("'method' should be \"inversion\" or \"rejection\"")
