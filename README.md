@@ -20,9 +20,9 @@ library(survivl)
 ```mermaid
 flowchart LR
  subgraph subgraph_okl5wt31b["L"]
-        D(X)
-        E(Y)
-        F(Z)
+        E(X)
+        F(Y)
+        D(Z)
   end
  subgraph subgraph_xvj607dzn["L-1"]
         B(X)
