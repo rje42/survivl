@@ -47,7 +47,6 @@ Finally,we set a Gaussian copula between $Y_L, Z_L$ to have correlation $0.4 = 2
 You can simulate from the graph for 20 time steps as follows:
 
 ```
-library(survivl)
 formulas <- list(C ~ 1,
                  Z ~ X_l1 + C,
                  X ~ Z_l0 + C,
