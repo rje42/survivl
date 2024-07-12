@@ -29,7 +29,6 @@ flowchart LR
         C(Y)
         A(Z)
   end
-  end
     A --> B & C
     B --> C & D
     D --> E & F
