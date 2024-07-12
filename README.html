@@ -368,21 +368,20 @@ library(survivl)</code></pre>
 <div id="example" class="section level2">
 <h2>Example:</h2>
 <pre class="mermaid"><code>flowchart LR
-
  subgraph subgraph_okl5wt31b[&quot;L&quot;]
-        D(&quot;$$Z_L$$&quot;)
-        E(&quot;$$X_L$$&quot;)
-        F(&quot;$$Y_L$$&quot;)
+        D(X)
+        E(Y)
+        F(Z)
   end
-   subgraph subgraph_xvj607dzn[&quot;L-1&quot;]
-        B(&quot;$$X_{L-1}$$&quot;)
-        C(&quot;$$Y_{L-1}$$&quot;)
-        A(&quot;$$Z_{L-1}$$&quot;)
+ subgraph subgraph_xvj607dzn[&quot;L-1&quot;]
+        B(X)
+        C(Y)
+        A(Z)
   end
-   subgraph subgraph_xvj607dza[&quot;L-2&quot;]
-        G(&quot;$$X_{L-2}$$&quot;)
-        H(&quot;$$Y_{L-2}$$&quot;)
-        I(&quot;$$Z_{L-2}$$&quot;)
+ subgraph subgraph_xvj607dza[&quot;L-2&quot;]
+        G(X)
+        H(Y)
+        I(Z)
   end
     A --&gt; B &amp; C
     B --&gt; C &amp; D
@@ -390,7 +389,7 @@ library(survivl)</code></pre>
     E --&gt; F
     I --&gt; H &amp; G
     G --&gt; H &amp; A
-</code></pre>
+    CC(&quot;C&quot;) -.-&gt; A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I</code></pre>
 <p>One example of the preceding graph would be to set our background
 covariates <span class="math inline">\(C =
 \text{Bern}(\text{expit}(0.5))\)</span>. We can set <span class="math inline">\(Z_{L} \mid X_{L-1}, C \sim N(-\frac{1}{2} +
