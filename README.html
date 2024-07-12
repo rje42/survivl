@@ -369,39 +369,33 @@ library(survivl)</code></pre>
 <h2>Example:</h2>
 <pre class="mermaid"><code>flowchart LR
  subgraph subgraph_okl5wt31b[&quot;L&quot;]
-        D(X)
-        E(Y)
-        F(Z)
+        E(X)
+        F(Y)
+        D(Z)
   end
  subgraph subgraph_xvj607dzn[&quot;L-1&quot;]
         B(X)
         C(Y)
         A(Z)
   end
- subgraph subgraph_xvj607dza[&quot;L-2&quot;]
-        G(X)
-        H(Y)
-        I(Z)
-  end
     A --&gt; B &amp; C
     B --&gt; C &amp; D
     D --&gt; E &amp; F
     E --&gt; F
-    I --&gt; H &amp; G
-    G --&gt; H &amp; A
-    CC(&quot;C&quot;) -.-&gt; A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I</code></pre>
+    CC(&quot;C&quot;) -.-&gt; A &amp; B &amp; C &amp; D &amp; E &amp; F</code></pre>
 <p>One example of the preceding graph would be to set our background
 covariates <span class="math inline">\(C =
-\text{Bern}(\text{expit}(0.5))\)</span>. We can set <span class="math inline">\(Z_{L} \mid X_{L-1}, C \sim N(-\frac{1}{2} +
-\frac{1}{2} X_{L-1} - \frac{1}{2}C)\)</span> and set <span class="math inline">\(X_{L} \mid Z_{L}, C \sim
-\text{Bern}\left(\text{expit}(\frac{1}{2}* Z_{L} +
-\frac{1}{10}C)\right)\)</span>.</p>
-<p>Finally, we can set <span class="math inline">\(Y_{L} \mid do(X_{L}),
-C \sim \text{Exp}\left(\left(0.05 + 0.5 * X_{L} + 0.05 *
-C\right)^{-1}\right)\)</span>.</p>
-<p>You can simulate from the graph as follows:</p>
-<pre><code>library(survivl)
-formulas &lt;- list(C ~ 1,
+\text{Bern}(\text{expit}(0.5))\)</span>. We can set <span class="math display">\[Z_{L} \mid X_{L-1}, C \sim N\left(-\frac{1}{2} +
+\frac{1}{2} X_{L-1} - \frac{1}{2}C\right)\]</span> and set <span class="math display">\[X_{L} \mid Z_{L}, C \sim
+\text{Bern}\left(\text{expit}\left(\frac{1}{2} Z_{L} +
+\frac{1}{10}C\right)\right).\]</span></p>
+<p>Then, we can set <span class="math display">\[Y_{L} \mid do(X_{L}), C
+\sim \text{Exp}\left(\left(0.05 + 0.5 X_{L} + 0.05
+C\right)^{-1}\right).\]</span></p>
+<p>Finally, we set a Gaussian copula between <span class="math inline">\(Y_L\)</span> and <span class="math inline">\(Z_L\)</span> to have correlation <span class="math display">\[0.4 = 2 \cdot \text{expit}(0.85) -
+1.\]</span></p>
+<p>You can simulate from the graph for 20 time steps as follows:</p>
+<pre><code>formulas &lt;- list(C ~ 1,
                  Z ~ X_l1 + C,
                  X ~ Z_l0 + C,
                  Y ~ X_l0 + C,
