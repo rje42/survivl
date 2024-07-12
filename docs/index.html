@@ -95,26 +95,9 @@
 <div class="section level2">
 <h2 id="example">Example:<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<pre class="mermaid"><code>flowchart LR
- subgraph subgraph_okl5wt31b["L"]
-        E(X)
-        F(Y)
-        D(Z)
-  end
- subgraph subgraph_xvj607dzn["L-1"]
-        B(X)
-        C(Y)
-        A(Z)
-  end
-    A --&gt; B &amp; C
-    B --&gt; C &amp; D
-    D --&gt; E &amp; F
-    E --&gt; F
-    CC("C") -.-&gt; A &amp; B &amp; C &amp; D &amp; E &amp; F</code></pre>
-<p>One example of the preceding graph would be to set our background covariates <span class="math inline"><em>C</em> = Bern(expit(0.5))</span>. We can set [Z_{L} X_{L-1}, C N(- +  X_{L-1} - C)] and set [X_{L} Z_{L}, C (( Z_{L} + C)).]</p>
-<p>Then, we can set [Y_{L} do(X_{L}), C ((0.05 + 0.5 X_{L} + 0.05 C)^{-1}).]</p>
-<p>Finally, we set a Gaussian copula between (Y_L) and (Z_L) to have correlation [0.4 = 2 (0.85) - 1.]</p>
-<p>You can simulate from the graph for 20 time steps as follows:</p>
+<p>One example of the preceding graph would be to set our background covariates <span class="math inline"><em>C</em> = Bern(expit(0.5))</span>. We can set <span class="math inline">$Z_{L} \mid X_{L-1}, C \sim N(-\frac{1}{2} + \frac{1}{2} X_{L-1} - \frac{1}{2}C)$</span> and set <span class="math inline">$X_{L} \mid Z_{L}, C \sim \text{Bern}\left(\text{expit}(\frac{1}{2}* Z_{L} + \frac{1}{10}C)\right)$</span>.</p>
+<p>Then, we can set <span class="math inline"><em>Y</em><sub><em>L</em></sub> ∣ <em>d</em><em>o</em>(<em>X</em><sub><em>L</em></sub>), <em>C</em> ∼ Exp((0.05+0.5*<em>X</em><sub><em>L</em></sub>+0.05*<em>C</em>)<sup>−1</sup>)</span>.</p>
+<p>Finally,we set a Gaussian copula between <span class="math inline"><em>Y</em><sub><em>L</em></sub>, <em>Z</em><sub><em>L</em></sub></span> to have correlation <span class="math inline">0.4 = 2 * expit(0.85) − 1</span> You can simulate from the graph for 20 time steps as follows:</p>
 <pre><code><span><span class="va">formulas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">C</span> <span class="op">~</span> <span class="fl">1</span>,</span>
 <span>                 <span class="va">Z</span> <span class="op">~</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">C</span>,</span>
 <span>                 <span class="va">X</span> <span class="op">~</span> <span class="va">Z_l0</span> <span class="op">+</span> <span class="va">C</span>,</span>
