@@ -33,8 +33,10 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
                       method="inversion", control=list()) {
 
   con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", 
-             start_at=0,risk_h = function(x, b, l) sum(x) + sum(b) + sum(l), eps = 0.05,
-             bootsims = 5000)
+             start_at=0,
+             risk_h = function(row){ x <- row[1]; c <- row[2]; 
+             mean <- sum(x) + sum(c); rnorm(1, mean, 1)}, 
+             eps = 0.05,bootsims = 5000)
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",
@@ -108,6 +110,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   qtls <- out[integer(0)]  # data frame of quantiles
 
   ## simulate static covariates
+
   for (i in seq_along(LHS_C)) {
     ## now compute etas
     eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
@@ -142,7 +145,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       
       mod2 <- modify_LHSs(mod_inputs, t=t)
       done <- c(done, paste0(vars_t, "_", t))
-      
+
       ## use sim_inversion()
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
       out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
@@ -295,6 +298,8 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
     riskH <- con$risk_h
     eps <- con$eps
     M <- con$bootsims
+    rho <- unlist(proc_inputs$pars$cop)
+    rho <- 2 * rje::expit(rho) - 1
     for (t in seq_len(T)-1) {
       
       ## function to standardize formulae
@@ -310,18 +315,29 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       
       ## simulate A_l, Z_l
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
+      out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
+
       
+      # generate probabilites for Y_0
+      lambda <- unlist(mod_inputs$pars[[paste0("Y_", t)]]$beta)
+      sub_out <- out[surv,]
+      covariates <- cbind(sub_out[[paste0("X_", t)]] ,sub_out[['C']])
+      g_t <- exp(-cbind(1,covariates) %*% lambda)
+
       # get scalar H
-      H <- tmp$dat[[paste0("Y_",t)]]
+      H <- apply(covariates, 1, riskH)
       
       ## simulate M times
 
       emperical_ys <- list()
       for(j in 1:M){
+        print(j)
         tmp_j <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
-        emperical_ys[[j]] <-tmp_j$dat[['Y_0']]
+        covariates_j <- cbind(tmp_j$dat[[paste0("X_", t)]] ,tmp_j$dat[['C']])
+        H_j <- apply(covariates, 1, riskH)
+        emperical_ys[[j]] <-H_j
       }
-      
+
       emperical_ys <- data.frame(emperical_ys)
       colnames(emperical_ys) <- seq(M)
 
@@ -339,17 +355,13 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       us[which(us <= 0)] <- eps
       
       # now with quantile and correlation coef, use copula, to get probability
-      rho <-0.2
-      normalize <- function(x) {
-        return ((x - min(x)) / (max(x) - min(x)))
-      }
-      cor_us <- (qnorm(normalize(H)) - rho * qnorm(us)) / sqrt(1 - rho^2)
-      probs <- pnorm(cor_us)
+
+      probs <- pnorm((qnorm(g_t) - rho * us) / (1 - rho^2))
       
       # now with probability, can sample next value
       y_k1 <- sapply(probs, function(x) rbinom(1, 1, x))
       tmp$dat[[paste0("Y_", t)]] <- y_k1
-      
+
       out[surv,] <- tmp$dat
 
       ## determine if the individual had an event
