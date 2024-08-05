@@ -34,9 +34,13 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
 
   con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen",
              start_at=0,
-             risk_h = function(row){ x <- row[1]; c <- row[2];
-             mean <- sum(x) + sum(c); rnorm(1, mean, 1)},
+             risk_h = function(row) {
+               treat <- row[1]; background <- row[2]; time_vary <- row[3];
+               mean <- sum(treat) + sum(background) + sum(time_vary);
+               mean
+             },
              eps = 0.05, bootsims = 5000)
+
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",
@@ -316,6 +320,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       done <- c(done, paste0(vars_t, "_", t))
 
       ## simulate A_l, Z_l
+
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
       out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
 
@@ -325,18 +330,52 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       sub_out <- out[surv,]
       covariates <- cbind(sub_out[[paste0("X_", t)]], sub_out[['C']])
       g_t <- exp(-cbind(1,covariates) %*% lambda)
+      g_t[which(g_t <= 0)] <- eps
+      g_t[which(g_t >= 1)] <- 1 -eps
 
       # get scalar H
-      H <- apply(covariates, 1, riskH)
+      covariates_0 <- cbind(sub_out[[paste0("X_", t)]] ,sub_out[['C']], sub_out[[paste0("Z_",t)]])
+      H <- apply(covariates_0, 1, riskH)
+
+      ## simulate M times
+
+      ### First get the current model matrix:
+
+      ## unpack mod_inputs
+      vars <- paste0(mod_inputs$vars_t, "_", mod_inputs$t)
+      d <- lengths(mod_inputs$formulas)
+      MMs <- list()
+      ## simulate covariates and treatments
+      for (j in 1:2) for (i in seq_len(d[j])) {
+        vnm <- vars[i+(j-1)*length(formulas[[1]])]
+        curr_link <-  mod_inputs$link[[j]][i]
+
+        curr_form <- mod_inputs$formulas[[j]][[i]]
+        curr_fam <-  mod_inputs$family[[j]][[i]]
+
+        trm <- terms(curr_form)
+
+        MM <- model.matrix(delete.response(trm), data=out[surv,])
+        MMs <- c(MMs, list(MM))
+        if (nrow(MM) != nrow(out[surv,])) {
+          if (length(attr(trm, "factors")) == 0) {
+            if (attr(trm, "intercept") == 1) MM <- matrix(1, nrow=nrow(out), ncol=1)
+            else MM <- matrix(0, nrow=nrow(out), ncol=0)
+          }
+          else warning(paste0("Missing entries for ", vnm))
+        }
+      }
 
       ## simulate M times
       emperical_ys <- list()
+
       if (verbose) cat("Bootstrap iteration: ")
       for(j in seq_len(M)) {
-        tmp_j <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
-        covariates_j <- cbind(tmp_j$dat[[paste0("X_", t)]] ,tmp_j$dat[['C']])
-        H_j <- apply(covariates, 1, riskH)
-        emperical_ys[[j]] <- H_j
+        tmp_j <- boot_sim(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd, MMs)
+        dat <- tmp_j$dat
+        covariates_j <- cbind(dat[[paste0("X_", t)]] ,dat[['C']], dat[[paste0("Z_",t)]])
+        H_j <- apply(covariates_j, 1, riskH)
+        emperical_ys[[j]] <-H_j
         if (verbose) printCount(j, first=1, last=M)
       }
 
@@ -350,7 +389,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       for (i in seq_along(ecdfs)) {
         us[i] <- ecdfs[[i]](H[i])
       }
-
+      options(warn=2, error=recover)
       # then use emperical cdf to get the quantile
       # truncate if above or below
       us[which(us >= 1)] <- 1-eps
