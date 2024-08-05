@@ -39,7 +39,8 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
                mean <- sum(treat) + sum(background) + sum(time_vary);
                mean
              },
-             eps = 0.05, bootsims = 5000)
+             # eps = 0.05,
+             bootsims = 5e3 - 1)
 
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
@@ -302,12 +303,12 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
     done <- unlist(LHS_C)
 
     riskH <- con$risk_h
-    eps <- con$eps
+    # eps <- con$eps
     M <- con$bootsims
     rho <- unlist(proc_inputs$pars$cop)
     rho <- 2 * rje::expit(rho) - 1
-    for (t in seq_len(T)-1) {
 
+    for (t in seq_len(T)-1) {
       ## function to standardize formulae
       mod_inputs$t <- t
       cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
@@ -320,31 +321,30 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       done <- c(done, paste0(vars_t, "_", t))
 
       ## simulate A_l, Z_l
-
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
       out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
-
 
       # generate probabilites for Y_0
       lambda <- unlist(mod_inputs$pars[[paste0("Y_", t)]]$beta)
       sub_out <- out[surv,]
+      n_surv <- nrow(sub_out)
       covariates <- cbind(sub_out[[paste0("X_", t)]], sub_out[['C']])
       g_t <- exp(-cbind(1,covariates) %*% lambda)
-      g_t[which(g_t <= 0)] <- eps
-      g_t[which(g_t >= 1)] <- 1 -eps
+      # g_t[which(g_t <= 0)] <- eps
+      # g_t[which(g_t >= 1)] <- 1 -eps
 
       # get scalar H
-      covariates_0 <- cbind(sub_out[[paste0("X_", t)]] ,sub_out[['C']], sub_out[[paste0("Z_",t)]])
+      covariates_0 <- cbind(sub_out[[paste0("X_", t)]], sub_out[['C']], sub_out[[paste0("Z_",t)]])
       H <- apply(covariates_0, 1, riskH)
 
       ## simulate M times
 
       ### First get the current model matrix:
-
       ## unpack mod_inputs
       vars <- paste0(mod_inputs$vars_t, "_", mod_inputs$t)
       d <- lengths(mod_inputs$formulas)
-      MMs <- list()
+      MMs <- list(list(), list())
+
       ## simulate covariates and treatments
       for (j in 1:2) for (i in seq_len(d[j])) {
         vnm <- vars[i+(j-1)*length(formulas[[1]])]
@@ -356,7 +356,8 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
         trm <- terms(curr_form)
 
         MM <- model.matrix(delete.response(trm), data=out[surv,])
-        MMs <- c(MMs, list(MM))
+        MMs[[j]][[i]] <- MM
+
         if (nrow(MM) != nrow(out[surv,])) {
           if (length(attr(trm, "factors")) == 0) {
             if (attr(trm, "intercept") == 1) MM <- matrix(1, nrow=nrow(out), ncol=1)
@@ -367,42 +368,46 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       }
 
       ## simulate M times
-      emperical_ys <- list()
+      empirical_ys <- matrix(NA, nrow=n_surv, ncol=M)
 
       if (verbose) cat("Bootstrap iteration: ")
       for(j in seq_len(M)) {
         tmp_j <- boot_sim(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd, MMs)
         dat <- tmp_j$dat
+
         covariates_j <- cbind(dat[[paste0("X_", t)]] ,dat[['C']], dat[[paste0("Z_",t)]])
         H_j <- apply(covariates_j, 1, riskH)
-        emperical_ys[[j]] <-H_j
+        empirical_ys[,j] <- H_j
         if (verbose) printCount(j, first=1, last=M)
       }
 
-      emperical_ys <- data.frame(emperical_ys)
-      colnames(emperical_ys) <- seq_len(M)
+      Hs <- matrix(H, nrow=n_surv, ncol=M)
 
-      ecdfs <- apply(emperical_ys, 1, function(x) ecdf(x))
+      # empirical_ys <- data.frame(empirical_ys)
+      # colnames(empirical_ys) <- seq_len(M)
 
-      # apply ith ecdf to ith entry of H
-      us <- numeric(length(ecdfs))
-      for (i in seq_along(ecdfs)) {
-        us[i] <- ecdfs[[i]](H[i])
-      }
-      options(warn=2, error=recover)
-      # then use emperical cdf to get the quantile
-      # truncate if above or below
-      us[which(us >= 1)] <- 1-eps
-      us[which(us <= 0)] <- eps
+      # ecdfs <- apply(empirical_ys, 1, function(x) ecdf(x))
+
+      # # apply ith ecdf to ith entry of H
+      # us <- numeric(length(ecdfs))
+      # for (i in seq_along(ecdfs)) {
+      #   us[i] <- ecdfs[[i]](H[i])
+      # }
+      us <- (rowSums(empirical_ys < Hs) + 1)/(M + 1) - runif(n, max=1/(M+1))
+
+      # # #options(warn=2, error=recover)
+      # # then use empirical cdf to get the quantile
+      # # truncate if above or below
+      # us[which(us >= 1)] <- 1-eps
+      # us[which(us <= 0)] <- eps
 
       # now with quantile and correlation coef, use copula, to get probability
-      probs <- pnorm((qnorm(g_t) - rho * us) / (1 - rho^2))
+      probs <- pnorm((qnorm(g_t) - rho * qnorm(us)) / (1 - rho^2))
 
       # now with probability, can sample next value
       y_k1 <- rbinom(length(probs), 1, probs)
       # y_k1 <- sapply(probs, function(x) rbinom(1, 1, x))
       tmp$dat[[paste0("Y_", t)]] <- y_k1
-
       out[surv,] <- tmp$dat
 
       ## determine if the individual had an event
