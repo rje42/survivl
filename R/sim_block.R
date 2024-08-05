@@ -1,5 +1,6 @@
 ##' @importFrom causl sim_variable
 ##' @importFrom causl `lhs<-`
+##' @importFrom rje printCount expit
 
 sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
