@@ -43,6 +43,13 @@ pars <- list(C = list(beta=0),
 
 ```{r sim_dat1}
 set.seed(123)
+m <- 1e3
+dat <- data.frame(C=rbinom(m,size=1,prob=0.5))
+dat$Z_0 <- rnorm(m, dat$C/4 - 1/2)
+dat$X_0 <- rbinom(m, size=1, prob=0.5)
+
+dat2 <- msm_samp(dat=dat, T=5, formulas=formulas, family=family, pars=pars, link=link)
+datl <- surv_to_long(dat2)
 n <- 1e4
 dat <- msm_samp(n, T=20, formulas=formulas, family=family, pars=pars, link=link)
 datl <- surv_to_long(dat)

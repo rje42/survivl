@@ -4,7 +4,7 @@
 \alias{curr_inputs}
 \title{Obtain reduced formulas and parameter vectors for earlier time-points}
 \usage{
-curr_inputs(formulas, pars, t, ordering, done, vars_t, kwd)
+curr_inputs(formulas, pars, t, ordering, done, vars_t, kwd, start_at = 0)
 }
 \arguments{
 \item{formulas}{list of formulas to use}

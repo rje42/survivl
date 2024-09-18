@@ -1,6 +1,6 @@
-##' Simulate from Cox MSM Model
+##' Simulate from marginal structural survival model
 ##'
-##' Obtain samples from a specified Cox Marginal Structural Model
+##' Obtain samples from a specified survival-valued marginal structural model,
 ##' using the frugal parameterization.
 ##'
 ##' @param n number of samples
@@ -20,11 +20,11 @@
 ##' confounders and treatments, and then a copula to join the distribution
 ##' of the outcome to that of the confounders.
 ##'
-##' Among the left-hand sides of outcome variables, the variable 'Cen' has a
+##' Among the left-hand sides of outcome variables, the variable `Cen` has a
 ##' special meaning as censoring.  This keyword can be changed to something
-##' else by using the argument \code{censor} in the \code{control} list.
+##' else by using the argument `censor` in the `control` list.
 ##'
-##' @return An object of class \code{survivl_dat} containing the simulated data.
+##' @return An object of class `survivl_dat` containing the simulated data.
 ##'
 ##' @importFrom survival Surv
 ##'
@@ -51,7 +51,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   }
 
   ## process inputs
-  proc_inputs <- process_inputs(formulas=formulas, pars=pars, family=family,
+  proc_inputs <- process_inputs(n=n, formulas=formulas, pars=pars, family=family,
                                 link=link, dat=dat, T=T, control=con, method=method)
   ## extract them again
   formulas <- proc_inputs$formulas; pars <- proc_inputs$pars; family <- proc_inputs$family; link <- proc_inputs$link
@@ -63,7 +63,9 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   var_nms_Y <- proc_inputs$std_form$var_nms_Y
   var_nms_cop <- proc_inputs$std_form$var_nms_cop
   order <- proc_inputs$ordering
-  vars_t <- proc_inputs$vars_t; vars <- proc_inputs$vars
+  vars_t <- proc_inputs$vars_t
+  qtls <- proc_inputs$quantiles
+  pres_var <- proc_inputs$pres_var
 
   # LHS_C <- causl::lhs(formulas[[1]])
   # LHS_Z <- causl::lhs(formulas[[2]])
@@ -82,70 +84,76 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   # nms_t <- c(LHS_Z, LHS_X, LHS_Y)
   # nms <- c(LHS_C, outer(vars_t, seq_len(T)-1, paste, sep="_"), "status")
 
-  out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(vars_t)), rep(0,n))
-  names(out) <- vars
+  ## set up output
+  out <- data.frame(matrix(NA, ncol=length(proc_inputs$vars), nrow=n))
+  names(out) <- proc_inputs$vars
+  out$status <- 0
+
+  if (!datNULL) {
+    out[proc_inputs$dat_kp] <- dat[proc_inputs$dat_kp]
+    # out <- cbind(dat, out)
+  }
+  if (anyDuplicated(na.omit(proc_inputs$vars))) stop("duplicated variable names")
+
+  # if (datNULL) out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(vars_t)), rep(0,n))
+  # else out <- cbind(dat, data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(vars_t)), rep(0,n)))
+  # names(out) <- vars
   out$T <- T
 
-  # RHS_Z <- causl::rhs_vars(formulas[[2]])
-  # RHS_X <- causl::rhs_vars(formulas[[3]])
-
-  # ## make sure family entries have a vector of integers
-  # if (any(sapply(family, is.null))) family[sapply(family, is.null)] <- list(integer(0))
-  # ## now set up link functions
-  # link <- causl::link_setup(link, family = family[-(5)], vars=list(LHS_C,LHS_Z,LHS_X,LHS_Y))
-  # # link[[4]] <- "inverse"
-  #
-  # if (is.null(pars$gamma)) pars$gamma <- function(X, beta) X %*% beta
-  #
-  # tmp <- standardize_formulae(formulas, static=LHS_C)
-  # var_nms_Z <- tmp$var_nms_Z
-  # var_nms_X <- tmp$var_nms_X
-  # var_nms_Y <- tmp$var_nms_Y
-  # var_nms_cop <- tmp$var_nms_cop
-
-  qtls <- out[integer(0)]  # data frame of quantiles
-
   ## simulate static covariates
-  for (i in seq_along(LHS_C)) {
-    ## now compute etas
-    eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
-    tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
-                          other_pars=pars[[LHS_C[[i]]]], link=link[[1]][i])
-    out[[LHS_C[[i]]]] <- tmp
-    qtls[[LHS_C[[i]]]] <- attr(tmp, "quantiles")
+  if (pres_var[1] < con$start_at && pres_var[2] < length(LHS_C)) {
+    for (i in seq_along(LHS_C)[pres_var[2] + seq_len(length(LHS_C) - pres_var[2])]) {
+      ## now compute etas
+      eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
+      tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
+                            other_pars=pars[[LHS_C[[i]]]], link=link[[1]][i])
+      out[[LHS_C[[i]]]] <- tmp
+      qtls[[LHS_C[[i]]]] <- attr(tmp, "quantiles")
+    }
   }
 
   surv <- rep(TRUE, nrow(out))
+  if (pres_var[1] > con$start_at) {
+
+  }
 
   if (method == "inversion") {
     mod_inputs <- modify_inputs(proc_inputs)
     formulas <- mod_inputs$formulas
     done <- unlist(LHS_C)
+
     for (t in seq_len(T)-1) {
       # this_time <- data.frame(rep(list(rep(NA,n)), dZ+dX+dY))
       # names(this_time) <- paste0(vars_t, "_", t)
       # out <- cbind(out, this_time)
 
-      ## function to standardize formulae
-      mod_inputs$t <- t
-      cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
-                          done=done, t=t, vars_t=vars_t, kwd=kwd)
-      mod_inputs$formulas <- cinp$formulas
-      # print(mod_inputs$formulas)
-      mod_inputs$pars <- cinp$pars
-      # tmp_pars <- rapply(mod_inputs$formulas, function(x) attr(x, "beta"), how="list")
-      # while (pluck_depth(tmp_pars) > 2) {
-      #   tmp_pars <- list_flatten(tmp_pars)
-      # }
+      if (t >= pres_var[1] - con$start_at) {
+        ## function to standardize formulae
+        mod_inputs$t <- t
+        cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
+                            done=done, t=t, vars_t=vars_t, kwd=kwd, start_at=con$start_at)
+        mod_inputs$formulas <- cinp$formulas
+        if (t == pres_var[1] - con$start_at) mod_inputs$pres_var <- pres_var[2]
+        else mod_inputs$pres_var <- 0
+        # print(mod_inputs$formulas)
+        mod_inputs$pars <- cinp$pars
+        # tmp_pars <- rapply(mod_inputs$formulas, function(x) attr(x, "beta"), how="list")
+        # while (pluck_depth(tmp_pars) > 2) {
+        #   tmp_pars <- list_flatten(tmp_pars)
+        # }
 
-      mod2 <- modify_LHSs(mod_inputs, t=t)
-      done <- c(done, paste0(vars_t, "_", t))
+        mod2 <- modify_LHSs(mod_inputs, t=t)
+        done <- c(done, paste0(vars_t, "_", t))
 
-      ## use sim_inversion()
-      tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
-      out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
+        ## use sim_inversion()
+        tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
+        out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
+      }
 
+      event <- event(out[surv, ], t=t, )
+      surv_this <-
       ## determine if the individual had an event
+      # indYt <- ifelse(is.null(dat), 0, ncol(dat))
       indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
       if (dY == 1) {
         surv_this <- out[surv, indYt] > 1

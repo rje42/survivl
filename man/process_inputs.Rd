@@ -4,9 +4,11 @@
 \alias{process_inputs}
 \title{Process formulas, families and parameters}
 \usage{
-process_inputs(formulas, pars, family, link, dat, T, method, control)
+process_inputs(n, formulas, pars, family, link, dat, T, method, control)
 }
 \arguments{
+\item{n}{number of samples}
+
 \item{formulas}{list of formulas to use}
 
 \item{pars}{list of parameter settings to use}

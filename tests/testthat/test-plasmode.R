@@ -1,11 +1,36 @@
+suppressMessages(library(survey))
+n <- 1e3
+
+forms <- list(W ~ 1,
+              Z ~ Z_l1 + X_l1,
+              X ~ X_l1 + Z_l0,
+              Y ~ W + X_l0,
+              list(Y = list(Z ~ W)))
+fams <- list(3, 1, 5, 3, c(1))
+pars <- list(W = list(beta=0, phi=1/2),
+             Z = list(beta=c(0,0.7,0.2), phi=1),
+             X = list(beta=c(-0.5,0.25,0.5)),
+             Y = list(beta=c(1,-1/10,1/5), phi=1),
+             cop = list(Y=list(Z=list(beta=c(0.5, 0.0))))
+)
+link <- list("log", "identity", "logit", "inverse")
+
+set.seed(123)
+dat <- msm_samp(n, T=5, formulas = forms, family = fams, pars = pars,
+                link = link)
+datl <- surv_to_long(dat, lag=1)
+
+
 ## first test for static covariates
 set.seed(123)
 n <- 1e4
 
-df <- data.frame(Z1=rnorm(n), Z2=factor(sample(3, n, replace = TRUE)))
 
-# msm_samp(T=3, formulas=forms, family=fams, pars=pars, )
-#
-# test_that("multiplication works", {
-#   expect_equal(2 * 2, 4)
-# })
+df <- data.frame(C = rnorm(n), Z_1 = rnorm(n),
+                 Z_2 = factor(sample(3, n, replace = TRUE), ordered=TRUE))
+
+# msm_samp(T=3, formulas=forms, family=fams, pars=pars, dat=df)
+
+test_that("multiplication works", {
+  expect_equal(2 * 2, 4)
+})

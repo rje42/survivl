@@ -11,35 +11,58 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   dZ <- proc_inputs$dim[1]; dX <- proc_inputs$dim[2]; dY <- proc_inputs$dim[3]
   LHS_Z <- proc_inputs$LHSs$LHS_Z; LHS_X <- proc_inputs$LHSs$LHS_X; LHS_Y <- proc_inputs$LHSs$LHS_Y
   # famZ <- proc_inputs$family[[1]]; famX <- proc_inputs$family[[2]]; famY <- proc_inputs$family[[3]]; famCop <- proc_inputs$family[[4]]
+  pvs <- proc_inputs$pres_var
 
   vars <- paste0(proc_inputs$vars_t, "_", proc_inputs$t)
 
   d <- lengths(formulas)
 
-  ## simulate covariates and treatments
-  for (j in 1:2) for (i in seq_len(d[j])) {
-    vnm <- vars[i+(j-1)*length(formulas[[1]])]
-    curr_link <- link[[j]][i]
+  if (!is.na(pvs)) {
+    if (pvs >= d[1]) {
+      pvs <- pvs - d[1]
+      dskip <- 2
 
-    curr_form <- formulas[[j]][[i]]
-    curr_fam <- family[[j]][[i]]
-
-    trm <- terms(curr_form)
-    # curr_form2 <- delete.response(terms(curr_form))
-    MM <- model.matrix(delete.response(trm), data=out)
-    if (nrow(MM) != nrow(out)) {
-      if (length(attr(trm, "factors")) == 0) {
-        if (attr(trm, "intercept") == 1) MM <- matrix(1, nrow=nrow(out), ncol=1)
-        else MM <- matrix(0, nrow=nrow(out), ncol=0)
+      if (pvs >= d[2]) {
+        pvs <- pvs - d[2]
+        dskip <- 3
       }
-      else warning(paste0("Missing entries for ", vnm))
     }
-    eta <- MM %*% pars[[vnm]]$beta
-    curr_phi <- pars[[vnm]]$phi
-    tmp <- causl::glm_sim(fam=curr_fam, eta=eta, phi=curr_phi, link=curr_link,
-                          other_pars=pars[[vnm]])
-    out[[vnm]] <- tmp
-    quantiles[[vnm]] <- attr(tmp, "quantile")
+    else dskip <- 1
+  }
+  else {
+    dskip <- 1
+    pvs <- 0
+  }
+
+  ## simulate covariates and treatments
+  for (j in 1:2) {
+    if (dskip > j) next
+    for (i in seq_len(d[j])) {
+      if (dskip == j && pvs >= i) next
+      vnm <- vars[i+(j-1)*length(formulas[[1]])]
+      if (!all(is.na(out[[vnm]]))) next
+      curr_link <- link[[j]][i]
+
+      curr_form <- formulas[[j]][[i]]
+      curr_fam <- family[[j]][[i]]
+
+      trm <- terms(curr_form)
+      # curr_form2 <- delete.response(terms(curr_form))
+      MM <- model.matrix(delete.response(trm), data=out)
+      if (nrow(MM) != nrow(out)) {
+        if (length(attr(trm, "factors")) == 0) {
+          if (attr(trm, "intercept") == 1) MM <- matrix(1, nrow=nrow(out), ncol=1)
+          else MM <- matrix(0, nrow=nrow(out), ncol=0)
+        }
+        else warning(paste0("Missing entries for ", vnm))
+      }
+      eta <- MM %*% pars[[vnm]]$beta
+      curr_phi <- pars[[vnm]]$phi
+      tmp <- causl::glm_sim(fam=curr_fam, eta=eta, phi=curr_phi, link=curr_link,
+                            other_pars=pars[[vnm]])
+      out[[vnm]] <- tmp
+      quantiles[[vnm]] <- attr(tmp, "quantile")
+    }
   }
 
   vnm <- lhs(formulas[[3]])
@@ -48,6 +71,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
   ## code to get Y quantiles conditional on different Zs
   for (i in seq_along(formulas[[3]])) {
+    if (dskip == 3 && pvs >= i) next
     ## simulate Y variable
     # qY <- runif(n)
     # print(wh)

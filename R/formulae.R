@@ -92,8 +92,7 @@ replace_vars <- function(formula, replace) {
 ##' @param kwd keyword for the copula
 ##'
 ##'
-curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
-  start_at <- 0
+curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd, start_at=0) {
 
   ## function to modify arguments
   mod_args <- function (form, beta, t, modLHS=FALSE) {

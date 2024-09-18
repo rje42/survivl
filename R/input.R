@@ -10,8 +10,9 @@
 ## @param method method to be used for sampling
 ## @param ordering logical: should an ordering of variables be computed?
 ##'
-process_inputs <- function (formulas, pars, family, link, dat, T, method, control) {
+process_inputs <- function (n, formulas, pars, family, link, dat, T, method, control) {
 
+  strt <- control$start_at
   for (i in 1:5) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
 
   ## check for censoring
@@ -40,7 +41,10 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   ## get response variables list
   RHS_vars <- rmv_lag(unlist(tms))
 
-  if (!all(RHS_vars %in% unlist(LHSs))) {
+  if (!is.null(dat)) plas_vars <- names(dat)
+  else plas_vars <- character(0)
+
+  if (!all(RHS_vars %in% c(plas_vars, unlist(LHSs)))) {
     wh <- RHS_vars[!RHS_vars %in% unlist(LHSs)]
     wh <- unique.default(wh)
     stop(paste0("Variables ", paste(wh, collapse=", "), " appear on right hand side but are not simulated"))
@@ -56,14 +60,9 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   # link[[4]] <- "inverse"
 
   # LHSs <- list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y)
+  attr(LHSs, "T") <- c(T, strt)
   dummy_dat <- causl::gen_dummy_dat(family=family, pars=pars, dat=dat, LHSs=LHSs, dims=dims)
   # causl::check_pars(formulas=formulas, family=family, pars=pars, dummy_dat=dummy_dat, LHSs=LHSs, kwd=control$cop, dims=dims)
-
-  ## naive check for number of parameters
-  for (j in seq_along(LHSs)) for (i in seq_along(formulas[[j]])) {
-    npar <- length(tms[[j]][[i]]) + attr(forms[[j]][[i]], "intercept")
-    if (length(pars[[LHSs[[j]][i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHSs[[j]][i], " does not match number of coefficients provided"))
-  }
 
   ## useful summaries
   nms_t <- c(LHS_Z, LHS_X, LHS_Y)
@@ -76,19 +75,47 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   ord <- tmp$ordering
   std_form <- tmp$std_form
 
-  ## copula related things
   kwd <- control$cop
 
+  ## naive check for number of parameters
+  tmp_input <- curr_inputs(formulas[-1], pars, t=T-1, ordering=ord,
+                           done=c(outer(nms_t, rep(seq_len(T-1)-1-strt), FUN="paste0")),
+                           vars_t = nms_t, kwd = kwd)
+  for (j in seq_along(LHSs)) for (i in seq_along(formulas[[j]])) {
+    npar <- length(tms[[j]][[i]]) + attr(forms[[j]][[i]], "intercept")
+    if (length(pars[[LHSs[[j]][i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHSs[[j]][i], " does not match number of coefficients provided"))
+  }
+
+  ## copula related things
   if (method == 'inversion') {
+    ## obtain empirical quantiles from any plasmode variables that will appear in copula
+    if (!is.null(dat)) {
+      n <- nrow(dat)
+
+      tmp <- process_prespecified(dat = dat, varC = LHS_C, vars_t = nms_t,
+                                  var_order = ord, start = strt)
+      ## extract quantiles and add entries for other variables
+      quantiles <- tmp$quantiles
+      dat_kp <- names(quantiles)
+      miss <- setdiff(names(dummy_dat), dat_kp)
+      to_add <- as.list(rep(NA, length(miss)))
+      names(to_add) <- miss
+      quantiles <- do.call(cbind, c(list(quantiles), to_add))
+
+      pres_var <- unlist(tmp[c("upto", "vars_sim")])
+    }
+    else {
+      quantiles <- dummy_dat[rep(NA,n),]
+    }
+
 
     tmp <- causl::pair_copula_setup(formulas=formulas[[5]], family=family[[5]], pars=pars[[kwd]],
                                      LHSs=LHSs, quans=character(0), ord=ord)
     formulas[[5]] <- tmp$formulas
     family[[5]] <- tmp$family
     pars[[kwd]] <- tmp$pars
-
   }
-
+  else if (!is.null(dat)) stop("Prespecified variables require the 'inversion' method")
 
   ## check that outcomes are OK for time-to-event
   if (any(!is_surv_outcome(family[[4]]))) {
@@ -96,11 +123,111 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
     stop(paste0("outcome '", LHSs[[4]][whn], "' must be of survival type (non-negative and continuous)"))
   }
 
+  if (!exists("quantiles")) quantiles <- data.frame(V1=rep(NA,n))[integer(0)]
+  if (!exists("pres_var")) pres_var <- c(strt - 1, 0L)
+  if (!exists("dat_kp")) dat_kp <- NULL
+
   out <- list(formulas=formulas, pars=pars, family=family, link=link,
               LHSs=list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
-              std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t)
+              std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t,
+              quantiles=quantiles, pres_var=pres_var, dat_kp=dat_kp)
 }
 
+##' Process variables already simulated
+##'
+##' @param dat data frame of pre-generated variables
+##' @param varC,vars_t character vector of static covariates and stems for dynamic variables
+##' @param var_order integer giving order for dynamic variables
+##' @param nlevs threshold for treating variable as continuous
+##' @param start time value to start simulation at
+##'
+##' @return A data frame of quantiles, and numbers representing the number of
+##' time points already fully simulated (`upto`) and the number within the particular
+##' group that have already been simulated (`vars_sim`).
+##'
+process_prespecified <- function (dat, varC, vars_t, var_order, nlevs = 10, start=0L) {
+
+  n <- nrow(dat)
+  pres <- names(dat)
+
+  if (all(varC %in% pres)) {
+    upto <- start - 1
+    while (all(paste0(vars_t, "_", upto + 1) %in% pres)) upto <- upto + 1
+
+    if (any(paste0(vars_t, "_", upto + 1) %in% pres)) {
+      whin <- var_order[which(paste0(vars_t, "_", upto+1) %in% pres)]
+      if (any(sort.int(whin)!=seq_along(whin))) vars_sim <- which.min(sort.int(whin)==seq_along(whin))
+      else vars_sim <- length(whin)
+
+      ## if no variables appear, then revert to previous level
+      if (vars_sim == 0) {
+        if (upto == start - 1) vars_sim <- length(varC)
+        else vars_sim <- length(vars_t)
+      }
+      else upto <- upto + 1
+    }
+    else {
+      if (upto == start - 1) vars_sim <- length(varC)
+      else vars_sim <- length(vars_t)
+    }
+
+    ## check that no intermediate variables are wrongly omitted
+    tmp <- setdiff(pres, varC)
+    if (upto - start > 0) tmp <- c(tmp, setdiff(c(outer(X=vars_t, Y=seq(from=start,to=upto-1), FUN = function (X,Y) paste0(X, "_", Y)))))
+    if (upto + 1 - start > 0) tmp <- c(tmp, paste0(vars_t[var_order <= vars_sim], "_", upto))
+
+    if (length(setdiff(pres, c(varC, tmp))) > 0) {
+      warning("Some intermediate variables not specified, so later ones will be overwritten")
+      dat <- dat[c(varC, tmp)]
+    }
+  }
+  else if (length(setdiff(pres, varC)) > 0) stop("Must specify all static variables to include dynamic ones")
+  else {
+    upto <- start - 1
+    vars_sim <- which.min(varC %in% pres) - 1
+    dat <- dat[varC[varC %in% pres]]
+  }
+
+  ## insert code to check that no dependent variables missing
+
+  ## object to contain quantiles
+  quantiles <- dat
+
+  ## extract quantiles for pre-simulated variables
+  for (i in seq_along(dat)) {
+    if (!is.factor(dat[[i]]) && (length(table(dat[[i]])) > nlevs)) {
+      ## for continuous data use rank and break ties at random
+      quan <- (rank(dat[[i]], na.last = "keep")-1/2)/n
+      if (any(duplicated(quan))) {
+        cts <- table(quan)
+        vals <- as.numeric(names(cts))
+        for (j in which(cts > 1)) {
+          wh_j <- which(quan == vals[j])
+          quan[wh_j] <- quan[wh_j] + (runif(cts[j])-1/2)*cts[j]/n
+        }
+      }
+      quantiles[[i]] <- quan
+    }
+    else if (is.factor(dat[[i]]) ||
+             (is.numeric(dat[[i]]) && (length(table(dat[[i]])) > nlevs))) {
+      if (is.factor(dat[[i]]) && !is.ordered(dat[[i]])) warning("Using ordering of factor to obtain quantiles, this may not be accurate")
+
+      ## similarly for ordered factors
+      out <- table(dat[[i]])
+      cqs <- c(0,cumsum(out))/sum(out)
+      df <- diff(cqs)
+      if (is.factor(dat[[i]])) idx <- as.integer(dat[[i]])
+      else {
+        ## is numeric, so match with the table entries
+        idx <- match(dat[[i]], as.numeric(names(out)))
+      }
+      quantiles[[i]] <- cqs[idx] + runif(n)*df[idx]
+    }
+    else stop("Must be numeric or a factor")
+  }
+
+  return(list(quantiles=quantiles, upto=upto, vars_sim=vars_sim))
+}
 
 ##' Obtain only time-varying inputs
 ##'
