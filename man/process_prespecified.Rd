@@ -4,16 +4,14 @@
 \alias{process_prespecified}
 \title{Process variables already simulated}
 \usage{
-process_prespecified(dat, varsC, vars_t, var_order, nlevs = 10, start = 0L)
+process_prespecified(dat, varC, vars_t, var_order, start = 0L)
 }
 \arguments{
 \item{dat}{data frame of pre-generated variables}
 
-\item{varsC, vars_t}{character vector of static covariates and stems for dynamic variables}
+\item{varC, vars_t}{character vector of static covariates and stems for dynamic variables}
 
 \item{var_order}{integer giving order for dynamic variables}
-
-\item{nlevs}{threshold for treating variable as continuous}
 
 \item{start}{time value to start simulation at}
 }

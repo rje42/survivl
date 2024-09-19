@@ -59,6 +59,9 @@ of the outcome to that of the confounders.
 Among the left-hand sides of outcome variables, the variable \code{Cen} has a
 special meaning as censoring.  This keyword can be changed to something
 else by using the argument \code{censor} in the \code{control} list.
+
+Times for presimulated events are put at halfway between the two timepoints;
+this is a hack.
 }
 \section{Functions}{
 \itemize{

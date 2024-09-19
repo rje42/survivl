@@ -18,6 +18,18 @@ link <- list("log", "identity", "logit", "inverse")
 set.seed(123)
 dat <- msm_samp(n, T=10, formulas = forms, family = fams, pars = pars,
                 link = link)
+
+cols <- match(paste0("Y_", ceiling(dat$T-1)), names(dat))
+Ys <- dat[cbind(seq_len(n), cols)]
+YsNA <- dat[cbind(seq_len(n), pmin(cols+3,ncol(dat)))]
+YsNA[cols==2 + 10*3] <- NA
+
+test_that("output is sound", {
+  expect_true(all(dat$T >= 0))
+  expect_false(any(is.na(Ys)))
+  expect_true(all(is.na(YsNA)))
+})
+
 datl <- surv_to_long(dat, lag=1)
 
 glmZ <- glm(Z ~ Z_l1 + X_l1, data=datl)

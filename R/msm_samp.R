@@ -24,6 +24,9 @@
 ##' special meaning as censoring.  This keyword can be changed to something
 ##' else by using the argument `censor` in the `control` list.
 ##'
+##' Times for presimulated events are put at halfway between the two timepoints;
+##' this is a hack.
+##'
 ##' @return An object of class `survivl_dat` containing the simulated data.
 ##'
 ##' @importFrom survival Surv
@@ -112,10 +115,8 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
     }
   }
 
+  ## record who should still be simulated
   surv <- rep(TRUE, nrow(out))
-  if (pres_var[1] > con$start_at) {
-
-  }
 
   if (method == "inversion") {
     mod_inputs <- modify_inputs(proc_inputs)
@@ -123,11 +124,9 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
     done <- unlist(LHS_C)
 
     for (t in seq_len(T)-1) {
-      # this_time <- data.frame(rep(list(rep(NA,n)), dZ+dX+dY))
-      # names(this_time) <- paste0(vars_t, "_", t)
-      # out <- cbind(out, this_time)
 
       if (t >= pres_var[1] - con$start_at) {
+        ## this time point not fully simulated already
         ## function to standardize formulae
         mod_inputs$t <- t
         cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
@@ -148,32 +147,20 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
         ## use sim_inversion()
         tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
         out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
-      }
 
-      event <- event(out[surv, ], t=t, )
-      surv_this <-
-      ## determine if the individual had an event
-      # indYt <- ifelse(is.null(dat), 0, ncol(dat))
-      indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
-      if (dY == 1) {
-        surv_this <- out[surv, indYt] > 1
+        ## establish which survivors had events, and record
+        tmp <- collect_events(dat=out[surv,], varY=LHS_Y, t=t)
       }
       else {
-        surv_this <- apply(out[surv, indYt] > 1, 1, all)
+        ## fully simulated already, so just get results
+        ## establish which survivors had events, and record
+        tmp <- collect_events(dat=out[surv,], varY=LHS_Y, t=t, trunc=TRUE)
       }
-      ## get time of event and which one
-      out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
-      wh_fail <- max.col(-out[surv,][!surv_this, indYt, drop=FALSE])
-      out$status[surv][!surv_this] <- wh_fail
 
-      ## record 0 for intervals survived, and 1 for intervals not survived
-      out[surv, indYt] <- 0L
-      out[cbind(which(surv)[!surv_this], indYt[wh_fail])] <- 1L
+      out[surv,] <- tmp$dat
 
       ## update list of survivors
-      surv[surv] <- surv[surv] & surv_this
-      # out <- causl::sim_inversion(out, mod2)
-      # qZ <- cbind(qZ, attr(out, "qZs"))
+      surv[surv] <- surv[surv] & tmp$surv
 
       ## if no-one has survived, then end the simulation
       if (!any(surv)) break
@@ -351,3 +338,4 @@ cox_samp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
   # .Deprecated(new = "msm_samp", msg = "This function is deprecated, please use msm_samp()")
   msm_samp(n=n, T=T, formulas=formulas, family=family, pars=pars, link=NULL, control=list())
 }
+

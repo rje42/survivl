@@ -1,5 +1,5 @@
 suppressMessages(library(survey))
-n <- 1e3
+n <- 1e4
 
 forms <- list(W ~ 1,
               Z ~ Z_l1 + X_l1,
@@ -20,17 +20,39 @@ dat <- msm_samp(n, T=5, formulas = forms, family = fams, pars = pars,
                 link = link)
 datl <- surv_to_long(dat, lag=1)
 
+## keep W, first set, and then Z,X for t=1
+vars <- c("W", paste0(c("Z","X","Y","Z","X"), "_", c(0,0,0,1,1)))
+dat2 <- dat[vars]
 
 ## first test for static covariates
 set.seed(123)
-n <- 1e4
+dati <- msm_samp(dat=dat2, T=5, formulas = forms, family = fams, pars = pars,
+                link = link)
+datil <- surv_to_long(dati, lag=1)
 
+dati$T[dati$T == 0.5] <- dat$T[dati$T == 0.5]
+mean(dat$T)
+mean(dati$T)
 
-df <- data.frame(C = rnorm(n), Z_1 = rnorm(n),
-                 Z_2 = factor(sample(3, n, replace = TRUE), ordered=TRUE))
+table(dat$status)
+table(dati$status)
+
+table(ceiling(dat$T-1))
+table(ceiling(dati$T-1))
 
 # msm_samp(T=3, formulas=forms, family=fams, pars=pars, dat=df)
 
-test_that("multiplication works", {
-  expect_equal(2 * 2, 4)
+# summary(svyglm(Z ~ Z_l1 + X_l1, design = svydesign(~ 1, data=datl)))
+modZ <- suppressWarnings(summary(svyglm(Z ~ Z_l1 + X_l1, design = svydesign(~ 1, data=datil)))$coefficients)
+modXp <- suppressWarnings(svyglm(X ~ X_l1 + Z, family = binomial, design = svydesign(~ 1, data=datil)))
+ps <- predict(modXp, type="response")
+wt <- datil$X/ps + (1-datil$X)/(1-ps)
+modX <- summary(modXp)$coefficients
+modY <- suppressWarnings(summary(svyglm(I(1-Y) ~ W + X, family = binomial(log), design = svydesign(~ 1, data=datil, weights = wt)))$coefficients)
+
+test_that("plasmode simulation works", {
+  expect_equal(dat[vars], dati[vars])
+  expect_lt(max(abs((modZ[,1] - pars$Z$beta)/modZ[,2])), 2.5)
+  expect_lt(max(abs((modX[,1] - pars$X$beta)/modX[,2])), 2.5)
+  expect_lt(max(abs((-modY[-1,1] - pars$Y$beta[-1])/modY[-1,2])), 2.5)  # intercept is wrong!
 })

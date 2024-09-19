@@ -138,14 +138,13 @@ process_inputs <- function (n, formulas, pars, family, link, dat, T, method, con
 ##' @param dat data frame of pre-generated variables
 ##' @param varC,vars_t character vector of static covariates and stems for dynamic variables
 ##' @param var_order integer giving order for dynamic variables
-##' @param nlevs threshold for treating variable as continuous
 ##' @param start time value to start simulation at
 ##'
 ##' @return A data frame of quantiles, and numbers representing the number of
 ##' time points already fully simulated (`upto`) and the number within the particular
 ##' group that have already been simulated (`vars_sim`).
 ##'
-process_prespecified <- function (dat, varC, vars_t, var_order, nlevs = 10, start=0L) {
+process_prespecified <- function (dat, varC, vars_t, var_order, start=0L) {
 
   n <- nrow(dat)
   pres <- names(dat)
@@ -173,7 +172,7 @@ process_prespecified <- function (dat, varC, vars_t, var_order, nlevs = 10, star
 
     ## check that no intermediate variables are wrongly omitted
     tmp <- setdiff(pres, varC)
-    if (upto - start > 0) tmp <- c(tmp, setdiff(c(outer(X=vars_t, Y=seq(from=start,to=upto-1), FUN = function (X,Y) paste0(X, "_", Y)))))
+    if (upto - start > 0) tmp <- c(tmp, c(outer(X=vars_t, Y=seq(from=start,to=upto-1), FUN = function (X,Y) paste0(X, "_", Y))))
     if (upto + 1 - start > 0) tmp <- c(tmp, paste0(vars_t[var_order <= vars_sim], "_", upto))
 
     if (length(setdiff(pres, c(varC, tmp))) > 0) {
@@ -195,7 +194,7 @@ process_prespecified <- function (dat, varC, vars_t, var_order, nlevs = 10, star
 
   ## extract quantiles for pre-simulated variables
   for (i in seq_along(dat)) {
-    if (!is.factor(dat[[i]]) && (length(table(dat[[i]])) > nlevs)) {
+    if (is.numeric(dat[[i]])) {
       ## for continuous data use rank and break ties at random
       quan <- (rank(dat[[i]], na.last = "keep")-1/2)/n
       if (any(duplicated(quan))) {
@@ -208,8 +207,7 @@ process_prespecified <- function (dat, varC, vars_t, var_order, nlevs = 10, star
       }
       quantiles[[i]] <- quan
     }
-    else if (is.factor(dat[[i]]) ||
-             (is.numeric(dat[[i]]) && (length(table(dat[[i]])) > nlevs))) {
+    else if (is.factor(dat[[i]])) {
       if (is.factor(dat[[i]]) && !is.ordered(dat[[i]])) warning("Using ordering of factor to obtain quantiles, this may not be accurate")
 
       ## similarly for ordered factors

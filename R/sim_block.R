@@ -17,6 +17,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
   d <- lengths(formulas)
 
+  ## compute which part of loop to skip to
   if (!is.na(pvs)) {
     if (pvs >= d[1]) {
       pvs <- pvs - d[1]
