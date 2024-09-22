@@ -44,7 +44,7 @@ process_inputs <- function (n, formulas, pars, family, link, dat, T, method, con
   if (!is.null(dat)) plas_vars <- names(dat)
   else plas_vars <- character(0)
 
-  if (!all(RHS_vars %in% c(plas_vars, unlist(LHSs)))) {
+  if (!all(RHS_vars %in% c(rmv_time(plas_vars), unlist(LHSs)))) {
     wh <- RHS_vars[!RHS_vars %in% unlist(LHSs)]
     wh <- unique.default(wh)
     stop(paste0("Variables ", paste(wh, collapse=", "), " appear on right hand side but are not simulated"))
@@ -77,15 +77,6 @@ process_inputs <- function (n, formulas, pars, family, link, dat, T, method, con
 
   kwd <- control$cop
 
-  ## naive check for number of parameters
-  tmp_input <- curr_inputs(formulas[-1], pars, t=T-1, ordering=ord,
-                           done=c(outer(nms_t, rep(seq_len(T-1)-1-strt), FUN="paste0")),
-                           vars_t = nms_t, kwd = kwd)
-  for (j in seq_along(LHSs)) for (i in seq_along(formulas[[j]])) {
-    npar <- length(tms[[j]][[i]]) + attr(forms[[j]][[i]], "intercept")
-    if (length(pars[[LHSs[[j]][i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHSs[[j]][i], " does not match number of coefficients provided"))
-  }
-
   ## copula related things
   if (method == 'inversion') {
     ## obtain empirical quantiles from any plasmode variables that will appear in copula
@@ -106,8 +97,24 @@ process_inputs <- function (n, formulas, pars, family, link, dat, T, method, con
     }
     else {
       quantiles <- dummy_dat[rep(NA,n),]
+      dat_kp <- character(0)
     }
 
+    ## naive check for number of parameters
+    tmp_input <- curr_inputs(formulas[-1], pars, t=T-1, ordering=ord,
+                             done=c(outer(nms_t, rep(seq_len(T-1)-1-strt), FUN="paste0")),
+                             vars_t = nms_t, kwd = kwd)
+    for (j in seq_along(LHSs)) for (i in seq_along(formulas[[j]])) {
+      ## skip if no simulation will occur
+      if (j == 1) if (LHSs[[j]][[i]] %in% dat_kp) next
+      else {
+        ## time-varying case
+        tv_nm <- paste0(LHSs[[j]][[i]], seq_len(T)-1+strt)
+        if (all(tv_nm %in% dat_kp)) next
+      }
+      npar <- length(tms[[j]][[i]]) + attr(forms[[j]][[i]], "intercept")
+      if (length(pars[[LHSs[[j]][i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHSs[[j]][i], " does not match number of coefficients provided"))
+    }
 
     tmp <- causl::pair_copula_setup(formulas=formulas[[5]], family=family[[5]], pars=pars[[kwd]],
                                      LHSs=LHSs, quans=character(0), ord=ord)
