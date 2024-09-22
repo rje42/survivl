@@ -93,7 +93,9 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   out$status <- 0
 
   if (!datNULL) {
+    to_back <- names(out)
     out[proc_inputs$dat_kp] <- dat[proc_inputs$dat_kp]
+    out <- out[c(proc_inputs$dat_kp, to_back)]
     # out <- cbind(dat, out)
   }
   if (anyDuplicated(na.omit(proc_inputs$vars))) stop("duplicated variable names")
@@ -101,7 +103,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   # if (datNULL) out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(vars_t)), rep(0,n))
   # else out <- cbind(dat, data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(vars_t)), rep(0,n)))
   # names(out) <- vars
-  out$T <- T
+  out$T <- T - con$start_at
 
   ## simulate static covariates
   if (pres_var[1] < con$start_at && pres_var[2] < length(LHS_C)) {
