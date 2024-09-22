@@ -9,9 +9,9 @@
 ##' families are Gaussian (=1), t (=2), Exponential (=3), beta (=4)
 ##' Bernoulli/categorical (=5) and log-normal (=6).
 ##'
-##' Link functions are listed in \code{causl::linksList}.
+##' Link functions are listed in `causl::links_list`.
 ##'
-##' @return Returns a numeric vector of the same length as \code{eta}.
+##' @return Returns a numeric vector of the same length as `eta`.
 ##'
 # ##' @export
 # glm_sim <- function(family, eta, link, phi) {

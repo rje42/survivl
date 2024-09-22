@@ -30,7 +30,7 @@ Possible
 families are Gaussian (=1), t (=2), Exponential (=3), beta (=4)
 Bernoulli/categorical (=5) and log-normal (=6).
 
-Link functions are listed in \code{causl::linksList}.
+Link functions are listed in \code{causl::links_list}.
 }
 \section{Functions}{
 \itemize{
