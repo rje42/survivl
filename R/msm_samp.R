@@ -95,7 +95,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   if (!datNULL) {
     to_back <- names(out)
     out[proc_inputs$dat_kp] <- dat[proc_inputs$dat_kp]
-    out <- out[c(proc_inputs$dat_kp, to_back)]
+    out <- out[unique.default(c(proc_inputs$dat_kp, to_back))]
     # out <- cbind(dat, out)
   }
   if (anyDuplicated(na.omit(proc_inputs$vars))) stop("duplicated variable names")
