@@ -127,7 +127,8 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
 
     for (t in seq_len(T)-1) {
 
-      if (t >= pres_var[1] - con$start_at) {
+      if (t > pres_var[1] - con$start_at ||
+          (t == pres_var[1] - con$start_at && pres_var[2] < length(vars_t))) {
         ## this time point not fully simulated already
         ## function to standardize formulae
         mod_inputs$t <- t

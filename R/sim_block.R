@@ -39,7 +39,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   for (j in 1:2) {
     if (dskip > j) next
     for (i in seq_len(d[j])) {
-      if (dskip == j && pvs >= i) next
+      if (dskip == j && pvs > i) next
       vnm <- vars[i+(j-1)*length(formulas[[1]])]
       if (!all(is.na(out[[vnm]]))) next
       curr_link <- link[[j]][i]
@@ -72,7 +72,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
   ## code to get Y quantiles conditional on different Zs
   for (i in seq_along(formulas[[3]])) {
-    if (dskip == 3 && pvs >= i) next
+    if (dskip == 3 && pvs > i) next
     ## simulate Y variable
     # qY <- runif(n)
     # print(wh)

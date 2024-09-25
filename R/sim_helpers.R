@@ -32,7 +32,7 @@ collect_events <- function (dat, varY, t = 0L, trunc = FALSE) {
     surv <- do.call(pmax, dat[indY]) == 0
     T <- dat$T
     T[!surv] <- t + 0.5
-    event[!surv] <- max.col(-dat[!surv, indY, drop=FALSE])
+    if (any(!surv)) event[!surv] <- max.col(-dat[!surv, indY, drop=FALSE])
   }
 
   dat$T <- T
