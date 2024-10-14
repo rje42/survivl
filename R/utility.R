@@ -143,7 +143,7 @@ surv_to_long <- function(dat, lag=0) {#, formulas) {
   status[Tmax*(seq_len(nrow(dat))-1) + ceiling(dat$T)] <- dat$status
   out$status <- status
 
-  out <- out[!apply(out, 1, function(x) any(is.na(x))),]
+  out <- out[!apply(out, 1, function(x) any(is.na(x[ts]))),]
 
   out$t_stop <- pmin(out$t+1, out$T)
   out2 <- out[setdiff(names(out), c("id","t","t_stop","T","status"))]

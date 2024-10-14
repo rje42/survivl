@@ -1,5 +1,5 @@
 suppressMessages(library(survey))
-n <- 1e4
+n <- 1e5
 
 forms <- list(W ~ 1,
               Z ~ Z_l1 + X_l1,
@@ -31,14 +31,14 @@ dati <- msm_samp(dat=dat2, T=5, formulas = forms, family = fams, pars = pars,
 datil <- surv_to_long(dati, lag=1)
 
 dati$T[dati$T == 0.5] <- dat$T[dati$T == 0.5]
-mean(dat$T)
-mean(dati$T)
-
-table(dat$status)
-table(dati$status)
-
-table(ceiling(dat$T-1))
-table(ceiling(dati$T-1))
+# mean(dat$T)
+# mean(dati$T)
+#
+# table(dat$status)
+# table(dati$status)
+#
+# table(ceiling(dat$T-1))
+# table(ceiling(dati$T-1))
 
 # msm_samp(T=3, formulas=forms, family=fams, pars=pars, dat=df)
 
@@ -48,7 +48,7 @@ modXp <- suppressWarnings(svyglm(X ~ X_l1 + Z, family = binomial, design = svyde
 ps <- predict(modXp, type="response")
 wt <- datil$X/ps + (1-datil$X)/(1-ps)
 modX <- summary(modXp)$coefficients
-modY <- suppressWarnings(summary(svyglm(I(1-Y) ~ W + X, family = binomial(log), design = svydesign(~ 1, data=datil, weights = wt)))$coefficients)
+modY <- suppressWarnings(summary(svyglm(I(1-Y) ~ W + X, family = binomial(log), start = c(-1,1/10,-1/5), design = svydesign(~ 1, data=datil, weights = wt)))$coefficients)
 
 test_that("plasmode simulation works", {
   expect_equal(dat[vars], dati[vars])
