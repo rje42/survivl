@@ -210,7 +210,7 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd, start_a
       tmp <- mod_args(form_copY[[j]], pars_copY[[LHSs[j]]]$beta, t = t, modLHS = TRUE)
       form_copY[[j]] <- tmp$form
       pars_copY[[LHSs[j]]]$beta <- tmp$beta
-      if (!is.null(tmp$form)) {j <- j+1}
+      if (!is.null(tmp$form)) j <- j+1
     }
     formulas[[4]][[LHS]] <- form_copY
     formulas[[4]] <- formulas[[4]][!sapply(formulas[[4]], is.null)]
