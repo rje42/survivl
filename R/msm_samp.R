@@ -393,7 +393,8 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       # for (i in seq_along(ecdfs)) {
       #   us[i] <- ecdfs[[i]](H[i])
       # }
-      us <- (rowSums(empirical_ys < Hs) + 1)/(M + 1) - runif(n, max=1/(M+1))
+      nus <- dim(Hs)[1]
+      us <- (rowSums(empirical_ys < Hs) + 1)/(M + 1) - runif(nus, max=1/(M+1))
 
       # # #options(warn=2, error=recover)
       # # then use empirical cdf to get the quantile
