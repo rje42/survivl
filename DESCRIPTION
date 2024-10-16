@@ -1,7 +1,7 @@
 Package: survivl
 Type: Package
 Title: Package for causal survival simulation and analysis
-Version: 0.3.2.9005
+Version: 0.3.2.9006
 Authors@R: c(
   person("Robin", "Evans", , "evans@stats.ox.ac.uk", role = c("aut", "cre")))
 Description: Uses methods of Young et al. (2009) to simulate from structural
