@@ -107,7 +107,7 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd, start_a
         LHS_lag <- as.numeric(substr(rgx, 3, nchar(rgx)))
         if (LHS_lag > t - start_at) {
           ## CODE TO DROP THIS FORMULA
-          return(list(form=NA, beta=NA))
+          return(list(form=NULL, beta=NULL))
         }
         else {
           LHS_new <- sub("_l([0-9]+)$", paste0("_", t-LHS_lag), LHS)
@@ -205,12 +205,15 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd, start_a
     pars_copY <- pars[[kwd]][[LHS]]
     LHSs <- lhs(form_copY)
 
-    for (j in seq_along(form_copY)) {
+    j <- 1
+    while (j <= length(form_copY)) {
       tmp <- mod_args(form_copY[[j]], pars_copY[[LHSs[j]]]$beta, t = t, modLHS = TRUE)
       form_copY[[j]] <- tmp$form
       pars_copY[[LHSs[j]]]$beta <- tmp$beta
+      if (!is.null(tmp$form)) {j <- j+1}
     }
     formulas[[4]][[LHS]] <- form_copY
+    formulas[[4]] <- formulas[[4]][!sapply(formulas[[4]], is.null)]
     pars[[kwd]][[LHS]] <- pars_copY
   }
 
