@@ -215,8 +215,7 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd, start_a
     }
     formulas[[4]][[LHS]] <- form_copY
     formulas[[4]] <- formulas[[4]][!sapply(formulas[[4]], is.null)]
-    pars[[kwd]][[LHS]] <- Filter(Negate(function(x) length(x) ==
-                                          0), pars_copY)
+    pars[[kwd]][[LHS]] <- pars_copY[lengths(pars_copY) > 0]
   }
 
   ## adjust parameter names
