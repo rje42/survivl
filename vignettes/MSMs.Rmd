@@ -27,8 +27,8 @@ variable, and a single time-varying covariate, treatment and outcome.  More
 specifically, let:
 \begin{align*}
 W &\sim \operatorname{Gamma}(1/2, \, 2)  \\
-Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1} &\sim N(0.7 Z_{t-1} + 0.2 X_t, \, 1)\\
-X_t \mid \overline{Z}_{t}, \overline{X}_{t-1} &\sim \operatorname{Bernoulli}(\operatorname{expit}(0.5 X_t + 0.25 Z_{t-1}))\\ 
+Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1} &\sim N(0.7 Z_{t-1} + 0.2 X_{t-1}, \, 1)\\
+X_t \mid \overline{Z}_{t}, \overline{X}_{t-1} &\sim \operatorname{Bernoulli}(\operatorname{expit}(0.5 X_{t-1} + 0.25 Z_t))\\ 
 P(Y_t = 1 \mid do(\overline{X}_{t}), W) &= \exp\{ - X_t + W/10\},
 \end{align*}
 and assume that there is a Gaussian pair-copula linking $Y_t$ with $Z_{t-1},Z_t$,
