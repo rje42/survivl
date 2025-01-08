@@ -4,7 +4,7 @@
 \alias{msm_samp}
 \alias{coxSamp}
 \alias{cox_samp}
-\title{Simulate from marginal structural survival model}
+\title{Simulate from marginal structural (survival) model}
 \usage{
 msm_samp(
   n,
@@ -45,7 +45,7 @@ cox_samp(n, T, formulas, family, pars, link = NULL, control = list())
 An object of class \code{survivl_dat} containing the simulated data.
 }
 \description{
-Obtain samples from a specified survival-valued marginal structural model,
+Obtain samples from a specified (survival-valued) marginal structural model,
 using the frugal parameterization.
 }
 \details{
@@ -62,6 +62,9 @@ else by using the argument \code{censor} in the \code{control} list.
 
 Times for presimulated events are put at halfway between the two timepoints;
 this is a hack.
+
+Setting the \code{control} argument \code{surv} to be false means that the data is
+just longitudinal.
 }
 \section{Functions}{
 \itemize{

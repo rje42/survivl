@@ -1,6 +1,6 @@
-##' Simulate from marginal structural survival model
+##' Simulate from marginal structural (survival) model
 ##'
-##' Obtain samples from a specified survival-valued marginal structural model,
+##' Obtain samples from a specified (survival-valued) marginal structural model,
 ##' using the frugal parameterization.
 ##'
 ##' @param n number of samples
@@ -27,6 +27,9 @@
 ##' Times for presimulated events are put at halfway between the two timepoints;
 ##' this is a hack.
 ##'
+##' Setting the `control` argument `surv` to be false means that the data is
+##' just longitudinal.
+##'
 ##' @return An object of class `survivl_dat` containing the simulated data.
 ##'
 ##' @importFrom survival Surv
@@ -35,7 +38,7 @@
 msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
                       method="inversion", control=list()) {
 
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0)
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", surv=TRUE, start_at=0)
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",
@@ -151,22 +154,27 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
         tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
         out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
 
-        ## establish which survivors had events, and record
-        tmp <- collect_events(dat=out[surv,], varY=LHS_Y, t=t)
+        if (control$surv) {
+          ## establish which survivors had events, and record
+          tmp <- collect_events(dat=out[surv,], varY=LHS_Y, t=t)
+        }
       }
-      else {
+      else if (control$surv) {
         ## fully simulated already, so just get results
         ## establish which survivors had events, and record
+        ## (CHECK THIS IS OK FOR LONGITUDINAL CASE)
         tmp <- collect_events(dat=out[surv,], varY=LHS_Y, t=t, trunc=TRUE)
       }
 
-      out[surv,] <- tmp$dat
+      if (control$surv) {
+        out[surv,] <- tmp$dat
 
-      ## update list of survivors
-      surv[surv] <- surv[surv] & tmp$surv
+        ## update list of survivors
+        surv[surv] <- surv[surv] & tmp$surv
 
-      ## if no-one has survived, then end the simulation
-      if (!any(surv)) break
+        ## if no-one has survived, then end the simulation
+        if (!any(surv)) break
+      }
     }
   }
   else if (method == "rejection") {
