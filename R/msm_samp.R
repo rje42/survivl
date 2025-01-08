@@ -1,6 +1,6 @@
-##' Simulate from marginal structural survival model
+##' Simulate from marginal structural (survival) model
 ##'
-##' Obtain samples from a specified survival-valued marginal structural model,
+##' Obtain samples from a specified (survival-valued) marginal structural model,
 ##' using the frugal parameterization.
 ##'
 ##' @param n number of samples
@@ -35,7 +35,7 @@
 msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
                       method="inversion", control=list()) {
 
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0)
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", surv=TRUE, start_at=0)
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",

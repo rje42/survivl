@@ -124,10 +124,12 @@ process_inputs <- function (n, formulas, pars, family, link, dat, T, method, con
   }
   else if (!is.null(dat)) stop("Prespecified variables require the 'inversion' method")
 
-  ## check that outcomes are OK for time-to-event
-  if (any(!is_surv_outcome(family[[4]]))) {
-    whn <- which(!is_surv_outcome(family[[4]]))[1]
-    stop(paste0("outcome '", LHSs[[4]][whn], "' must be of survival type (non-negative and continuous)"))
+  ## if a survival model, check that outcomes are OK for time-to-event
+  if (control$surv) {
+    if (any(!is_surv_outcome(family[[4]]))) {
+      whn <- which(!is_surv_outcome(family[[4]]))[1]
+      stop(paste0("outcome '", LHSs[[4]][whn], "' must be of survival type (non-negative and continuous)"))
+    }
   }
 
   if (!exists("quantiles")) quantiles <- data.frame(V1=rep(NA,n))[integer(0)]
@@ -339,18 +341,42 @@ var_order <- function (formulas, nms_t, LHSs, dims) {
 
   d_C <- dims[-1]
 
-  for (j in 2:4) for (i in seq_along(LHSs[[j]])) {
-    tab <- std_form[[j-1]][[i]]
-    A[sum(d_C[seq_len(j-2)]) + i, ] <- 1*(nms_t %in% tab$var[tab$lag == 0])
+  for (j in 2:4) {
+    for (i in seq_along(LHSs[[j]])) {
+      tab <- std_form[[j-1]][[i]]
+      A[sum(d_C[seq_len(j-2)]) + i, ] <- 1*(nms_t %in% tab$var[tab$lag == 0])
+    }
   }
 
   ## get appropriate ordering
-  ord <- causl:::topOrd(A)
+  ord <- top_ord(A[seq_len(dims[2]), seq_len(dims[2]), drop=FALSE])
+  ord <- c(ord, dims[2] + top_ord(A[dims[2] + seq_len(dims[3]), dims[2] + seq_len(dims[3]), drop=FALSE]))
+  ord <- c(ord, sum(dims[2:3]) + top_ord(A[sum(dims[2:3]) + seq_len(dims[4]), sum(dims[2:3]) + seq_len(dims[4]), drop=FALSE]))
+  # ord <- causl:::topOrd(A)
 
   if (any(is.na(ord))) stop("Cyclic dependence in formulae provided")
 
   return(list(ordering=ord, std_form=std_form))
 }
+
+## Get topological order from an adjacency matrix
+top_ord <- function (A) {
+  ord <- integer(0)
+  actv <- seq_len(nrow(A))
+
+  while(length(actv) > 0) {
+    npa <- rowSums(A[actv,,drop=FALSE])
+    wh0 <- which(npa == 0)
+
+    if (length(wh0) == 0) return(NA)
+    ord <- c(ord, actv[wh0])
+    A[,actv[wh0]] <- 0
+    actv <- actv[-wh0]
+  }
+
+  ord
+}
+
 
 ##' @importFrom causl gen_dummy_dat pair_copula_setup check_pars
 NULL
