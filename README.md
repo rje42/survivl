@@ -44,7 +44,7 @@ set $X_{L} \mid Z_{L}, C \sim \text{Bern}\left(\text{expit}(Z_{L}/2 + C/10)\righ
 
 
 
-Then, we can set $Y_{L} \mid do(X_{L}), C \sim \text{Exp}\left(\left(0.05 + 0.5 X_{L} + 0.05 C\right)^{-1}\right)$.
+Then, we can set $T_{L} \mid do(X_{L}), C \sim \text{Exp}\left(\left(0.05 + 0.5 X_{L} + 0.05 C\right)^{-1}\right)$ be the time and let $Y_l \mid do(X_{L}), C = \mathbf{1}(T_L > 1)$.
 
 Finally, we set a Gaussian copula between $Y_L, Z_L$ to have correlation $0.4 = 2 \text{expit}(0.847) - 1$
 You can simulate from the graph for 20 time steps as follows:
