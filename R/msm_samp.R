@@ -112,7 +112,12 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   # var_nms_Y <- tmp$var_nms_Y
   # var_nms_cop <- tmp$var_nms_cop
 
-  qtls <- out[integer(0)]  # data frame of quantiles
+  qtls <- out[TRUE,]  # data frame of quantiles
+  # add Y_L quantiles
+  for (t in 0:T) {
+    qtls[[paste0("Y_L_", t)]] <- NA
+  }
+  
 
   ## simulate static covariates
 
@@ -122,7 +127,8 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
     tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
                           other_pars=pars[[LHS_C[[i]]]], link=link[[1]][i])
     out[[LHS_C[[i]]]] <- tmp
-    qtls[[LHS_C[[i]]]] <- attr(tmp, "quantiles")
+    qtls[[LHS_C[[i]]]] <- attr(tmp, "quantile")
+
   }
 
   surv <- rep(TRUE, nrow(out))
