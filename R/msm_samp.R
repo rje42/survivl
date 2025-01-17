@@ -20,11 +20,11 @@
 ##' confounders and treatments, and then a copula to join the distribution
 ##' of the outcome to that of the confounders.
 ##'
-##' Among the left-hand sides of outcome variables, the variable `Cen` has a
+##' Among the left-hand sides of outcome variables, the variable 'Cen' has a
 ##' special meaning as censoring.  This keyword can be changed to something
-##' else by using the argument `censor` in the `control` list.
+##' else by using the argument \code{censor} in the \code{control} list.
 ##'
-##' @return An object of class `survivl_dat` containing the simulated data.
+##' @return An object of class \code{survivl_dat} containing the simulated data.
 ##'
 ##' @importFrom survival Surv
 ##'
@@ -32,16 +32,7 @@
 msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
                       method="inversion", control=list()) {
 
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen",
-             start_at=0,
-             risk_h = function(row) {
-               treat <- row[1]; background <- row[2]; time_vary <- row[3];
-               mean <- sum(treat) + sum(background) + sum(time_vary);
-               mean
-             },
-             # eps = 0.05,
-             bootsims = 5e3 - 1)
-
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0)
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",
@@ -112,22 +103,20 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   # var_nms_Y <- tmp$var_nms_Y
   # var_nms_cop <- tmp$var_nms_cop
 
-  qtls <- out[TRUE,]  # data frame of quantiles
-  # add Y_L quantiles
-  for (t in 0:T) {
-    qtls[[paste0("Y_L_", t)]] <- NA
-  }
-  
+
 
   ## simulate static covariates
-
+  baseline_vars <- unlist(LHS_C)
   for (i in seq_along(LHS_C)) {
     ## now compute etas
     eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
     tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
                           other_pars=pars[[LHS_C[[i]]]], link=link[[1]][i])
     out[[LHS_C[[i]]]] <- tmp
-    qtls[[LHS_C[[i]]]] <- attr(tmp, "quantile")
+    library(tibble)
+    library(dplyr)
+    qtls <- as_tibble(attr(tmp, "quantile"))
+    colnames(qtls) <- LHS_C[[i]]
 
   }
 
@@ -158,8 +147,25 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       done <- c(done, paste0(vars_t, "_", t))
 
       ## use sim_inversion()
-      tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
-      out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
+      # setnames(qtls,
+      #          old = names(qtls)[grepl(t-1, names(qtls))],
+      #          new = paste0(names(qtls)[grepl(t-1, names(qtls))], "_prev"))
+
+      if(t > 0){
+        if(t > 1){
+          qtls <- dplyr::select(qtls, -contains("prev"))
+        }
+        colnames(qtls)[2:ncol(qtls)] <- sapply(colnames(qtls)[2:ncol(qtls)], function(z) paste0(z,"_prev"))
+
+      }
+      tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,, drop = FALSE], kwd=kwd)
+      out[surv, ] <- tmp$dat
+      for(name in names(tmp$quantiles)){
+        qtls[surv, name] <- tmp$quantiles[[name]]
+      }
+
+
+
 
       ## determine if the individual had an event
       indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
@@ -170,6 +176,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
         surv_this <- apply(out[surv, indYt] > 1, 1, all)
       }
       ## get time of event and which one
+
       out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
       wh_fail <- max.col(-out[surv,][!surv_this, indYt, drop=FALSE])
       out$status[surv][!surv_this] <- wh_fail - (censoring)
@@ -187,6 +194,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       if (!any(surv)) break
     }
   }
+
   else if (method == "rejection") {
     ## simulate time-varying covariates and survival
     for (t in seq_len(T)) {
@@ -303,145 +311,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       # out[[var]][!is.na(out[[var]])] <- 1*(out[[var]][!is.na(out[[var]])] > 1)
     }
   }
-  else if (method == "bootstrap") {
-    mod_inputs <- modify_inputs(proc_inputs)
-    formulas <- mod_inputs$formulas
-    done <- unlist(LHS_C)
-
-    riskH <- con$risk_h
-    # eps <- con$eps
-    M <- con$bootsims
-    rho <- unlist(proc_inputs$pars$cop)
-    rho <- 2 * rje::expit(rho) - 1
-
-    for (t in seq_len(T)-1) {
-      ## function to standardize formulae
-      mod_inputs$t <- t
-      cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
-                          done=done, t=t, vars_t=vars_t, kwd=kwd)
-      mod_inputs$formulas <- cinp$formulas
-
-      mod_inputs$pars <- cinp$pars
-
-      mod2 <- modify_LHSs(mod_inputs, t=t)
-      done <- c(done, paste0(vars_t, "_", t))
-
-      ## simulate A_l, Z_l
-      tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
-      out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
-
-      # generate probabilites for Y_0
-      lambda <- unlist(mod_inputs$pars[[paste0("Y_", t)]]$beta)
-      sub_out <- out[surv,]
-      n_surv <- nrow(sub_out)
-      covariates <- cbind(sub_out[[paste0("X_", t)]], sub_out[['C']])
-      g_t <- exp(-cbind(1,covariates) %*% lambda)
-      # g_t[which(g_t <= 0)] <- eps
-      # g_t[which(g_t >= 1)] <- 1 -eps
-
-      # get scalar H
-      covariates_0 <- cbind(sub_out[[paste0("X_", t)]], sub_out[['C']], sub_out[[paste0("Z_",t)]])
-      H <- apply(covariates_0, 1, riskH)
-
-      ## simulate M times
-
-      ### First get the current model matrix:
-      ## unpack mod_inputs
-      vars <- paste0(mod_inputs$vars_t, "_", mod_inputs$t)
-      d <- lengths(mod_inputs$formulas)
-      MMs <- list(list(), list())
-
-      ## simulate covariates and treatments
-      for (j in 1:2) for (i in seq_len(d[j])) {
-        vnm <- vars[i+(j-1)*length(formulas[[1]])]
-        curr_link <-  mod_inputs$link[[j]][i]
-
-        curr_form <- mod_inputs$formulas[[j]][[i]]
-        curr_fam <-  mod_inputs$family[[j]][[i]]
-
-        trm <- terms(curr_form)
-
-        MM <- model.matrix(delete.response(trm), data=out[surv,])
-        MMs[[j]][[i]] <- MM
-
-        if (nrow(MM) != nrow(out[surv,])) {
-          if (length(attr(trm, "factors")) == 0) {
-            if (attr(trm, "intercept") == 1) MM <- matrix(1, nrow=nrow(out), ncol=1)
-            else MM <- matrix(0, nrow=nrow(out), ncol=0)
-          }
-          else warning(paste0("Missing entries for ", vnm))
-        }
-      }
-
-      ## simulate M times
-      empirical_ys <- matrix(NA, nrow=n_surv, ncol=M)
-
-      if (verbose) cat("Bootstrap iteration: ")
-      for(j in seq_len(M)) {
-        tmp_j <- boot_sim(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd, MMs)
-        dat <- tmp_j$dat
-
-        covariates_j <- cbind(dat[[paste0("X_", t)]] ,dat[['C']], dat[[paste0("Z_",t)]])
-        H_j <- apply(covariates_j, 1, riskH)
-        empirical_ys[,j] <- H_j
-        if (verbose) printCount(j, first=1, last=M)
-      }
-
-      Hs <- matrix(H, nrow=n_surv, ncol=M)
-
-      # empirical_ys <- data.frame(empirical_ys)
-      # colnames(empirical_ys) <- seq_len(M)
-
-      # ecdfs <- apply(empirical_ys, 1, function(x) ecdf(x))
-
-      # # apply ith ecdf to ith entry of H
-      # us <- numeric(length(ecdfs))
-      # for (i in seq_along(ecdfs)) {
-      #   us[i] <- ecdfs[[i]](H[i])
-      # }
-      nus <- dim(Hs)[1]
-      us <- (rowSums(empirical_ys < Hs) + 1)/(M + 1) - runif(nus, max=1/(M+1))
-
-      # # #options(warn=2, error=recover)
-      # # then use empirical cdf to get the quantile
-      # # truncate if above or below
-      # us[which(us >= 1)] <- 1-eps
-      # us[which(us <= 0)] <- eps
-
-      # now with quantile and correlation coef, use copula, to get probability
-      probs <- pnorm((qnorm(g_t) - rho * qnorm(us)) / (1 - rho^2))
-
-      # now with probability, can sample next value
-      y_k1 <- rbinom(length(probs), 1, probs)
-      # y_k1 <- sapply(probs, function(x) rbinom(1, 1, x))
-      tmp$dat[[paste0("Y_", t)]] <- y_k1
-      out[surv,] <- tmp$dat
-
-      ## determine if the individual had an event
-      indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
-      if (dY == 1) {
-        surv_this <- out[surv, indYt] == 0
-      }
-      else {
-        surv_this <- apply(out[surv, indYt] == 0, 1, all)
-      }
-      ## get time of event and which one
-      out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
-      wh_fail <- max.col(-out[surv,][!surv_this, indYt, drop=FALSE])
-      out$status[surv][!surv_this] <- wh_fail - (censoring)
-
-      ## record 0 for intervals survived/censored, and i for failure due to ith competing risk
-      out[surv, indYt] <- 0L
-      out[cbind(which(surv)[!surv_this], indYt[wh_fail])] <- 1L
-
-      ## update list of survivors
-      surv[surv] <- surv[surv] & surv_this
-
-      ## if no-one has survived, then end the simulation
-      if (!any(surv)) break
-    }
-  }
-  else stop("'method' should be \"inversion\", \"bootstrap\", or \"rejection\"")
+  else stop("'method' should be \"inversion\" or \"rejection\"")
 
 #   # cum_haz <- rep(0, n)
 #   Y_res <- out[[LHS_Y]]
@@ -477,7 +347,6 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
 #
 #     # cum_haz <- cum_haz + exp(gam_aft)
 #   }
-
   out <- cbind(id=seq_len(nrow(out)), out)
   # out$status <- 1*surv
   class(out) <- c("survivl_dat", "data.frame")
