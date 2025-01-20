@@ -45,7 +45,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
           L_col_insert <- paste0("L_",k-j)
           Y_col <- paste0("Y","_prev")
 
-          qs <- as.matrix(cbind(quantiles[[L_col]], quantiles[[Y_col]]))
+          qs <- as.matrix(cbind(quantiles[[Y_col]],quantiles[[L_col]]))
           quantiles[[L_col_insert]] <- compute_copula_quantiles(qs, family, pars, i, FALSE)
 
         }
