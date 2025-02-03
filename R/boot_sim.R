@@ -1,6 +1,7 @@
 ##' @importFrom causl sim_variable
 ##' @importFrom causl `lhs<-`
 ##' @param MMs all the Model Matrices passed as arguments in a list.
+##' @export
 boot_sim <- function (out, proc_inputs, quantiles, kwd, MMs) {
 
   formulas <- proc_inputs$formulas

@@ -39,19 +39,19 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
                           other_pars=pars[[vnm]])
     out[[vnm]] <- tmp
     quantiles[[vnm]] <- attr(tmp, "quantile")
-    ## just for recreating XI experiment can fix more later
-
-    if(proc_inputs$t == 0 & (vnm == "Z1_0" || vnm == "Z2_0" || vnm == "A_0")){
-      quantiles[["Z1_0"]] = runif(nrow(out))
-      out[["Z1_0"]] = qnorm(quantiles[["Z1_0"]], 0.2*out$X1, sd = 1)
-      quantiles[["Z2|Z1_0"]] = runif(nrow(out))
-      out[["Z2_0"]] = qbinom(quantiles[["Z2|Z1_0"]], 1, expit(-0.2 + 0.4 * out$X2))
-      quantiles[["A_0"]] = runif(nrow(out))
-      out[["A_0"]] = qbinom(quantiles[["A_0"]], 1, expit(-1 + 0.1 * out$X1 + 0.15*
-                                                           + out$X2 + 0.1*out$B1 + 0.3*out[["Z1_0"]] + 0.3* out[["Z2_0"]]))
-      # quantiles[["Z3|Z1Z2_0"]] = runif(nrow(out))
-      # out[["Z3_0"]] = qbinom(quantiles[["Z3|Z1Z2_0"]], 1, expit(-0.2 + 0.4 * out$X1))
-    }
+    # ## just for recreating XI experiment can fix more later
+# 
+    # if(proc_inputs$t == 0 & (vnm == "Z1_0" || vnm == "Z2_0" || vnm == "A_0")){
+    #   quantiles[["Z1_0"]] = runif(nrow(out))
+    #   out[["Z1_0"]] = qnorm(quantiles[["Z1_0"]], 0.2*out$X1, sd = 1)
+    #   quantiles[["Z2|Z1_0"]] = runif(nrow(out))
+    #   out[["Z2_0"]] = qbinom(quantiles[["Z2|Z1_0"]], 1, expit(-0.2 + 0.4 * out$X2))
+    #   quantiles[["A_0"]] = runif(nrow(out))
+    #   out[["A_0"]] = qbinom(quantiles[["A_0"]], 1, expit(-1 + 0.1 * out$X1 + 0.15*
+    #                                                        + out$X2 + 0.1*out$B1 + 0.3*out[["Z1_0"]] + 0.3* out[["Z2_0"]]))
+    #   # quantiles[["Z3|Z1Z2_0"]] = runif(nrow(out))
+    #   # out[["Z3_0"]] = qbinom(quantiles[["Z3|Z1Z2_0"]], 1, expit(-0.2 + 0.4 * out$X1))
+    # }
   }
 
 
