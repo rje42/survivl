@@ -195,7 +195,6 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
     frm <- formulas[[wh]][[i2]]
     LHS <- lhs(frm)
     prs <- pars[[LHS]]$beta
-
     tmp <- mod_args(frm, prs, t = t, modLHS = TRUE)
     formulas[[wh]][[i2]] <- tmp$form
     pars[[LHS]]$beta <- tmp$beta

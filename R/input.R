@@ -15,7 +15,7 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   for (i in 1:5) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
 
   ## check for censoring
-  cens <- check_censoring (formulas[[4]], pars, cns_kwd = control$censor)
+  cens <- check_censoring(formulas[[4]], pars, cns_kwd = control$censor)
   censoring <- cens$censoring
   if (censoring) {
     formulas[[4]] <- cens$formulas
@@ -79,7 +79,7 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   ## copula related things
   kwd <- control$cop
 
-  if (method == 'inversion') {
+  if (method == 'inversion' || method == 'bootstrap') {
 
     tmp <- causl::pair_copula_setup(formulas=formulas[[5]], family=family[[5]], pars=pars[[kwd]],
                                      LHSs=LHSs, quans=character(0), ord=ord)
