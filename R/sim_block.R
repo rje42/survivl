@@ -1,9 +1,7 @@
 ##' @importFrom causl sim_variable
 ##' @importFrom causl `lhs<-`
 ##' @importFrom rje printCount expit
-
 sim_block <- function (out, proc_inputs, quantiles, kwd) {
-
   ## unpack proc_inputs
   formulas <- proc_inputs$formulas
   pars <- proc_inputs$pars
@@ -14,7 +12,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   # famZ <- proc_inputs$family[[1]]; famX <- proc_inputs$family[[2]]; famY <- proc_inputs$family[[3]]; famCop <- proc_inputs$family[[4]]
 
   vars <- paste0(proc_inputs$vars_t, "_", proc_inputs$t)
-
+  time_vars <- proc_inputs$vars_t[1:dZ]
   d <- lengths(formulas)
 
   ## simulate covariates and treatments
@@ -41,13 +39,41 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
                           other_pars=pars[[vnm]])
     out[[vnm]] <- tmp
     quantiles[[vnm]] <- attr(tmp, "quantile")
+    ## just for recreating XI experiment can fix more later
+
+    if(proc_inputs$t == 0 & (vnm == "Z1_0" || vnm == "Z2_0" || vnm == "A_0")){
+      quantiles[["Z1_0"]] = runif(nrow(out))
+      out[["Z1_0"]] = qnorm(quantiles[["Z1_0"]], 0.2*out$X1, sd = 1)
+      quantiles[["Z2|Z1_0"]] = runif(nrow(out))
+      out[["Z2_0"]] = qbinom(quantiles[["Z2|Z1_0"]], 1, expit(-0.2 + 0.4 * out$X2))
+      quantiles[["A_0"]] = runif(nrow(out))
+      out[["A_0"]] = qbinom(quantiles[["A_0"]], 1, expit(-1 + 0.1 * out$X1 + 0.15*
+                                                           + out$X2 + 0.1*out$B1 + 0.3*out[["Z1_0"]] + 0.3* out[["Z2_0"]]))
+      # quantiles[["Z3|Z1Z2_0"]] = runif(nrow(out))
+      # out[["Z3_0"]] = qbinom(quantiles[["Z3|Z1Z2_0"]], 1, expit(-0.2 + 0.4 * out$X1))
+    }
   }
+
+
 
   vnm <- lhs(formulas[[3]])
   vnm_stm <- rmv_time(vnm)
   # vnm_t <- paste0(vnm, "_", proc_inputs$t)
+  k = proc_inputs$t
+  print(k)
+
+  quantiles[[paste0("Y|", paste0(time_vars, collapse = ""), "_", k)]] = runif(nrow(out))
+  if(k > 0){
+    for(i in length(time_vars):2){
+      insert_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k)
+      quantiles[[insert_col]] <- runif(nrow(out))
+    }
+    quantiles[[paste0(time_vars[1], "_", k)]] <- runif(nrow(out))
+  }
+
 
   ## code to get Y quantiles conditional on different Zs
+
   for (i in seq_along(formulas[[3]])) {
     ## simulate Y variable
     # qY <- runif(n)
@@ -59,12 +85,18 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     if (!is.null(prs[[1]]$lambda0)) prs[[1]]$phi <- 1 #prs[[1]]$phi <- prs[[1]]$lambda0
     lnk <- list(link[[3]][i], list()) # link[[4]][[i]])
 
-    out <- causl::sim_variable(nrow(out), forms, fams, prs, lnk,
-                               dat=out, quantiles=quantiles)
+    cop_pars <- pars[grepl("^cop", names(pars))]
+    cop_pars[["doPar"]] <- pars[[vnm[i]]]
+
+    out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
+                                 dat = out, quantiles=quantiles)
+    # out <- causl::sim_variable(nrow(out), forms, fams, prs, lnk,
+    #                            dat=out, quantiles=quantiles)
     quantiles <- attr(out, "quantiles")
     attr(out, "quantiles") <- NULL
 
   }
+
 
   return(list(dat=out, quantiles=quantiles))
 }
