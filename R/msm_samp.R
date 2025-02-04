@@ -103,16 +103,21 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   # var_nms_Y <- tmp$var_nms_Y
   # var_nms_cop <- tmp$var_nms_cop
 
-  qtls <- out[integer(0)]  # data frame of quantiles
+
 
   ## simulate static covariates
+  baseline_vars <- unlist(LHS_C)
   for (i in seq_along(LHS_C)) {
     ## now compute etas
     eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
     tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
                           other_pars=pars[[LHS_C[[i]]]], link=link[[1]][i])
     out[[LHS_C[[i]]]] <- tmp
-    qtls[[LHS_C[[i]]]] <- attr(tmp, "quantiles")
+    library(tibble)
+    library(dplyr)
+    qtls <- as_tibble(attr(tmp, "quantile"))
+    colnames(qtls) <- LHS_C[[i]]
+
   }
 
   surv <- rep(TRUE, nrow(out))
@@ -142,8 +147,25 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       done <- c(done, paste0(vars_t, "_", t))
 
       ## use sim_inversion()
-      tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
-      out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
+      # setnames(qtls,
+      #          old = names(qtls)[grepl(t-1, names(qtls))],
+      #          new = paste0(names(qtls)[grepl(t-1, names(qtls))], "_prev"))
+
+      if(t > 0){
+        if(t > 1){
+          qtls <- dplyr::select(qtls, -contains("prev"))
+        }
+        colnames(qtls)[2:ncol(qtls)] <- sapply(colnames(qtls)[2:ncol(qtls)], function(z) paste0(z,"_prev"))
+
+      }
+      tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,, drop = FALSE], kwd=kwd)
+      out[surv, ] <- tmp$dat
+      for(name in names(tmp$quantiles)){
+        qtls[surv, name] <- tmp$quantiles[[name]]
+      }
+
+
+
 
       ## determine if the individual had an event
       indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
@@ -154,6 +176,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
         surv_this <- apply(out[surv, indYt] > 1, 1, all)
       }
       ## get time of event and which one
+
       out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
       wh_fail <- max.col(-out[surv,][!surv_this, indYt, drop=FALSE])
       out$status[surv][!surv_this] <- wh_fail - (censoring)
@@ -171,6 +194,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       if (!any(surv)) break
     }
   }
+
   else if (method == "rejection") {
     ## simulate time-varying covariates and survival
     for (t in seq_len(T)) {
@@ -323,7 +347,6 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
 #
 #     # cum_haz <- cum_haz + exp(gam_aft)
 #   }
-
   out <- cbind(id=seq_len(nrow(out)), out)
   # out$status <- 1*surv
   class(out) <- c("survivl_dat", "data.frame")
