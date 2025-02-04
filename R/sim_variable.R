@@ -36,22 +36,23 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
         if (j<k){
 
           for(i in p:2){
-            L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j, "_prev")
             Y_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""),
                            "_", k-j, "_", time_vars[i],"_", k-j-1, "_prev")
-
+            L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j, "_prev")
             qs <- cbind(
-              quantiles[[L_col]],
-              quantiles[[Y_col]]
+              quantiles[[Y_col]],
+              quantiles[[L_col]]
             )
             insert_col = gsub("_prev", "", L_col)
             quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
                                                                 pars, i, inv = F)
-
           }
+          Y_col = paste0("Y|", paste0(time_vars, collapse = ""), "_", k-j-1, "_prev")
           L_col = paste0(time_vars[1], "_",k-j,"_prev")
-          Y_col = paste0("Y|", paste0(time_vars, collapse = ""), "_", k-j, "_prev")
-          qs <- cbind(quantiles[[L_col]], quantiles[[Y_col]])
+          qs <- cbind(
+            quantiles[[Y_col]],
+            quantiles[[L_col]]
+          )
           insert_col = gsub("_prev", "", L_col)
           quantiles[[insert_col]] <- compute_copula_quantiles(qs, family, pars, 1, F)
 
@@ -61,17 +62,19 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
             L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
             Y_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
             qs <- cbind(
-              quantiles[[L_col]],
-              quantiles[[Y_col]]
+              quantiles[[Y_col]],
+              quantiles[[L_col]]
             )
             insert_col = gsub("_prev", "", L_col)
             quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
                                                                 pars, i, inv = F)
-
           }
           L_col = paste0(time_vars[1], "_0_prev")
           Y_col = "Y_prev"
-          qs <- cbind(quantiles[[L_col]], quantiles[[Y_col]])
+          qs <- cbind(
+            quantiles[[Y_col]],
+            quantiles[[L_col]]
+          )
           insert_col = gsub("_prev", "", L_col)
           quantiles[[insert_col]] <- compute_copula_quantiles(qs, family, pars, 1, F)
 
@@ -123,9 +126,10 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
         Y_col <- insert_col
         insert_col <- "Y"
         ## rescale quantiles for pair-copula
-        qs <-
-          cbind(quantiles[[L_col]],
-                quantiles[[Y_col]])
+        qs <- cbind(
+          quantiles[[L_col]],
+          quantiles[[Y_col]]
+          )
         qY <- compute_copula_quantiles(qs, family, pars, 1, inv = T)
         quantiles[[insert_col]] <- qY
 
@@ -145,7 +149,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
   return(dat)
 }
 
-
+##' @importFrom copula cCopula
 compute_copula_quantiles <- function(qs, family, pars, i, inv) {
 
   library(copula)
@@ -163,9 +167,10 @@ compute_copula_quantiles <- function(qs, family, pars, i, inv) {
 
   fam <- family[[2]][[i]]
   beta <- pars[[i]]$beta
+  par2 = pars[[i]]$par2
   beta <- 2 * expit(beta) - 1
   if (fam >= 1 && fam <= 6) {
-    qY <- copula_functions[[fam]](qs, beta, par2 = 5, inv)
+    qY <- copula_functions[[fam]](qs, beta, par2 = par2, inv)
   } else {
     stop("family must be between 0 and 5")
   }
