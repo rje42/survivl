@@ -5,6 +5,7 @@
 ##'
 ##' @param n number of samples
 ##' @param dat optional data frame for plasmode simulation
+##' @param qtls associated quantiles from dat for plasmode simulation
 ##' @param T number of time points
 ##' @param formulas list of formulas to use
 ##' @param family list of families to use
@@ -29,7 +30,7 @@
 ##' @importFrom survival Surv
 ##'
 ##' @export
-msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
+msm_samp <- function (n, dat=NULL,qtls = NULL, T, formulas, family, pars, link=NULL,
                       method="inversion", control=list()) {
 
   con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0)
@@ -85,7 +86,11 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
   out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(vars_t)), rep(0,n))
   names(out) <- vars
   out$T <- T
-
+  # any columns that are in dat want to fill in new variable out
+  # Copy matching columns from dat to out
+  if(!datNULL){
+    out[, intersect(colnames(out), colnames(dat))] <- dat[, intersect(colnames(out), colnames(dat))]
+  }
   # RHS_Z <- causl::rhs_vars(formulas[[2]])
   # RHS_X <- causl::rhs_vars(formulas[[3]])
 
@@ -107,20 +112,23 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
 
   ## simulate static covariates
   baseline_vars <- unlist(LHS_C)
-  for (i in seq_along(LHS_C)) {
-    ## now compute etas
-    eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
-    tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
-                          other_pars=pars[[LHS_C[[i]]]], link=link[[1]][i])
-    out[[LHS_C[[i]]]] <- tmp
-    library(tibble)
-    library(dplyr)
-    qtls <- as_tibble(attr(tmp, "quantile"))
-    colnames(qtls) <- LHS_C[[i]]
-
+  if(datNULL){
+    for (i in seq_along(LHS_C)) {
+      ## now compute etas
+      eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
+      tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
+                            other_pars=pars[[LHS_C[[i]]]], link=link[[1]][i])
+      out[[LHS_C[[i]]]] <- tmp
+      library(tibble)
+      library(dplyr)
+      qtls <- as_tibble(attr(tmp, "quantile"))
+      colnames(qtls) <- LHS_C[[i]]
+    }
   }
 
   surv <- rep(TRUE, nrow(out))
+
+
 
   if (method == "inversion") {
     mod_inputs <- modify_inputs(proc_inputs)
@@ -150,15 +158,15 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
       # setnames(qtls,
       #          old = names(qtls)[grepl(t-1, names(qtls))],
       #          new = paste0(names(qtls)[grepl(t-1, names(qtls))], "_prev"))
-
       if(t > 0){
         if(t > 1){
           qtls <- dplyr::select(qtls, -contains("prev"))
         }
         colnames(qtls)[2:ncol(qtls)] <- sapply(colnames(qtls)[2:ncol(qtls)], function(z) paste0(z,"_prev"))
-
       }
+
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,, drop = FALSE], kwd=kwd)
+
       out[surv, ] <- tmp$dat
       for(name in names(tmp$quantiles)){
         qtls[surv, name] <- tmp$quantiles[[name]]

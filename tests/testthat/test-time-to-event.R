@@ -14,6 +14,21 @@ rho_to_beta <- function(rho){
 }
 
 
+n <- 1e5
+qtls <- data.frame(X1 = runif(n), X2 = runif(n), B1 = runif(n), B2 = runif(n),
+                   Z1_0 = runif(n), A_0 = runif(n))
+qtls[["Z2|Z1_0"]] = runif(n)
+
+dat <- data.frame(X1=qnorm(qtls$X1,mean = 0, sd = 1),
+                  X2 = qbinom(qtls$X2, size = 1, prob = 0.5))
+dat$B1 <- qnorm(qtls$B1, 0.4*dat$X2 -0.2, sd = 1)
+dat$B2 <- qnorm(qtls$B2, 0.2*dat$X1, sd = 1)
+
+dat[["Z1_0"]] <- qnorm(qtls[["Z1_0"]], 0.2*dat$X1, sd = 1)
+dat[["Z2_0"]] <- qbinom(qtls[["Z2|Z1_0"]], 1, expit(-0.2 + 0.4 * dat$X2))
+dat[["A_0"]] = qbinom(qtls[["A_0"]], 1, expit(-1 + 0.1 * dat$X1 + 0.15*dat$X2 + 0.1*dat$B1 + 0.3*dat[["Z1_0"]] + 0.3* dat[["Z2_0"]]))
+
+
 
 formulas <- list(list(X1 ~ 1, X2 ~ 1,B1 ~ X2, B2 ~ X1),
                  list(Z1 ~  B2 + Z1_l1 + A_l1, Z2 ~ B2 + Z2_l1 + A_l1),
@@ -38,7 +53,7 @@ pars <- list(X1 = list(beta = 0, phi = 1),
              copZ1 = list(beta= rho_to_beta(-0.6), par2 = 5),
              copZ2 = list(beta = rho_to_beta(0.2), par2 = 5))
 
-dat <- msm_samp(n=1e5, T = 10,
+dat2 <- msm_samp(T = 10,dat = dat, qtls = qtls,
                 formulas = formulas,
                 family = family,
                 pars = pars,

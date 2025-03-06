@@ -18,6 +18,9 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   ## simulate covariates and treatments
   for (j in 1:2) for (i in seq_len(d[j])) {
     vnm_q <- vnm <- vars[i+(j-1)*length(formulas[[1]])]
+    if(!all(is.na(out[[vnm]]))){
+      next;
+    }
     insert_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k)
 
     if(j ==1 & i > 1){
@@ -44,19 +47,6 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
                           other_pars=pars[[vnm]])
     out[[vnm]] <- tmp
     quantiles[[vnm_q]] <- attr(tmp, "quantile")
-    ## just for recreating XI experiment can fix more later
-    
-    if(proc_inputs$t == 0 & (vnm == "Z1_0" || vnm == "Z2_0" || vnm == "A_0")){
-      quantiles[["Z1_0"]] = runif(nrow(out))
-      out[["Z1_0"]] = qnorm(quantiles[["Z1_0"]], 0.2*out$X1, sd = 1)
-      quantiles[["Z2|Z1_0"]] = runif(nrow(out))
-      out[["Z2_0"]] = qbinom(quantiles[["Z2|Z1_0"]], 1, expit(-0.2 + 0.4 * out$X2))
-      quantiles[["A_0"]] = runif(nrow(out))
-      out[["A_0"]] = qbinom(quantiles[["A_0"]], 1, expit(-1 + 0.1 * out$X1 + 0.15*
-                                                           + out$X2 + 0.1*out$B1 + 0.3*out[["Z1_0"]] + 0.3* out[["Z2_0"]]))
-      # quantiles[["Z3|Z1Z2_0"]] = runif(nrow(out))
-      # out[["Z3_0"]] = qbinom(quantiles[["Z3|Z1Z2_0"]], 1, expit(-0.2 + 0.4 * out$X1))
-    }
   }
 
 
@@ -66,7 +56,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
 
   quantiles[[paste0("Y|", paste0(time_vars, collapse = ""), "_", k)]] = runif(nrow(out))
-  if(k > 0){
+  if(k > 0 & length(time_vars) > 1){
     for(i in length(time_vars):2){
       insert_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k)
       quantiles[[insert_col]] <- runif(nrow(out))
@@ -90,7 +80,6 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
     cop_pars <- pars[grepl("^cop", names(pars))]
     cop_pars[["doPar"]] <- pars[[vnm[i]]]
-
     out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
                                  dat = out, quantiles=quantiles)
     # out <- causl::sim_variable(nrow(out), forms, fams, prs, lnk,

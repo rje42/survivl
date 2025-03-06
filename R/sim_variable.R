@@ -35,10 +35,14 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
       for (j in (1:k)){
         if (j<k){
 
-          for(i in p:2){
-            Y_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""),
-                           "_", k-j, "_", time_vars[i],"_", k-j-1, "_prev")
-            L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j, "_prev")
+          for(i in p:(min(p,2))){
+            if(p == 1){
+              break;
+            }else{
+              Y_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""),
+                             "_", k-j, "_", time_vars[i],"_", k-j-1, "_prev")
+              L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j, "_prev")
+            }
             qs <- cbind(
               quantiles[[Y_col]],
               quantiles[[L_col]]
@@ -58,9 +62,14 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
 
         } else{
 
-          for(i in p:2){
-            L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
-            Y_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
+          for(i in p:(min(p, 2))){
+            if(p == 1){
+              break;
+            }else{
+              L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
+              Y_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
+            }
+
             qs <- cbind(
               quantiles[[Y_col]],
               quantiles[[L_col]]
@@ -87,7 +96,11 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
       if (j<k){
         Y_col = paste0("Y|", paste0(time_vars[1:p], collapse = ""), "_", k-j)
         for(i in p:2){
-          L_col = paste0(time_vars[p], "|", paste0(time_vars[1:(p-1)], collapse = ""), "_", k-j)
+          if(p == 1){
+            break;
+          }else{
+            L_col = paste0(time_vars[p], "|", paste0(time_vars[1:(p-1)], collapse = ""), "_", k-j)
+          }
           qs <- cbind(
             quantiles[[L_col]],
             quantiles[[Y_col]]
@@ -109,11 +122,15 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
         quantiles[[insert_col]] = compute_copula_quantiles(qs, family, pars, 1, inv = T)
 
 
-
       }else{
-        for(i in p:2){
-          L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0")
-          Y_col = paste0("Y|", paste0(time_vars[1:i], collapse = ""), "_0")
+
+        for(i in p:(min(p, 2))){
+          if(p == 1){
+            break;
+          }else{
+            L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0")
+            Y_col = paste0("Y|", paste0(time_vars[1:i], collapse = ""), "_0")
+          }
           qs <- cbind(
             quantiles[[L_col]],
             quantiles[[Y_col]]
@@ -123,7 +140,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
                                                             pars, i, inv = T)
         }
         L_col <- paste0(time_vars[1], "_0")
-        Y_col <- insert_col
+        Y_col <- paste0("Y|", time_vars[1], "_", k-j)
         insert_col <- "Y"
         ## rescale quantiles for pair-copula
         qs <- cbind(
@@ -151,20 +168,19 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
 
 ##' @importFrom copula cCopula
 compute_copula_quantiles <- function(qs, family, pars, i, inv) {
-
   library(copula)
   #change for now don't know how to add df
 
   copula_functions <- list(
-    function(U, param, par2, inv) pnorm(qnorm(U[, 2]) * sqrt(1 - param^2) + param * qnorm(U[, 1])),
+    #function(U, param, par2, inv) pnorm(qnorm(U[, 2]) * sqrt(1 - param^2) + param * qnorm(U[, 1])),
+    function(U, param, par2, inv) cCopula(U, copula = normalCopula(param = param, dispstr = "un"), inverse = inv),
     function(U, param, par2, inv) cCopula(U, copula = tCopula(param = param, df = par2, dim = 2, dispstr = "un"), inverse = inv),
-    function(U, param, par2, inv) cCopula(U, copula = claytonCopula(param = param, dim = 2, dispstr = "un"), inverse = inv),
+    function(U, param, par2, inv) cCopula(U, copula = claytonCopula(param = param, dim = 2), inverse = inv),
     function(U, param, par2, inv) cCopula(U, copula = gumbelCopula(param = param, dim = 2, dispstr = "un"), inverse = inv),
     function(U, param, par2, inv) cCopula(U, copula = frankCopula(param = param, dim = 2, dispstr = "un"), inverse = inv),
     function(U, param, par2, inv) cCopula(U, copula = joeCopula(param = param, dim = 2, dispstr = "un"), inverse = inv)
   )
   # pin from 1 to 1-eps for eps = 0.0005
-
   fam <- family[[2]][[i]]
   beta <- pars[[i]]$beta
   par2 = pars[[i]]$par2
