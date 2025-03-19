@@ -142,6 +142,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
         L_col <- paste0(time_vars[1], "_0")
         Y_col <- paste0("Y|", time_vars[1], "_", k-j)
         insert_col <- "Y"
+        browser()
         ## rescale quantiles for pair-copula
         qs <- cbind(
           quantiles[[L_col]],
@@ -169,7 +170,6 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
 ##' @importFrom copula cCopula
 compute_copula_quantiles <- function(qs, family, pars, i, inv) {
   library(copula)
-  #change for now don't know how to add df
 
   copula_functions <- list(
     #function(U, param, par2, inv) pnorm(qnorm(U[, 2]) * sqrt(1 - param^2) + param * qnorm(U[, 1])),
@@ -182,8 +182,9 @@ compute_copula_quantiles <- function(qs, family, pars, i, inv) {
   )
   # pin from 1 to 1-eps for eps = 0.0005
   fam <- family[[2]][[i]]
-  beta <- pars[[i]]$beta
-  par2 = pars[[i]]$par2
+  copPars <- unlist(pars[[i]])
+  beta <- copPars[1]
+  par2 <- copPars[2]
   beta <- 2 * expit(beta) - 1
   if (fam >= 1 && fam <= 6) {
     qY <- copula_functions[[fam]](qs, beta, par2 = par2, inv)

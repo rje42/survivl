@@ -1,3 +1,56 @@
+---
+title: "Plasmode"
+author: "Chase Mathis"
+date: "`r Sys.Date()`"
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{MSMs}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Marginal Structural Models
+
+In this vignette, we consider _marginal structural models_ for time-to-event 
+data under the plasmode setting. This means there exists
+data already and we continue to simulate from that pre-existing data. Begin by loading the library.
+```{r load}
+library(survivl)
+options(digits=4)
+```
+
+Then we define our formulas and family variables.  We will have one baseline
+variable, and a single time-varying covariate, treatment and outcome.  More 
+specifically, let:
+\begin{align*}
+W &\sim \operatorname{Gamma}(1/2, \, 2)  \\
+Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1} &\sim N(0.7 Z_{t-1} + 0.2 X_{t-1}, \, 1)\\
+X_t \mid \overline{Z}_{t}, \overline{X}_{t-1} &\sim \operatorname{Bernoulli}(\operatorname{expit}(0.5 X_{t-1} + 0.25 Z_t))\\ 
+P(Y_t = 1 \mid do(\overline{X}_{t}), W) &= \exp\{ - X_t + W/10\},
+\end{align*}
+and assume that there is a Gaussian pair-copula linking $Y_t$ with $Z_{t-1},Z_t$,
+which also depends upon $W$.  We assume that the parameter for the $Y_t$-$Z_{t-1}$
+interaction is 0.2, and that for $Y_t$-$Z_{t}$ given $Z_{t-1}$ is 0.3.
+
+```{r formulas}
+forms <- list(W ~ 1,
+              Z ~ Z_l1 + X_l1,
+              X ~ X_l1 + Z_l0,
+              Y ~ W + X_l0,
+              list(Y = list(Z ~ W)))
+fams <- list(3, 1, 5, 3, c(1))
+pars <- list(W = list(beta=0, phi=1/2),
+             Z = list(beta=c(0,0.7,0.2), phi=1),
+             X = list(beta=c(-0.5,0.25,0.5)), 
+             Y = list(beta=c(1,-1/10,1/5), phi=1),
+             cop = list(Y=list(Z=list(beta=c(0.5, 0.0))))
+)
+link <- list("log", "identity", "logit", "inverse")
+```
 suppressWarnings(library(survey))
 suppressWarnings(library(survival))
 suppressWarnings(library(ipw))
@@ -62,7 +115,7 @@ dat2 <- msm_samp(T = 10,dat = dat, qtls = qtls,
                              "logit", "log"))
 
 # dat <- as.data.table(dat)
-datl <- surv_to_long(dat)
+datl <- surv_to_long(dat2)
 
 
 temp <- ipwtm(
@@ -84,9 +137,4 @@ sumY <- summary(glmY)
 
 
 
-test_that("msm_samp() works as expected for time-to-event", {
-  # expect_lt(max(abs(sumZ$coefficients[,1] - c(0, 0.7, 0.2))/sumZ$coefficients[,2]), 2.5)
-  # expect_lt(max(abs(sumX$coefficients[,1] - c(-0.5, 0.25, 0.5))/sumX$coefficients[,2]), 2.5)
-  expect_lt(max(abs(sumY$coefficients[,1] + c(-1/5))/sumY$coefficients[,2]), 2.5)
-})
 

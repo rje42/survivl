@@ -42,10 +42,10 @@ family <- list(list(1,5,1,1),
                3,
                list(2,2))
 pars <- list(X1 = list(beta = 0, phi = 1),
-             X2 = list(beta = 0), #expit(0) = 0.5
+             X2 = list(beta = 0), # expit(0) = 0.5
              B1 = list(beta = c(-0.2,0.4),phi = 1),
              B2 = list(beta = c(0, 0.2), phi = 1),
-
+             
              Z1 = list(beta=c(0.3,0.4, 0.7,-0.6 ), phi=1),
              Z2 = list(beta = c(-0.2,0.4,1,-0.6)),
              A = list(beta=c(-1, gamma1, gamma2, gamma3, gamma4, gamma5, 1)),
@@ -54,14 +54,14 @@ pars <- list(X1 = list(beta = 0, phi = 1),
              copZ2 = list(beta = rho_to_beta(0.2), par2 = 5))
 
 dat2 <- msm_samp(T = 10,dat = dat, qtls = qtls,
-                formulas = formulas,
-                family = family,
-                pars = pars,
-                link = list(list("identity", "logit", "identity", "identity"),
-                            list("identity", "logit"),
-                            "logit", "log"))
+                 formulas = formulas,
+                 family = family,
+                 pars = pars,
+                 link = list(list("identity", "logit", "identity", "identity"),
+                             list("identity", "logit"),
+                             "logit", "log"))
 
-# dat <- as.data.table(dat)
+dat <- as.data.table(dat)
 datl <- surv_to_long(dat)
 
 
@@ -79,14 +79,8 @@ temp <- ipwtm(
 
 datl$wt <- temp$ipw.weights
 glmY <- suppressWarnings(coxph(Surv(t, t_stop,Y)~ A, id = id, data = datl,
-                         weights = datl$wt, timefix = FALSE))
+                               weights = datl$wt, timefix = FALSE))
 sumY <- summary(glmY)
 
 
-
-test_that("msm_samp() works as expected for time-to-event", {
-  # expect_lt(max(abs(sumZ$coefficients[,1] - c(0, 0.7, 0.2))/sumZ$coefficients[,2]), 2.5)
-  # expect_lt(max(abs(sumX$coefficients[,1] - c(-0.5, 0.25, 0.5))/sumX$coefficients[,2]), 2.5)
-  expect_lt(max(abs(sumY$coefficients[,1] + c(-1/5))/sumY$coefficients[,2]), 2.5)
-})
 

@@ -54,7 +54,6 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   vnm_stm <- rmv_time(vnm)
   # vnm_t <- paste0(vnm, "_", proc_inputs$t)
 
-
   quantiles[[paste0("Y|", paste0(time_vars, collapse = ""), "_", k)]] = runif(nrow(out))
   if(k > 0 & length(time_vars) > 1){
     for(i in length(time_vars):2){
