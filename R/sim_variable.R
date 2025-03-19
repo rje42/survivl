@@ -25,7 +25,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
   k <- as.numeric(substr(vnm, nchar(vnm), nchar(vnm)))
   time_vars <- sapply(as.character(unlist(formulas[[2]])), function(x) sub("_.*", "", x))
   p <- length(time_vars)
-
+  vnm <- gsub("_.*$", "", vnm)
   X <- model.matrix(formulas[[1]], data=dat)
     # eta <- X %*% pars[[2]][[i]]$beta
 
@@ -39,7 +39,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
             if(p == 1){
               break;
             }else{
-              Y_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""),
+              Y_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""),
                              "_", k-j, "_", time_vars[i],"_", k-j-1, "_prev")
               L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j, "_prev")
             }
@@ -51,7 +51,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
             quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
                                                                 pars, i, inv = F)
           }
-          Y_col = paste0("Y|", paste0(time_vars, collapse = ""), "_", k-j-1, "_prev")
+          Y_col = paste0(vnm, "|", paste0(time_vars, collapse = ""), "_", k-j-1, "_prev")
           L_col = paste0(time_vars[1], "_",k-j,"_prev")
           qs <- cbind(
             quantiles[[Y_col]],
@@ -67,7 +67,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
               break;
             }else{
               L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
-              Y_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
+              Y_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
             }
 
             qs <- cbind(
@@ -94,7 +94,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
     for (j in (0:k)){
 
       if (j<k){
-        Y_col = paste0("Y|", paste0(time_vars[1:p], collapse = ""), "_", k-j)
+        Y_col = paste0(vnm, "|", paste0(time_vars[1:p], collapse = ""), "_", k-j)
         for(i in p:2){
           if(p == 1){
             break;
@@ -105,7 +105,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
             quantiles[[L_col]],
             quantiles[[Y_col]]
           )
-          insert_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""),
+          insert_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""),
                               "_", k-j, "_", time_vars[i],"_", k-j-1)
           quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
                                                               pars, i, inv = T)
@@ -118,7 +118,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
           quantiles[[L_col]],
           quantiles[[Y_col]]
         )
-        insert_col = paste0("Y|", paste0(time_vars, collapse = ""), "_", k-j-1)
+        insert_col = paste0(vnm, "|", paste0(time_vars, collapse = ""), "_", k-j-1)
         quantiles[[insert_col]] = compute_copula_quantiles(qs, family, pars, 1, inv = T)
 
 
@@ -129,18 +129,18 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
             break;
           }else{
             L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0")
-            Y_col = paste0("Y|", paste0(time_vars[1:i], collapse = ""), "_0")
+            Y_col = paste0(vnm, "|", paste0(time_vars[1:i], collapse = ""), "_0")
           }
           qs <- cbind(
             quantiles[[L_col]],
             quantiles[[Y_col]]
           )
-          insert_col = paste0("Y|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j)
+          insert_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j)
           quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
                                                             pars, i, inv = T)
         }
         L_col <- paste0(time_vars[1], "_0")
-        Y_col <- paste0("Y|", time_vars[1], "_", k-j)
+        Y_col <- paste0(vnm, "|", time_vars[1], "_", k-j)
         insert_col <- "Y"
         browser()
         ## rescale quantiles for pair-copula

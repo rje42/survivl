@@ -13,6 +13,8 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
   vars <- paste0(proc_inputs$vars_t, "_", proc_inputs$t)
   time_vars <- proc_inputs$vars_t[1:dZ]
+  outcome_vars <- proc_inputs$vars_t[(dZ + dX + 1):(dZ+dX+dY)]
+  survival_vars <- proc_inputs$survival_outcome
   d <- lengths(formulas)
   k = proc_inputs$t
   ## simulate covariates and treatments
@@ -53,8 +55,20 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   vnm <- lhs(formulas[[3]])
   vnm_stm <- rmv_time(vnm)
   # vnm_t <- paste0(vnm, "_", proc_inputs$t)
-
-  quantiles[[paste0("Y|", paste0(time_vars, collapse = ""), "_", k)]] = runif(nrow(out))
+  browser()
+  first <- TRUE
+  prev <- ""
+  for(outcome_vnm in outcome_vars) {
+    if(first) {
+      quantiles[[paste0(outcome_vnm, "_", k)]] <- runif(nrow(out))
+      first <- FALSE
+      prev <- outcome_vnm
+    } else {
+      quantiles[[paste0(outcome_vnm, "|", prev, "_", k)]] <- runif(nrow(out))
+      prev <- paste(prev, outcome_vnm, sep = ",")
+    }
+  }
+  
   if(k > 0 & length(time_vars) > 1){
     for(i in length(time_vars):2){
       insert_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k)
@@ -70,7 +84,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     ## simulate Y variable
     # qY <- runif(n)
     # print(wh)
-
+    browser()
     forms <- list(formulas[[3]][[i]], formulas[[4]][[i]])
     fams <- list(family[[3]][[i]], family[[4]][[i]])
     prs <- list(c(pars[[vnm[i]]], list(x=proc_inputs$t)), pars[[kwd]][[vnm_stm[i]]])
@@ -79,6 +93,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
     cop_pars <- pars[grepl("^cop", names(pars))]
     cop_pars[["doPar"]] <- pars[[vnm[i]]]
+
     out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
                                  dat = out, quantiles=quantiles)
     # out <- causl::sim_variable(nrow(out), forms, fams, prs, lnk,

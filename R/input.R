@@ -90,15 +90,19 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   }
 
 
-  ## check that outcomes are OK for time-to-event
+  ## check that at least one outcomes are OK for time-to-event
   if (any(!is_surv_outcome(family[[4]]))) {
     whn <- which(!is_surv_outcome(family[[4]]))[1]
-    stop(paste0("outcome '", LHSs[[4]][whn], "' must be of survival type (non-negative and continuous)"))
+    if(all(!is_surv_outcome(family[[4]]))){
+      stop(paste0("at least one outcome must be of 
+                  survival type (non-negative and continuous)"))
+    }
+    
   }
-
   out <- list(formulas=formulas, pars=pars, family=family, link=link,
               LHSs=list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
-              std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t)
+              std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t,
+              survival_outcome = nms_t[dZ+dX+whn])
 }
 
 
