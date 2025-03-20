@@ -55,18 +55,13 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   vnm <- lhs(formulas[[3]])
   vnm_stm <- rmv_time(vnm)
   # vnm_t <- paste0(vnm, "_", proc_inputs$t)
-  browser()
   first <- TRUE
-  prev <- ""
+  prev <- paste0(time_vars, collapse = "")
   for(outcome_vnm in outcome_vars) {
-    if(first) {
-      quantiles[[paste0(outcome_vnm, "_", k)]] <- runif(nrow(out))
-      first <- FALSE
-      prev <- outcome_vnm
-    } else {
       quantiles[[paste0(outcome_vnm, "|", prev, "_", k)]] <- runif(nrow(out))
-      prev <- paste(prev, outcome_vnm, sep = ",")
-    }
+
+      prev <- paste0(prev, outcome_vnm)
+    
   }
   
   if(k > 0 & length(time_vars) > 1){
@@ -84,7 +79,6 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     ## simulate Y variable
     # qY <- runif(n)
     # print(wh)
-    browser()
     forms <- list(formulas[[3]][[i]], formulas[[4]][[i]])
     fams <- list(family[[3]][[i]], family[[4]][[i]])
     prs <- list(c(pars[[vnm[i]]], list(x=proc_inputs$t)), pars[[kwd]][[vnm_stm[i]]])

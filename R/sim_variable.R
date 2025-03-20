@@ -18,14 +18,14 @@
 ##' @export
 sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
   ## get variables
-  vnm <- lhs(formulas[[1]])
-  if (length(vnm) != 1L) stop("Unable to extract variable name")
+  vnm_t <- lhs(formulas[[1]])
+  if (length(vnm_t) != 1L) stop("Unable to extract variable name")
 
   LHS_cop <- lhs(formulas[[2]])
-  k <- as.numeric(substr(vnm, nchar(vnm), nchar(vnm)))
+  k <- as.numeric(substr(vnm_t, nchar(vnm_t), nchar(vnm_t)))
   time_vars <- sapply(as.character(unlist(formulas[[2]])), function(x) sub("_.*", "", x))
   p <- length(time_vars)
-  vnm <- gsub("_.*$", "", vnm)
+  vnm <- rmv_time(vnm_t)
   X <- model.matrix(formulas[[1]], data=dat)
     # eta <- X %*% pars[[2]][[i]]$beta
 
@@ -141,8 +141,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
         }
         L_col <- paste0(time_vars[1], "_0")
         Y_col <- paste0(vnm, "|", time_vars[1], "_", k-j)
-        insert_col <- "Y"
-        browser()
+        insert_col <- vnm
         ## rescale quantiles for pair-copula
         qs <- cbind(
           quantiles[[L_col]],
@@ -153,14 +152,13 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles) {
 
       }
     }
-
   ## now rescale to correct margin
   X <- model.matrix(delete.response(terms(formulas[[1]])), data=dat)
 
   Y <- rescale_var(qY, X=X, family=family[[1]], pars=pars[["doPar"]], link=link[[1]])
 
   # Y <- rescale_var(runif(n), X=X, family=family[[1]], pars=pars[[1]], link=link[[1]])
-  dat[[vnm]] <- Y
+  dat[[vnm_t]] <- Y
   # quantiles[[vnm]] <- qY
   attr(dat, "quantiles") <- quantiles
 

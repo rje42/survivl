@@ -56,7 +56,7 @@ msm_samp <- function (n, dat=NULL,qtls = NULL, T, formulas, family, pars, link=N
                                 link=link, dat=dat, T=T, control=con, method=method)
   ## extract them again
   formulas <- proc_inputs$formulas; pars <- proc_inputs$pars; family <- proc_inputs$family; link <- proc_inputs$link
-
+  
   LHS_C <- proc_inputs$LHSs$LHS_C; LHS_Z <- proc_inputs$LHSs$LHS_Z; LHS_X <- proc_inputs$LHSs$LHS_X; LHS_Y <- proc_inputs$LHSs$LHS_Y
   dC <- length(LHS_C); dZ <- length(LHS_Z); dX <- length(LHS_X); dY <- length(LHS_Y)
   var_nms_Z <- proc_inputs$std_form$var_nms_Z
@@ -164,9 +164,8 @@ msm_samp <- function (n, dat=NULL,qtls = NULL, T, formulas, family, pars, link=N
         }
         colnames(qtls)[2:ncol(qtls)] <- sapply(colnames(qtls)[2:ncol(qtls)], function(z) paste0(z,"_prev"))
       }
-
+  
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,, drop = FALSE], kwd=kwd)
-
       out[surv, ] <- tmp$dat
       for(name in names(tmp$quantiles)){
         qtls[surv, name] <- tmp$quantiles[[name]]
