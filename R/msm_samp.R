@@ -162,14 +162,19 @@ msm_samp <- function (n, dat=NULL,qtls = NULL, T, formulas, family, pars, link=N
         if(t > 1){
           qtls <- dplyr::select(qtls, -contains("prev"))
         }
-        colnames(qtls)[2:ncol(qtls)] <- sapply(colnames(qtls)[2:ncol(qtls)], function(z) paste0(z,"_prev"))
+        colnames(qtls)[(dC + 1):ncol(qtls)] <- sapply(colnames(qtls)[(dC+1):ncol(qtls)], function(z) paste0(z,"_prev"))
       }
-  
+
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,, drop = FALSE], kwd=kwd)
       out[surv, ] <- tmp$dat
-      for(name in names(tmp$quantiles)){
-        qtls[surv, name] <- tmp$quantiles[[name]]
+      if(is.null(qtls)){
+        qtls <- tmp$quantiles
+      }else{
+        for(name in names(tmp$quantiles)){
+          qtls[surv, name] <- tmp$quantiles[[name]]
+        }
       }
+
 
 
 

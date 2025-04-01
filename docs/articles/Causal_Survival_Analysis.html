@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
       </span>
     </div>
 
@@ -60,6 +60,9 @@
     </li>
     <li>
       <a href="../articles/MSMs.html">Marginal Structural Survival Models</a>
+    </li>
+    <li>
+      <a href="../articles/Plasmode.html">Plasmode</a>
     </li>
   </ul>
 </li>
@@ -132,17 +135,53 @@ between <span class="math inline">\(Z_t\)</span> and <span class="math inline">\
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0.5</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
 <span>             X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.1</span>,<span class="op">-</span><span class="fl">0.5</span><span class="op">)</span>, lambda0<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
+<span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.1</span>,<span class="op">-</span><span class="fl">0.5</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
 <span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Now we call the function <code>msm_samp</code>, which obtains samples
 from this model.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/msm_samp.html">msm_samp</a></span><span class="op">(</span><span class="fl">1e4</span>, T<span class="op">=</span><span class="fl">5</span>,</span>
-<span>                formulas <span class="op">=</span> <span class="va">formulas</span>, </span>
-<span>                family <span class="op">=</span> <span class="va">family</span>, </span>
-<span>                pars <span class="op">=</span> <span class="va">pars</span>,</span>
-<span>                link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"inverse"</span><span class="op">)</span><span class="op">)</span></span>
+<span>                formulas <span class="op">=</span> <span class="va">formulas</span>,</span>
+<span>                family <span class="op">=</span> <span class="va">family</span>,</span>
+<span>                pars <span class="op">=</span> <span class="va">pars</span>, </span>
+<span>                link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: package 'copula' was built under R version 4.3.3</span></span>
+<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
+<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
+<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
+<span><span class="co">#&gt;     link = link[[1]])</span></span>
+<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
+<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
+<span><span class="co">#&gt; debug: return(dat)</span></span>
+<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
+<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
+<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
+<span><span class="co">#&gt;     link = link[[1]])</span></span>
+<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
+<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
+<span><span class="co">#&gt; debug: return(dat)</span></span>
+<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
+<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
+<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
+<span><span class="co">#&gt;     link = link[[1]])</span></span>
+<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
+<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
+<span><span class="co">#&gt; debug: return(dat)</span></span>
+<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
+<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
+<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
+<span><span class="co">#&gt;     link = link[[1]])</span></span>
+<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
+<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
+<span><span class="co">#&gt; debug: return(dat)</span></span>
+<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
+<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
+<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
+<span><span class="co">#&gt;     link = link[[1]])</span></span>
+<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
+<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
+<span><span class="co">#&gt; debug: return(dat)</span></span>
 <span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -155,29 +194,33 @@ standard errors account for the re-weighting.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://r-survey.r-forge.r-project.org/survey/" class="external-link">survey</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">ipw</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>digits<span class="op">=</span><span class="fl">5</span><span class="op">)</span></span></code></pre></div>
 <p>Now, we fit a GLM to obtain the weighting to use with <span class="math inline">\(X\)</span>.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">modX</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">Z</span>, family<span class="op">=</span><span class="va">binomial</span>, data<span class="op">=</span><span class="va">datl</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">modX</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
-<span><span class="co">#&gt;             Estimate Std. Error z value    Pr(&gt;|z|)</span></span>
-<span><span class="co">#&gt; (Intercept)  -1.0144   0.027322 -37.128 9.9779e-302</span></span>
-<span><span class="co">#&gt; Z             1.0048   0.019510  51.500  0.0000e+00</span></span>
-<span><span class="va">pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">modX</span>, type<span class="op">=</span><span class="st">"response"</span><span class="op">)</span></span>
-<span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="va">datl</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="va">datl</span>, wts <span class="op">=</span> <span class="va">X</span><span class="op">/</span><span class="va">pred</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">X</span><span class="op">)</span><span class="op">/</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">pred</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Fit model using inverse probability weighting</span></span>
+<span></span>
+<span></span>
+<span><span class="va">temp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ipw/man/ipwtm.html" class="external-link">ipwtm</a></span><span class="op">(</span></span>
+<span>  exposure <span class="op">=</span> <span class="va">X</span>,</span>
+<span>  family <span class="op">=</span> <span class="st">"binomial"</span>,</span>
+<span>  numerator <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>,</span>
+<span>  denominator <span class="op">=</span> <span class="op">~</span> <span class="va">Z</span>,</span>
+<span>  link <span class="op">=</span> <span class="st">"logit"</span>,</span>
+<span>  id <span class="op">=</span> <span class="va">id</span>,</span>
+<span>  timevar <span class="op">=</span> <span class="va">t</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">datl</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">datl</span><span class="op">$</span><span class="va">wt</span> <span class="op">&lt;-</span> <span class="va">temp</span><span class="op">$</span><span class="va">ipw.weights</span></span></code></pre></div>
 <p>At this point we can fit the model to obtain the coefficients for the
 effect of <span class="math inline">\(X\)</span> on <span class="math inline">\(Y\)</span>.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">X</span>, </span>
-<span>              family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span>link<span class="op">=</span><span class="va">log</span><span class="op">)</span>, </span>
-<span>              design <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svydesign.html" class="external-link">svydesign</a></span><span class="op">(</span>ids<span class="op">=</span><span class="va">datl</span><span class="op">$</span><span class="va">id</span>,</span>
-<span>                                 weights<span class="op">=</span><span class="va">datl</span><span class="op">$</span><span class="va">wts</span>,</span>
-<span>                                 data<span class="op">=</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in eval(family$initialize): non-integer #successes in a binomial glm!</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
-<span><span class="co">#&gt;             Estimate Std. Error t value    Pr(&gt;|t|)</span></span>
-<span><span class="co">#&gt; (Intercept) -1.14423   0.020865 -54.839  0.0000e+00</span></span>
-<span><span class="co">#&gt; X            0.54732   0.023461  23.329 2.9539e-117</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">glmY</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>,<span class="va">Y</span><span class="op">)</span><span class="op">~</span> <span class="va">X</span>, id <span class="op">=</span> <span class="va">id</span>, data <span class="op">=</span> <span class="va">datl</span>,</span>
+<span>                               weights <span class="op">=</span> <span class="va">datl</span><span class="op">$</span><span class="va">wt</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">glmY</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
+<span><span class="co">#&gt;      coef exp(coef) se(coef) robust se      z   Pr(&gt;|z|)</span></span>
+<span><span class="co">#&gt; X 0.52359    1.6881 0.021909  0.030103 17.393 9.2965e-68</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="naïve-approaches">Naïve Approaches<a class="anchor" aria-label="anchor" href="#na%C3%AFve-approaches"></a>
@@ -191,25 +234,9 @@ obtain a biased estimate of the coefficient of <span class="math inline">\(X\)</
 <span>                                 weights<span class="op">=</span><span class="op">~</span><span class="fl">1</span>,</span>
 <span>                                 data<span class="op">=</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_naive</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
-<span><span class="co">#&gt;             Estimate Std. Error t value Pr(&gt;|t|)</span></span>
-<span><span class="co">#&gt; (Intercept) -1.39718   0.019121 -73.069        0</span></span>
-<span><span class="co">#&gt; X            0.92342   0.020664  44.687        0</span></span></code></pre></div>
-<p>Alternatively we can fit a conditional model. Again, the estimate we
-obtain is biased.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">start</span> <span class="op">&lt;-</span> <span class="va">mod_naive</span><span class="op">$</span><span class="va">coefficients</span></span>
-<span><span class="va">start</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">start</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="fl">0</span>, <span class="va">start</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="va">mod_cond</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">Z</span> <span class="op">+</span> <span class="va">X</span>, </span>
-<span>                   start <span class="op">=</span> <span class="va">start</span>,</span>
-<span>                   family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span>link<span class="op">=</span><span class="va">log</span><span class="op">)</span>, </span>
-<span>                   design <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svydesign.html" class="external-link">svydesign</a></span><span class="op">(</span>ids<span class="op">=</span><span class="va">datl</span><span class="op">$</span><span class="va">id</span>,</span>
-<span>                                      weights<span class="op">=</span><span class="op">~</span><span class="fl">1</span>,</span>
-<span>                                      data<span class="op">=</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_cond</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
-<span><span class="co">#&gt;             Estimate Std. Error t value    Pr(&gt;|t|)</span></span>
-<span><span class="co">#&gt; (Intercept) -1.47720  0.0189618 -77.904  0.0000e+00</span></span>
-<span><span class="co">#&gt; Z            0.11247  0.0017895  62.847  0.0000e+00</span></span>
-<span><span class="co">#&gt; X            0.82233  0.0212298  38.735 6.1468e-306</span></span></code></pre></div>
+<span><span class="co">#&gt;              Estimate Std. Error  t value Pr(&gt;|t|)</span></span>
+<span><span class="co">#&gt; (Intercept) -0.433661  0.0066119 -65.5880 0.000000</span></span>
+<span><span class="co">#&gt; X           -0.023445  0.0095319  -2.4596 0.013926</span></span></code></pre></div>
 </div>
   </div>
 

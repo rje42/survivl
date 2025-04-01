@@ -48,7 +48,12 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     tmp <- causl::glm_sim(fam=curr_fam, eta=eta, phi=curr_phi, link=curr_link,
                           other_pars=pars[[vnm]])
     out[[vnm]] <- tmp
-    quantiles[[vnm_q]] <- attr(tmp, "quantile")
+    if(is.null(quantiles)){
+      quantiles <- data.frame(attr(tmp, "quantile"))
+      names(quantiles) = vnm_q
+    }else{
+      quantiles[[vnm_q]] <- attr(tmp, "quantile")
+    }
   }
 
 
@@ -84,12 +89,15 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     prs <- list(c(pars[[vnm[i]]], list(x=proc_inputs$t)), pars[[kwd]][[vnm_stm[i]]])
     if (!is.null(prs[[1]]$lambda0)) prs[[1]]$phi <- 1 #prs[[1]]$phi <- prs[[1]]$lambda0
     lnk <- list(link[[3]][i], list()) # link[[4]][[i]])
-
     cop_pars <- pars[grepl("^cop", names(pars))]
     cop_pars[["doPar"]] <- pars[[vnm[i]]]
-
+    if(i == 1){ #TODO: fix logic here
+      survival <- "primary"
+    }else{
+      survival <- "competing"
+    }
     out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
-                                 dat = out, quantiles=quantiles)
+                                 dat = out, quantiles=quantiles, survival)
     # out <- causl::sim_variable(nrow(out), forms, fams, prs, lnk,
     #                            dat=out, quantiles=quantiles)
     quantiles <- attr(out, "quantiles")
