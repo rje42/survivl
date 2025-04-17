@@ -1,5 +1,6 @@
 suppressWarnings(library(survey))
 suppressWarnings(library(survival))
+devtools::load_all("~/DukeUndergraduate/Research/longitudinal_sim/causl/")
 suppressWarnings(library(ipw))
 gamma1 <- 0.1
 gamma2 <- 0.15
@@ -14,7 +15,7 @@ rho_to_beta <- function(rho){
 }
 
 
-n <- 1e5
+n <- 1e4
 qtls <- data.frame(X1 = runif(n), X2 = runif(n), B1 = runif(n), B2 = runif(n),
                    Z1_0 = runif(n), A_0 = runif(n))
 qtls[["Z2|Z1_0"]] = runif(n)

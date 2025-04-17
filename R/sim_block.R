@@ -92,12 +92,12 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     cop_pars <- pars[grepl("^cop", names(pars))]
     cop_pars[["doPar"]] <- pars[[vnm[i]]]
     if(i == 1){ #TODO: fix logic here
-      survival <- "primary"
+      type_event <- "primary"
     }else{
-      survival <- "competing"
+      type_event <- "competing"
     }
     out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
-                                 dat = out, quantiles=quantiles, survival)
+                                 dat = out, quantiles=quantiles, type_event)
     # out <- causl::sim_variable(nrow(out), forms, fams, prs, lnk,
     #                            dat=out, quantiles=quantiles)
     quantiles <- attr(out, "quantiles")

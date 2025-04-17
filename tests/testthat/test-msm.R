@@ -1,4 +1,5 @@
 suppressMessages(library(survey))
+devtools::load_all("~/DukeUndergraduate/Research/longitudinal_sim/causl/")
 n <- 1e5
 
 forms <- list(W ~ 1,
@@ -16,8 +17,8 @@ pars <- list(W = list(beta=0, phi=1/2),
 link <- list("log", "identity", "logit", "inverse")
 
 set.seed(123)
-dat <- msm_samp(n, T=10, formulas = forms, family = fams, pars = pars,
-                link = link)
+dat <- msm_samp(n, T=7, formulas = forms, family = fams, pars = pars,
+                link = link) # changed to 7 too many people died out
 datl <- surv_to_long(dat, lag=1)
 
 glmZ <- glm(Z ~ Z_l1 + X_l1, data=datl)
