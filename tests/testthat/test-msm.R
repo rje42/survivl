@@ -1,5 +1,4 @@
 suppressMessages(library(survey))
-devtools::load_all("~/DukeUndergraduate/Research/longitudinal_sim/causl/")
 n <- 1e5
 
 forms <- list(W ~ 1,

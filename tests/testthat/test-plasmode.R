@@ -1,6 +1,5 @@
 suppressWarnings(library(survey))
 suppressWarnings(library(survival))
-devtools::load_all("~/DukeUndergraduate/Research/longitudinal_sim/causl/")
 suppressWarnings(library(ipw))
 gamma1 <- 0.1
 gamma2 <- 0.15

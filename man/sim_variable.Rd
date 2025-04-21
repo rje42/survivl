@@ -4,7 +4,7 @@
 \alias{sim_variable}
 \title{Simulate a single variable using the inversion method}
 \usage{
-sim_variable(n, formulas, family, pars, link, dat, quantiles, survival)
+sim_variable(n, formulas, family, pars, link, dat, quantiles, type_event)
 }
 \arguments{
 \item{n}{sample size}
