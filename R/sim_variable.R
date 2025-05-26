@@ -92,13 +92,9 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
   if (k >0){
     #get the distributions of Ls in the survivors
     for (j in (1:k)){
-        for(i in p:(min(p, 2))){
-          if(p == 1){
-            break;
-          }else{
-            L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_",k-j, "_prev")
-            Y_col = paste0(paste0("q", i, "_", k-j, "_prev"))
-          }
+        for(i in rev(seq_len(p)[-1])){
+          L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_",k-j, "_prev")
+          Y_col = paste0(paste0("q", i, "_", k-j, "_prev"))
           
           qs <- cbind(
             quantiles[[L_col]],
@@ -134,12 +130,8 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
     
     if (j<k){
       Y_col = paste0(vnm, "|", paste0(time_vars[1:p], collapse = ""), "_", k-j)
-      for(i in p:2){
-        if(p == 1){
-          break;
-        }else{
-          L_col = paste0(time_vars[p], "|", paste0(time_vars[1:(p-1)], collapse = ""), "_", k-j)
-        }
+      for(i in rev(seq_len(p)[-1])){
+        L_col = paste0(time_vars[p], "|", paste0(time_vars[1:(p-1)], collapse = ""), "_", k-j)
         qs <- cbind(
           quantiles[[L_col]],
           quantiles[[Y_col]]
@@ -163,13 +155,10 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
       
     }else{
       
-      for(i in p:(min(p, 2))){
-        if(p == 1){
-          break;
-        }else{
-          L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0")
-          Y_col = paste0(vnm, "|", paste0(time_vars[1:i], collapse = ""), "_0")
-        }
+      for(i in rev(seq_len(p)[-1])){
+  
+        L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0")
+        Y_col = paste0(vnm, "|", paste0(time_vars[1:i], collapse = ""), "_0")
         qs <- cbind(
           quantiles[[L_col]],
           quantiles[[Y_col]]
@@ -202,14 +191,11 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
     for (j in (1:k)){
       if (j<k){
         
-        for(i in p:(min(p,2))){
-          if(p == 1){
-            break;
-          }else{
-            Y_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""),
-                           "_", k-j, "_", time_vars[i],"_", k-j-1, "_prev")
-            L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j, "_prev")
-          }
+        for(i in rev(seq_len(p)[-1])){
+ 
+          Y_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""),
+                         "_", k-j, "_", time_vars[i],"_", k-j-1, "_prev")
+          L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j, "_prev")
           qs <- cbind(
             quantiles[[Y_col]],
             quantiles[[L_col]]
@@ -229,14 +215,9 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
         
       } else{
         
-        for(i in p:(min(p, 2))){
-          if(p == 1){
-            break;
-          }else{
-            L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
-            Y_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
-          }
-          
+        for(i in rev(seq_len(p)[-1])){
+          L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
+          Y_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0", "_prev")
           qs <- cbind(
             quantiles[[Y_col]],
             quantiles[[L_col]]
@@ -262,12 +243,8 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
     
     if (j<k){
       Y_col = paste0(vnm, "|", paste0(time_vars[1:p], collapse = ""), "_", k-j)
-      for(i in p:2){
-        if(p == 1){
-          break;
-        }else{
-          L_col = paste0(time_vars[p], "|", paste0(time_vars[1:(p-1)], collapse = ""), "_", k-j)
-        }
+      for(i in rev(seq_len(p)[-1])){
+        L_col = paste0(time_vars[p], "|", paste0(time_vars[1:(p-1)], collapse = ""), "_", k-j)
         qs <- cbind(
           quantiles[[L_col]],
           quantiles[[Y_col]]
@@ -291,13 +268,9 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
       
     }else{
       
-      for(i in p:(min(p, 2))){
-        if(p == 1){
-          break;
-        }else{
-          L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0")
-          Y_col = paste0(vnm, "|", paste0(time_vars[1:i], collapse = ""), "_0")
-        }
+      for(i in rev(seq_len(p)[-1])){
+        L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0")
+        Y_col = paste0(vnm, "|", paste0(time_vars[1:i], collapse = ""), "_0")
         qs <- cbind(
           quantiles[[L_col]],
           quantiles[[Y_col]]

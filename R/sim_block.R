@@ -13,7 +13,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
   vars <- paste0(proc_inputs$vars_t, "_", proc_inputs$t)
   time_vars <- proc_inputs$vars_t[1:dZ]
-  outcome_vars <- proc_inputs$vars_t[(dZ + dX + 1):(dZ+dX+dY)]
+  outcome_vars <- proc_inputs$vars_t[(dZ + dX + 1):(dZ+dX+dY)] # TODO: fix this
   survival_vars <- proc_inputs$survival_outcome
   d <- lengths(formulas)
   k = proc_inputs$t

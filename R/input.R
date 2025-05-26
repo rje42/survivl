@@ -26,7 +26,7 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   LHS_C <- LHSs[[1]]; LHS_Z <- LHSs[[2]]; LHS_X <- LHSs[[3]]; LHS_Y <- LHSs[[4]]
   if(!is.null(dat)){
     prev_vars <- colnames(dat)
-    LHS_C <- prev_vars[which(prev_vars == rmv_time(prev_vars))]
+    LHS_C <- c(prev_vars[which(prev_vars == rmv_time(prev_vars))], LHS_C) # have subset of baseline variables
   }
   # LHS_C <- causl::lhs(formulas[[1]])
   # LHS_Z <- causl::lhs(formulas[[2]])
