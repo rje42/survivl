@@ -59,8 +59,9 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
       }
       eta <- MM %*% pars[[vnm]]$beta
       curr_phi <- pars[[vnm]]$phi
+      curr_ops <- pars[[vnm]][!(names(pars[[vnm]]) %in% c("beta", "phi"))]
       tmp <- causl::glm_sim(fam=curr_fam, eta=eta, phi=curr_phi, link=curr_link,
-                            other_pars=pars[[vnm]])
+                            other_pars=curr_ops)
       out[[vnm]] <- tmp
       quantiles[[vnm]] <- attr(tmp, "quantile")
     }
@@ -79,7 +80,8 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
     forms <- list(formulas[[3]][[i]], formulas[[4]][[i]])
     fams <- list(family[[3]][[i]], family[[4]][[i]])
-    prs <- list(c(pars[[vnm[i]]], list(x=proc_inputs$t)), pars[[kwd]][[vnm_stm[i]]])
+    prs <- list(c(pars[[vnm[i]]]#, list(x=proc_inputs$t)
+                  ), pars[[kwd]][[vnm_stm[i]]])
     if (!is.null(prs[[1]]$lambda0)) prs[[1]]$phi <- 1 #prs[[1]]$phi <- prs[[1]]$lambda0
     lnk <- list(link[[3]][i], list()) # link[[4]][[i]])
 

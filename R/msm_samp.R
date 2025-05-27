@@ -113,7 +113,7 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
     for (i in seq_along(LHS_C)[pres_var[2] + seq_len(length(LHS_C) - pres_var[2])]) {
       ## now compute etas
       eta <- model.matrix(update(formulas[[1]][[i]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
-      tmp <- causl::glm_sim(family=family[[1]][i], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
+      tmp <- causl::glm_sim(family=family[[1]][[i]], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
                             other_pars=pars[[LHS_C[[i]]]], link=link[[1]][i])
       out[[LHS_C[[i]]]] <- tmp
       qtls[[LHS_C[[i]]]] <- attr(tmp, "quantiles")
@@ -154,19 +154,19 @@ msm_samp <- function (n, dat=NULL, T, formulas, family, pars, link=NULL,
         tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,], kwd=kwd)
         out[surv,] <- tmp$dat; qtls[surv,] <- tmp$quantiles
 
-        if (control$surv) {
+        if (con$surv) {
           ## establish which survivors had events, and record
           tmp <- collect_events(dat=out[surv,], varY=LHS_Y, t=t)
         }
       }
-      else if (control$surv) {
+      else if (con$surv) {
         ## fully simulated already, so just get results
         ## establish which survivors had events, and record
         ## (CHECK THIS IS OK FOR LONGITUDINAL CASE)
         tmp <- collect_events(dat=out[surv,], varY=LHS_Y, t=t, trunc=TRUE)
       }
 
-      if (control$surv) {
+      if (con$surv) {
         out[surv,] <- tmp$dat
 
         ## update list of survivors

@@ -37,10 +37,10 @@ sumZ <- summary(glmZ)
 glmX <- glm(X ~ X_l1 + Z, data=datl, family=binomial)
 sumX <- summary(glmX)
 ps <- predict(glmX, type="response")
-wt <- datl$X/ps + (1-datl$X)/(1-ps)
+wt <- datl$X[datl$t >= 1]/ps + (1-datl$X[datl$t >= 1])/(1-ps)
 
 glmY <- suppressWarnings(svyglm(I(1-Y) ~ W + X, family=binomial(log), start=c(-2,1/10,-1/5),
-                                design = svydesign(~ 1, weights = wt, data=datl)))
+                                design = svydesign(~ 1, weights = wt, data=datl[datl$t >= 1,])))
 sumY <- summary(glmY)
 
 test_that("msm_samp() works as expected", {

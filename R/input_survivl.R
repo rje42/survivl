@@ -52,12 +52,15 @@ process_inputs <- function (n, formulas, pars, family, link, dat, T, method, con
 
   ## introduce code from causl
   dims <- lengths(formulas)
-  family <- causl::process_family(family=family, dims=dims, func_return=get_surv_family)
+  # family <- causl::process_family(family=family, dims=dims, func_return=get_surv_family)
+  tmp <- causl::process_family_link(family=family, link=link, dims=dims,
+                                    func_return=get_surv_family)
+  family <- tmp$family; link <- tmp$link
 
-  ## now set up link functions
-  link <- causl::link_setup(link, family = family[-(5)], vars=LHSs,
-                            sources=c(links_list, surv_links_list))
-  # link[[4]] <- "inverse"
+  # ## now set up link functions
+  # link <- causl::link_setup(link, family = family[-(5)], vars=LHSs,
+  #                           sources=c(links_list, surv_links_list))
+  # # link[[4]] <- "inverse"
 
   # LHSs <- list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y)
   attr(LHSs, "T") <- c(T, strt)
