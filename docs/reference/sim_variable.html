@@ -19,7 +19,7 @@ second to the pair-copulas being used."><!-- mathjax --><script src="https://cdn
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
       </span>
     </div>
 
@@ -44,6 +44,9 @@ second to the pair-copulas being used."><!-- mathjax --><script src="https://cdn
     </li>
     <li>
       <a href="../articles/MSMs.html">Marginal Structural Survival Models</a>
+    </li>
+    <li>
+      <a href="../articles/Plasmode.html">Plasmode</a>
     </li>
   </ul></li>
 <li>
@@ -70,7 +73,7 @@ second to the pair-copulas being used.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">sim_variable</span><span class="op">(</span><span class="va">n</span>, <span class="va">formulas</span>, <span class="va">family</span>, <span class="va">pars</span>, <span class="va">link</span>, <span class="va">dat</span>, <span class="va">quantiles</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">sim_variable</span><span class="op">(</span><span class="va">n</span>, <span class="va">formulas</span>, <span class="va">family</span>, <span class="va">pars</span>, <span class="va">link</span>, <span class="va">dat</span>, <span class="va">quantiles</span>, <span class="va">survival</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -101,6 +104,10 @@ second to the pair-copulas being used.</p>
 
 <dt>quantiles</dt>
 <dd><p>data frame of quantiles</p></dd>
+
+
+<dt>survival</dt>
+<dd><p>character denoting if primary or competing</p></dd>
 
 </dl></div>
     <div id="value">

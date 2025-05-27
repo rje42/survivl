@@ -9,6 +9,7 @@
 msm_samp(
   n,
   dat = NULL,
+  qtls = NULL,
   T,
   formulas,
   family,
@@ -26,6 +27,8 @@ cox_samp(n, T, formulas, family, pars, link = NULL, control = list())
 \item{n}{number of samples}
 
 \item{dat}{optional data frame for plasmode simulation}
+
+\item{qtls}{associated quantiles from dat for plasmode simulation}
 
 \item{T}{number of time points}
 
