@@ -24,6 +24,10 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
 
   LHSs <- lapply(formulas[1:4], causl::lhs)
   LHS_C <- LHSs[[1]]; LHS_Z <- LHSs[[2]]; LHS_X <- LHSs[[3]]; LHS_Y <- LHSs[[4]]
+  if(!is.null(dat)){
+    prev_vars <- colnames(dat)
+    LHS_C <- c(prev_vars[which(prev_vars == rmv_time(prev_vars))], LHS_C) # have subset of baseline variables
+  }
   # LHS_C <- causl::lhs(formulas[[1]])
   # LHS_Z <- causl::lhs(formulas[[2]])
   # LHS_X <- causl::lhs(formulas[[3]])
@@ -40,7 +44,7 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   ## get response variables list
   RHS_vars <- rmv_lag(unlist(tms))
 
-  if (!all(RHS_vars %in% unlist(LHSs))) {
+  if (!all(RHS_vars %in% c(unlist(LHSs), colnames(dat)))) {
     wh <- RHS_vars[!RHS_vars %in% unlist(LHSs)]
     wh <- unique.default(wh)
     stop(paste0("Variables ", paste(wh, collapse=", "), " appear on right hand side but are not simulated"))
@@ -80,7 +84,6 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   kwd <- control$cop
 
   if (method == 'inversion' || method == 'bootstrap') {
-
     tmp <- causl::pair_copula_setup(formulas=formulas[[5]], family=family[[5]], pars=pars[[kwd]],
                                      LHSs=LHSs, quans=character(0), ord=ord)
     formulas[[5]] <- tmp$formulas
@@ -90,15 +93,21 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   }
 
 
-  ## check that outcomes are OK for time-to-event
+  ## check that at least one outcomes are OK for time-to-event
+  survival_outcome <- NULL
   if (any(!is_surv_outcome(family[[4]]))) {
     whn <- which(!is_surv_outcome(family[[4]]))[1]
-    stop(paste0("outcome '", LHSs[[4]][whn], "' must be of survival type (non-negative and continuous)"))
+    if(all(!is_surv_outcome(family[[4]]))){
+      stop(paste0("at least one outcome must be of 
+                  survival type (non-negative and continuous)"))
+    }
+    survival_outcome <- nms_t[dZ + dX + whn]
+    
   }
-
   out <- list(formulas=formulas, pars=pars, family=family, link=link,
               LHSs=list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
-              std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t)
+              std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t,
+              survival_outcome = survival_outcome)
 }
 
 

@@ -18,7 +18,7 @@ using the frugal parameterization."><!-- mathjax --><script src="https://cdnjs.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
       </span>
     </div>
 
@@ -43,6 +43,9 @@ using the frugal parameterization."><!-- mathjax --><script src="https://cdnjs.c
     </li>
     <li>
       <a href="../articles/MSMs.html">Marginal Structural Survival Models</a>
+    </li>
+    <li>
+      <a href="../articles/Plasmode.html">Plasmode</a>
     </li>
   </ul></li>
 <li>
@@ -71,6 +74,7 @@ using the frugal parameterization.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">msm_samp</span><span class="op">(</span></span>
 <span>  <span class="va">n</span>,</span>
 <span>  dat <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  qtls <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="cn">T</span>,</span>
 <span>  <span class="va">formulas</span>,</span>
 <span>  <span class="va">family</span>,</span>
@@ -93,6 +97,10 @@ using the frugal parameterization.</p>
 
 <dt>dat</dt>
 <dd><p>optional data frame for plasmode simulation</p></dd>
+
+
+<dt>qtls</dt>
+<dd><p>associated quantiles from dat for plasmode simulation</p></dd>
 
 
 <dt>T</dt>

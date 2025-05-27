@@ -1,6 +1,13 @@
+##' Simulate from Survival Model using Seamon-Keogh Bootstrap Method
+##'
+##' Obtain samples from a specified Cox Marginal Structural Model
+##' using the frugal parameterization.
+##'
 ##' @importFrom causl sim_variable
 ##' @importFrom causl `lhs<-`
 ##' @param MMs all the Model Matrices passed as arguments in a list.
+##' @param pars list of parameter settings to use
+
 ##' @export
 boot_sim <- function (out, proc_inputs, quantiles, kwd, MMs) {
 

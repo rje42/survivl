@@ -4,7 +4,7 @@
 \alias{sim_variable}
 \title{Simulate a single variable using the inversion method}
 \usage{
-sim_variable(n, formulas, family, pars, link, dat, quantiles)
+sim_variable(n, formulas, family, pars, link, dat, quantiles, type_event)
 }
 \arguments{
 \item{n}{sample size}
@@ -20,6 +20,8 @@ sim_variable(n, formulas, family, pars, link, dat, quantiles)
 \item{dat}{data frame of current variables}
 
 \item{quantiles}{data frame of quantiles}
+
+\item{survival}{character denoting if primary or competing}
 }
 \value{
 The data frame \code{dat} with an additional column given by the left-hand side of \code{formula[[1]]}.

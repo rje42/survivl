@@ -60,7 +60,7 @@ $Z_t$ and $Y_t^*$.
 ```{r MSM_pars}
 pars <- list(Z = list(beta=c(1,0.5), phi=1),
              X = list(beta=c(-1,1)),
-             Y = list(beta=c(1.1,-0.5), lambda0=1),
+             Y = list(beta=c(1.1,-0.5), phi=1),
              cop = list(beta=1))
 ```
 
@@ -68,10 +68,10 @@ Now we call the function `msm_samp`, which obtains samples from this model.
 ```{r MSM_datasamp}
 set.seed(123)
 dat <- msm_samp(1e4, T=5,
-                formulas = formulas, 
-                family = family, 
-                pars = pars,
-                link = list(character(0), "identity", "logit", "inverse"))
+                formulas = formulas,
+                family = family,
+                pars = pars, 
+                link = list(character(0), "identity", "logit", "log"))
 datl <- surv_to_long(dat)
 ```
 
@@ -84,25 +84,35 @@ function, since its standard errors account for the re-weighting.
 ```{r survey_load, message=FALSE}
 library(survey)
 library(dplyr)
+library(ipw)
 options(digits=5)
 ```
 Now, we fit a GLM to obtain the weighting to use with $X$.
 ```{r weights}
-modX <- glm(X ~ Z, family=binomial, data=datl)
-summary(modX)$coefficients
-pred <- predict(modX, type="response")
-datl <- datl %>% mutate(datl, wts = X/pred + (1-X)/(1-pred))
+# Fit model using inverse probability weighting
+
+
+temp <- ipwtm(
+  exposure = X,
+  family = "binomial",
+  numerator = ~ 1,
+  denominator = ~ Z,
+  link = "logit",
+  id = id,
+  timevar = t,
+  type = "all",
+  data = datl)
+
+datl$wt <- temp$ipw.weights
+
 ```
 
 At this point we can fit the model to obtain the coefficients for the effect
 of $X$ on $Y$.
 ```{r MSM_fit}
-mod <- svyglm(I(1-Y) ~ X, 
-              family=binomial(link=log), 
-              design = svydesign(ids=datl$id,
-                                 weights=datl$wts,
-                                 data=datl))
-summary(mod)$coefficients
+glmY <- coxph(Surv(t, t_stop,Y)~ X, id = id, data = datl,
+                               weights = datl$wt, timefix = FALSE)
+summary(glmY)$coefficients
 ```
 
 ## Naïve Approaches
@@ -117,19 +127,3 @@ mod_naive <- svyglm(I(1-Y) ~ X,
                                  data=datl))
 summary(mod_naive)$coefficients
 ```
-
-Alternatively we can fit a conditional model.  Again, the estimate we obtain
-is biased.
-
-```{r cond_fit, warning=FALSE}
-start <- mod_naive$coefficients
-start <- c(start[1], 0, start[2])
-mod_cond <- svyglm(I(1-Y) ~ Z + X, 
-                   start = start,
-                   family = binomial(link=log), 
-                   design = svydesign(ids=datl$id,
-                                      weights=~1,
-                                      data=datl))
-summary(mod_cond)$coefficients
-```
-
