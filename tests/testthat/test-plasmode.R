@@ -7,7 +7,6 @@ gamma3 <- 0.1
 gamma4 <- 0.3
 gamma5 <- 0.3
 
-
 rho_to_beta <- function(rho){
   x <- (rho + 1)/2
   return(log(x/(1-x)))
@@ -48,13 +47,12 @@ pars <- list(B2 = list(beta = c(-0.2, 0.4), phi = 1),
              cop = list(Y = list(Z1 = list(beta= rho_to_beta(-0.6), par2 = 5),
                                  Z2 = list(beta = rho_to_beta(0.2), par2 = 5))))
 
-dat2 <- msm_samp(T = 10,dat = dat, qtls = qtls,
-                 formulas = formulas,
-                 family = family,
-                 pars = pars,
-                 link = list(list("identity"),
-                             list("identity", "logit"),
-                             "logit", "log"))
+sm <- survivl_model(formulas=formulas, family=family,
+                    pars=pars, T = 5, dat = dat, qtls = qtls,
+                    link = list(list("identity"),
+                    list("identity", "logit"),
+                    "logit", "log"))
+dat2 <- rmsm(n, sm)
 
 datl <- surv_to_long(dat2)
 

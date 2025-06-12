@@ -1,12 +1,12 @@
 suppressMessages(library(survey))
 n <- 1e5
 
-forms <- list(W ~ 1,
+formulas <- list(W ~ 1,
               Z ~ Z_l1 + X_l1,
               X ~ X_l1 + Z_l0,
               Y ~ W + X_l0,
               list(Y = list(Z ~ W)))
-fams <- list(3, 1, 5, 3, c(1))
+family <- list(3, 1, 5, 3, c(1))
 pars <- list(W = list(beta=0, phi=1/2),
              Z = list(beta=c(0,0.7,0.2), phi=1),
              X = list(beta=c(-0.5,0.25,0.5)),
@@ -16,8 +16,12 @@ pars <- list(W = list(beta=0, phi=1/2),
 link <- list("log", "identity", "logit", "inverse")
 
 set.seed(123)
-dat <- msm_samp(n, T=7, formulas = forms, family = fams, pars = pars,
-                link = link) # changed to 7 too many people died out
+
+sm <- survivl_model(formulas=formulas, family=family,
+                    pars=pars, T = 7,
+                    link = link)
+
+dat <- rmsm(n,sm) # changed to 7 too many people died out
 datl <- surv_to_long(dat, lag=1)
 
 glmZ <- glm(Z ~ Z_l1 + X_l1, data=datl)

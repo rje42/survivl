@@ -4,16 +4,15 @@
 ## @param pars list of lists of parameters
 ## @param family families for Z,X,Y and copula
 ## @param link list of link functions
-## @param kwd keyword for copula
 ##' @inheritParams msm_samp
 ## @param control control variables
 ## @param method method to be used for sampling
 ## @param ordering logical: should an ordering of variables be computed?
 ##'
-process_inputs <- function (formulas, pars, family, link, dat, T, method, control) {
+process_inputs <- function (formulas, pars, family, link, 
+                            dat, qtls, T, method = "inversion", control) {
 
   for (i in 1:5) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
-
   ## check for censoring
   cens <- check_censoring(formulas[[4]], pars, cns_kwd = control$censor)
   censoring <- cens$censoring
@@ -53,7 +52,6 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   ## introduce code from causl
   dims <- lengths(formulas)
   family <- causl::process_family(family=family, dims=dims, func_return=get_surv_family)
-
   ## now set up link functions
   link <- causl::link_setup(link, family = family[-(5)], vars=LHSs,
                             sources=c(links_list, surv_links_list))
@@ -68,7 +66,6 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
     npar <- length(tms[[j]][[i]]) + attr(forms[[j]][[i]], "intercept")
     if (length(pars[[LHSs[[j]][i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHSs[[j]][i], " does not match number of coefficients provided"))
   }
-
   ## useful summaries
   nms_t <- c(LHS_Z, LHS_X, LHS_Y)
   nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"), "status")
@@ -104,10 +101,12 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
     survival_outcome <- nms_t[dZ + dX + whn]
     
   }
+
   out <- list(formulas=formulas, pars=pars, family=family, link=link,
               LHSs=list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
               std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t,
-              survival_outcome = survival_outcome)
+              survival_outcome = survival_outcome, method = method, dat = dat,
+              censoring = censoring, T = T, kwd = kwd, qtls = qtls, start_at = control$start_at)
 }
 
 
