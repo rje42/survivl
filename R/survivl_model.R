@@ -15,8 +15,9 @@
 ##' @export
 survivl_model <- function (formulas, family, pars, link, T = T, dat=NULL, qtls = NULL, method="inversion",
                          kwd="cop", control=list()) {
-  
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0)
+
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0,
+             pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,quan_tol = 1e3*.Machine$double.eps)
   matches = match(names(control), names(con))
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",

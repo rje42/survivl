@@ -101,12 +101,33 @@ process_inputs <- function (formulas, pars, family, link,
     survival_outcome <- nms_t[dZ + dX + whn]
     
   }
+  # get quantiles if there is none
+  if (!is.null(dat)) {
+    n <- nrow(dat)
+    # different than causl, we need all quantiles to do weaving
+    wh_q <- names(dat)
+    quantiles <- process_prespecified(dat, prespec = wh_q, cond = control$pm_cond,
+                                      nlevs = control$pm_nlevs,
+                                      cor_thresh = control$pm_cor_thresh,
+                                      tol = control$quan_tol)
+    # renaming L quantile names to work for parametrization (L1, L2 -> L2|L1, L1)
+    time_vars <- lhs(formulas[[2]])
+    p <- length(time_vars)
+    # only assuming that we have one time window for now plasmode
+    for(i in rev(seq_len(p)[-1])){
+        L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0")
+        names(quantiles)[names(quantiles) == paste0(time_vars[i], "_0")] <- L_col
+        
+        
+        
+    }
+  }
 
   out <- list(formulas=formulas, pars=pars, family=family, link=link,
               LHSs=list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
               std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t,
               survival_outcome = survival_outcome, method = method, dat = dat,
-              censoring = censoring, T = T, kwd = kwd, qtls = qtls, start_at = control$start_at)
+              censoring = censoring, T = T, kwd = kwd, qtls = quantiles, start_at = control$start_at)
 }
 
 
