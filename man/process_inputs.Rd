@@ -4,7 +4,17 @@
 \alias{process_inputs}
 \title{Process formulas, families and parameters}
 \usage{
-process_inputs(formulas, pars, family, link, dat, T, method, control)
+process_inputs(
+  formulas,
+  pars,
+  family,
+  link,
+  dat,
+  qtls,
+  T,
+  method = "inversion",
+  control
+)
 }
 \arguments{
 \item{formulas}{list of formulas to use}
@@ -16,6 +26,8 @@ process_inputs(formulas, pars, family, link, dat, T, method, control)
 \item{link}{link functions for GLM-like models}
 
 \item{dat}{optional data frame for plasmode simulation}
+
+\item{qtls}{associated quantiles from dat for plasmode simulation}
 
 \item{T}{number of time points}
 

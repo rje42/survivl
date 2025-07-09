@@ -3,7 +3,6 @@
 ##' This defines a `survivl_model` object, that can be used either for simulation
 ##' or inference.
 ##'
-##' @inheritParams rfrugalParam
 ##' @param kwd word used for copula formula and parameters
 ##'
 ##' @details
