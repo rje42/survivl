@@ -92,7 +92,7 @@ kableExtra::kbl(tab_correct, digits = c(2,3,5,2), booktabs=TRUE, format="latex")
   kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "p-value"))
 ```
 
-### Example 2 (doesn't work)
+### Example 2 (Gamma distributed requires by hand ipw calculation)
 
 We assume:
  - $C$ is a Bernoulli r.v. with parameter $1/2$;
