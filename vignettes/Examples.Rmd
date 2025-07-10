@@ -44,7 +44,8 @@ pars <- list(C = list(beta=0),
 ```{r sim_dat1}
 set.seed(123)
 n <- 1e4
-dat <- msm_samp(n, T=20, formulas=formulas, family=family, pars=pars, link=link)
+surv_model <- survivl_model(T=20, formulas=formulas, family=family, pars=pars, link=link)
+dat <- rmsm(n, surv_model)
 datl <- surv_to_long(dat)
 ```
 
@@ -111,7 +112,8 @@ pars <- list(C = list(beta=0),
 
 ```{r sim_dat2}
 set.seed(123)
-dat <- msm_samp(1e4, T=20, formulas=formulas, family=family, pars=pars, link=link)
+surv_model2 <- survivl_model(T=20, formulas=formulas, family=family, pars=pars, link=link)
+dat <- rmsm(1e4, surv_model2)
 datl <- surv_to_long(dat)
 ```
 

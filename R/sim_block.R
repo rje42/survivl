@@ -98,7 +98,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     }
     out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
                                  dat = out, quantiles=quantiles, type_event)
-    browser()
+
     collect_events(out, "Y")
     # out <- causl::sim_variable(nrow(out), forms, fams, prs, lnk,
     #                            dat=out, quantiles=quantiles)

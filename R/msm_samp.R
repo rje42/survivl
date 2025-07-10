@@ -501,6 +501,7 @@ rmsm <- function(n, surv_model, control = list()){
         }
         colnames(qtls)[(dC + 1):ncol(qtls)] <- sapply(colnames(qtls)[(dC+1):ncol(qtls)], function(z) paste0(z,"_prev"))
       }
+
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,, drop = FALSE], kwd=kwd)
       out[surv, ] <- tmp$dat
       if(is.null(qtls)){

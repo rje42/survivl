@@ -49,13 +49,13 @@ pars <- list(W = list(beta=0, phi=1/2),
              cop = list(Y=list(Z=list(beta=c(0.5, 0.0))))
 )
 link <- list("log", "identity", "logit", "inverse")
+surv_model <- survivl_model(T = 10, formulas = forms, family = fams, pars = pars, link=link)
 ```
 We can now simulate $n=10^5$ observations from the model over 10 time points.
 ```{r sim_data}
 n <- 1e5
 set.seed(124)
-dat <- msm_samp(n, T = 10, formulas = forms, family = fams, pars = pars, link=link) 
-                # method = "rejection")
+dat <- rmsm(n, survivl_model)
 datl <- surv_to_long(dat, lag=1)
 ```
 ### Checking the fit
@@ -109,11 +109,12 @@ forms2[[5]] <- list(Y = list(Z1 ~ W, Z2 ~ W))
 fams2[[5]] <- list(c(1, 1))
 pars2$cop <- list(Y=list(Z1=list(beta=c(0.5,0.2)),
                          Z2=list(beta=c(0.25,0))))
+surv_model2 <- survivl_model(T = 10, formulas = forms2, family = fams2, pars = pars2, 
+                  link = link, method = "inversion")
 ```
 We can then simulate as before.
 ```{r sim_dat_mv}
-dat2 <-  msm_samp(n, T = 10, formulas = forms2, family = fams2, pars = pars2, 
-                  link = link, method = "inversion")
+dat2 <-  rmsm(n, surv_model2)
 dat2l <- surv_to_long(dat2, lag=1)
 ```
 

@@ -44,18 +44,13 @@ A_0 \mid X_1,X_2,B_1,Z_{1,0},Z_{2,0} &\sim \text{Bernoulli}(\text{expit}(-1 + 0.
 We have 10,000 observations of existing data.
 ```{r existing data}
 n <- 1e4
-qtls <- data.frame(X1 = runif(n), X2 = runif(n), B1 = runif(n), B2 = runif(n),
-                   Z1_0 = runif(n), A_0 = runif(n))
-qtls[["Z2|Z1_0"]] = runif(n)
+dat <- data.frame(X1=rnorm(n,mean = 0, sd = 1),
+                  X2 = rbinom(n, size = 1, prob = 0.5))
+dat$B1 <- rnorm(n, 0.4*dat$X2 -0.2, sd = 1)
 
-dat <- data.frame(X1=qnorm(qtls$X1,mean = 0, sd = 1),
-                  X2 = qbinom(qtls$X2, size = 1, prob = 0.5))
-dat$B1 <- qnorm(qtls$B1, 0.4*dat$X2 -0.2, sd = 1)
-dat$B2 <- qnorm(qtls$B2, 0.2*dat$X1, sd = 1)
-
-dat[["Z1_0"]] <- qnorm(qtls[["Z1_0"]], 0.2*dat$X1, sd = 1)
-dat[["Z2_0"]] <- qbinom(qtls[["Z2|Z1_0"]], 1, expit(-0.2 + 0.4 * dat$X2))
-dat[["A_0"]] = qbinom(qtls[["A_0"]], 1, expit(-1 + 0.1 * dat$X1 + 0.15*dat$X2 + 0.1*dat$B1 + 0.3*dat[["Z1_0"]] + 0.3* dat[["Z2_0"]]))
+dat[["Z1_0"]] <- rnorm(n, 0.2*dat$X1, sd = 1)
+dat[["Z2_0"]] <- rbinom(n, 1, expit(-0.2 + 0.4 * dat$X2))
+dat[["A_0"]] = rbinom(n, 1, expit(-1 + 0.1 * dat$X1 + 0.15*dat$X2 + 0.1*dat$B1 + 0.3*dat[["Z1_0"]] + 0.3* dat[["Z2_0"]]))
 
 ```
 
@@ -76,36 +71,35 @@ gamma3 <- 0.1
 gamma4 <- 0.3
 gamma5 <- 0.3
 
-formulas <- list(list(),
-                 list(Z1 ~  B2 + Z1_l1 + A_l1, 
-                      Z2 ~ B2 + Z2_l1 + A_l1),
+formulas <- list(list(B2 ~ X1),
+                 list(Z1 ~  B2 + Z1_l1 + A_l1, Z2 ~ B2 + Z2_l1 + A_l1),
                  A ~ X1 + X2 + B1 + Z1_l0 + Z2_l0 + A_l1,
                  Y ~ A_l0,
                  list(Z1 ~ 1, Z2 ~ 1))
 
-family <- list(list(),
+family <- list(list(1),
                list(1,5),
                5,
                3,
                list(2,2))
-pars <- list(Z1 = list(beta=c(0.3,0.4, 0.7,-0.6 ), phi=1),
+pars <- list(B2 = list(beta = c(-0.2, 0.4), phi = 1),
+             Z1 = list(beta=c(0.3,0.4, 0.7,-0.6 ), phi=1),
              Z2 = list(beta = c(-0.2,0.4,1,-0.6)),
              A = list(beta=c(-1, gamma1, gamma2, gamma3, gamma4, gamma5, 1)),
              Y = list(beta = c(0.5,0.2), phi = 1), # negative 1/exp
              cop = list(Y = list(Z1 = list(beta= rho_to_beta(-0.6), par2 = 5),
                                  Z2 = list(beta = rho_to_beta(0.2), par2 = 5))))
-links <-list(list(),
-                             list("identity", "logit"),
-                             "logit", "log")
+
+surv_model <- survivl_model(formulas=formulas, family=family,
+                    pars=pars, T = 5, dat = dat, qtls = NULL, # no quantiles given
+                    link = list(list("identity"),
+                    list("identity", "logit"),
+                    "logit", "log"))
 ```
 
-We simulate the rest of the data dat2, starting with dat.
+We simulate the rest of the data `dat2`, starting with `dat`.
 ```{r}
-dat2 <- msm_samp(T = 10,dat = dat, qtls = qtls,
-                 formulas = formulas,
-                 family = family,
-                 pars = pars,
-                 link = links)
+dat2 <- rmsm(n, sm)
 ```
 
 We are able to recover the causal estimand. 
