@@ -53,9 +53,6 @@
       <a href="../articles/Causal_Survival_Analysis.html">Causal Survival Analysis</a>
     </li>
     <li>
-      <a href="../articles/Censoring.html">Censoring</a>
-    </li>
-    <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
@@ -137,51 +134,16 @@ between <span class="math inline">\(Z_t\)</span> and <span class="math inline">\
 <span>             X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.1</span>,<span class="op">-</span><span class="fl">0.5</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
 <span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Now we call the function <code>msm_samp</code>, which obtains samples
-from this model.</p>
+<p>Now we create a <code>survivl_model</code> which contains all of our
+inputted information. To simulate samples from this MSM call the
+<code>rmsm</code> function.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/msm_samp.html">msm_samp</a></span><span class="op">(</span><span class="fl">1e4</span>, T<span class="op">=</span><span class="fl">5</span>,</span>
-<span>                formulas <span class="op">=</span> <span class="va">formulas</span>,</span>
-<span>                family <span class="op">=</span> <span class="va">family</span>,</span>
-<span>                pars <span class="op">=</span> <span class="va">pars</span>, </span>
-<span>                link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>,</span>
+<span>                    pars<span class="op">=</span><span class="va">pars</span>, T <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>                    link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">1e4</span>, <span class="va">surv_model</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: package 'copula' was built under R version 4.3.3</span></span>
-<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
-<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
-<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
-<span><span class="co">#&gt;     link = link[[1]])</span></span>
-<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
-<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
-<span><span class="co">#&gt; debug: return(dat)</span></span>
-<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
-<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
-<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
-<span><span class="co">#&gt;     link = link[[1]])</span></span>
-<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
-<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
-<span><span class="co">#&gt; debug: return(dat)</span></span>
-<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
-<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
-<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
-<span><span class="co">#&gt;     link = link[[1]])</span></span>
-<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
-<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
-<span><span class="co">#&gt; debug: return(dat)</span></span>
-<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
-<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
-<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
-<span><span class="co">#&gt;     link = link[[1]])</span></span>
-<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
-<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
-<span><span class="co">#&gt; debug: return(dat)</span></span>
-<span><span class="co">#&gt; Called from: survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk, </span></span>
-<span><span class="co">#&gt;     dat = out, quantiles = quantiles, survival)</span></span>
-<span><span class="co">#&gt; debug: Y &lt;- rescale_var(qY, X = X, family = family[[1]], pars = pars[["doPar"]], </span></span>
-<span><span class="co">#&gt;     link = link[[1]])</span></span>
-<span><span class="co">#&gt; debug: dat[[vnm_t]] &lt;- Y</span></span>
-<span><span class="co">#&gt; debug: attr(dat, "quantiles") &lt;- quantiles</span></span>
-<span><span class="co">#&gt; debug: return(dat)</span></span>
 <span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -220,7 +182,7 @@ effect of <span class="math inline">\(X\)</span> on <span class="math inline">\(
 <span>                               weights <span class="op">=</span> <span class="va">datl</span><span class="op">$</span><span class="va">wt</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">glmY</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
 <span><span class="co">#&gt;      coef exp(coef) se(coef) robust se      z   Pr(&gt;|z|)</span></span>
-<span><span class="co">#&gt; X 0.52359    1.6881 0.021909  0.030103 17.393 9.2965e-68</span></span></code></pre></div>
+<span><span class="co">#&gt; X 0.50452    1.6562 0.022049  0.028498 17.704 3.9272e-70</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="naïve-approaches">Naïve Approaches<a class="anchor" aria-label="anchor" href="#na%C3%AFve-approaches"></a>
@@ -235,8 +197,8 @@ obtain a biased estimate of the coefficient of <span class="math inline">\(X\)</
 <span>                                 data<span class="op">=</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_naive</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
 <span><span class="co">#&gt;              Estimate Std. Error  t value Pr(&gt;|t|)</span></span>
-<span><span class="co">#&gt; (Intercept) -0.433661  0.0066119 -65.5880 0.000000</span></span>
-<span><span class="co">#&gt; X           -0.023445  0.0095319  -2.4596 0.013926</span></span></code></pre></div>
+<span><span class="co">#&gt; (Intercept) -0.436305  0.0065753 -66.3555 0.000000</span></span>
+<span><span class="co">#&gt; X           -0.015734  0.0095505  -1.6474 0.099506</span></span></code></pre></div>
 </div>
   </div>
 

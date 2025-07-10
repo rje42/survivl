@@ -48,9 +48,8 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles, type_
   X <- model.matrix(delete.response(terms(formulas[[1]])), data=dat)
   Y <- rescale_var(qY, X=X, family=family[[1]], pars=pars[["doPar"]], link=link[[1]])
   
-
   eta <- X %*% pars[["doPar"]]$beta
-  lambda <- 1/ (link_apply(eta, link[[1]], family[[1]]))
+  lambda <- 1/ (link_apply(eta, link[[1]], family[[1]]$name))
   quantiles[[paste0("q1_0")]] <- pexp(1, lambda)
 
 
