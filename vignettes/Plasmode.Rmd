@@ -26,6 +26,10 @@ Begin by loading the library.
 ```{r load}
 library(survivl)
 library(ipw)
+rho_to_beta <- function(rho){
+  x <- (rho + 1)/2
+  return(log(x/(1-x)))
+}
 options(digits=4)
 ```
 
@@ -49,8 +53,8 @@ dat <- data.frame(X1=rnorm(n,mean = 0, sd = 1),
 dat$B1 <- rnorm(n, 0.4*dat$X2 -0.2, sd = 1)
 
 dat[["Z1_0"]] <- rnorm(n, 0.2*dat$X1, sd = 1)
-dat[["Z2_0"]] <- rbinom(n, 1, expit(-0.2 + 0.4 * dat$X2))
-dat[["A_0"]] = rbinom(n, 1, expit(-1 + 0.1 * dat$X1 + 0.15*dat$X2 + 0.1*dat$B1 + 0.3*dat[["Z1_0"]] + 0.3* dat[["Z2_0"]]))
+dat[["Z2_0"]] <- rbinom(n, 1, plogis(-0.2 + 0.4 * dat$X2))
+dat[["A_0"]] = rbinom(n, 1, plogis(-1 + 0.1 * dat$X1 + 0.15*dat$X2 + 0.1*dat$B1 + 0.3*dat[["Z1_0"]] + 0.3* dat[["Z2_0"]]))
 
 ```
 
@@ -99,7 +103,7 @@ surv_model <- survivl_model(formulas=formulas, family=family,
 
 We simulate the rest of the data `dat2`, starting with `dat`.
 ```{r}
-dat2 <- rmsm(n, sm)
+dat2 <- rmsm(n, surv_model)
 ```
 
 We are able to recover the causal estimand. 

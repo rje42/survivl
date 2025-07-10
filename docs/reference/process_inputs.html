@@ -35,9 +35,6 @@
       <a href="../articles/Causal_Survival_Analysis.html">Causal Survival Analysis</a>
     </li>
     <li>
-      <a href="../articles/Censoring.html">Censoring</a>
-    </li>
-    <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
@@ -69,7 +66,17 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">process_inputs</span><span class="op">(</span><span class="va">formulas</span>, <span class="va">pars</span>, <span class="va">family</span>, <span class="va">link</span>, <span class="va">dat</span>, <span class="cn">T</span>, <span class="va">method</span>, <span class="va">control</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">process_inputs</span><span class="op">(</span></span>
+<span>  <span class="va">formulas</span>,</span>
+<span>  <span class="va">pars</span>,</span>
+<span>  <span class="va">family</span>,</span>
+<span>  <span class="va">link</span>,</span>
+<span>  <span class="va">dat</span>,</span>
+<span>  <span class="va">qtls</span>,</span>
+<span>  <span class="cn">T</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"inversion"</span>,</span>
+<span>  <span class="va">control</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -92,6 +99,10 @@
 
 <dt>dat</dt>
 <dd><p>optional data frame for plasmode simulation</p></dd>
+
+
+<dt>qtls</dt>
+<dd><p>associated quantiles from dat for plasmode simulation</p></dd>
 
 
 <dt>T</dt>

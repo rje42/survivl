@@ -19,6 +19,7 @@ In this vignette we consider _marginal structural models_ for time-to-event
 data.  Begin by loading the library.
 ```{r load}
 library(survivl)
+library(survival) # for coxph
 options(digits=4)
 ```
 
@@ -55,7 +56,7 @@ We can now simulate $n=10^5$ observations from the model over 10 time points.
 ```{r sim_data}
 n <- 1e5
 set.seed(124)
-dat <- rmsm(n, survivl_model)
+dat <- rmsm(n, surv_model)
 datl <- surv_to_long(dat, lag=1)
 ```
 ### Checking the fit
@@ -70,24 +71,44 @@ summary(glm(Z ~ W + Z_l1 + X_l1, data=datl))$coefficients
 summary(glm(X ~ W + X_l1 + Z, data=datl, family=binomial))$coefficients
 ```
 Indeed, each of these variables is consistent with the parameters we used.  For
-the survival outcome, we can use inverse probability weighting.  The `survey` 
-package can account for the additional uncertainty introduced by weighting.
-```{r survey, message=FALSE}
-library(survey)
+the survival outcome, we can use inverse probability weighting.  The `ipw` 
+package can estimate ipw weights for time varying confounders like `Z`.
+
+```{r}
+temp <- ipw::ipwtm(
+  X,
+  family = "binomial",
+  link = "logit",
+  numerator = ~1,
+  denominator = ~ Z,
+  id = id,
+  type = "all",
+  timevar = t,
+  data = datl,
+)
+datl$wt <- temp$ipw.weights
+mod_correct <- coxph(Surv(t, t_stop, Y) ~ W + X, weights = wt, data = datl,
+                     timefix = FALSE)
+mod_naive <- coxph(Surv(t, t_stop, Y) ~ W + X, weights = rep(1, nrow(datl)), data = datl,
+                   timefix = FALSE)
 ```
-Now we estimate the propensity scores, and fit the IPW model.
-```{r ipw, warn=FALSE}
-ps <- predict(glm(X ~ W + X_l1 + Z, data=datl, family=binomial), type = "response")
-wt <- datl$X/ps + (1-datl$X)/(1-ps)
-summary(svyglm(I(1-Y) ~ W + X, family=binomial(log), start=c(-2,1/10,-1/5), 
-               design=svydesign(~1, data=datl, weights=wt)))$coefficients
+
+```{r}
+tab_correct <- cbind(pars$Y$beta[-c(1)], -mod_correct$coef, summary(mod_correct)$coef[,-c(1,3)])
+tab_correct[,4] <- pt(abs((tab_correct[,2]-tab_correct[,1])/tab_correct[,3]), df=n-4, lower.tail = FALSE)
+tab_naive <- cbind(pars$Y$beta[-c(1)], -mod_naive$coef, summary(mod_naive)$coef[,-c(1,3)])
+tab_naive[,4] <- pt(abs((tab_naive[,2]-tab_naive[,1])/tab_naive[,3]), df=n-4, lower.tail = FALSE)
+library(kableExtra)
+kableExtra::kbl(tab_naive, digits = c(2,3,5,2), booktabs=TRUE, format="latex")  %>%  
+  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "p-value"))
+kableExtra::kbl(tab_correct, digits = c(2,3,5,2), booktabs=TRUE, format="latex")  %>%  
+  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "p-value"))
 ```
 
 # Multiple time-varying covariates
 
-We may well be interested in simulating more than one time-varying covariate. We
-can easily allow for this, first by simply specifying another formula in the 
-second element of our list...
+We may well be interested in simulating more than one time-varying covariate. 
+A new update allows us to update our `surv_model` object without redefining it.
 
 ```{r mv_forms}
 forms2 <- forms
@@ -109,29 +130,55 @@ forms2[[5]] <- list(Y = list(Z1 ~ W, Z2 ~ W))
 fams2[[5]] <- list(c(1, 1))
 pars2$cop <- list(Y=list(Z1=list(beta=c(0.5,0.2)),
                          Z2=list(beta=c(0.25,0))))
-surv_model2 <- survivl_model(T = 10, formulas = forms2, family = fams2, pars = pars2, 
-                  link = link, method = "inversion")
+# should be able to just use modify
+surv_model2 <- modify.survivl_model(surv_model, formulas = forms2,
+                                    family = fams2,
+                                    pars = pars2, link = link)
 ```
 We can then simulate as before.
 ```{r sim_dat_mv}
 dat2 <-  rmsm(n, surv_model2)
-dat2l <- surv_to_long(dat2, lag=1)
+dat2l <- surv_to_long(dat2, lag = 1)
 ```
 
 Checking the distributions, these all seem fine.
-```{r check_ZX_mv}
+```{r check_ZX_mv, eval=FALSE}
 summary(glm(Z1 ~ W + Z1_l1 + Z2_l1 + X_l1, data=dat2l))$coef
 summary(glm(Z2 ~ W + Z2_l1 + X_l1 + Z1, data=dat2l))$coef
-summary(glm(X ~ W + X_l1 + Z1 + Z2, data=dat2l, family=binomial))$coef
+summary(glm(X ~ W + Z1 + Z2, data=dat2l, family=binomial))$coef
 ```
 
 For the outcome, we again apply IPW, and obtain:
+```{r}
+temp <- ipwtm(
+  exposure = X,
+  family = "binomial",
+  link = "logit",
+  numerator = ~W,
+  denominator = ~ W + Z1 + Z2 + X_l1,
+  id = id,
+  timevar = t,
+  type = "all",
+  data = dat2l
+)
+dat2l$wt <- temp$ipw.weights
+
+mod_correct <- coxph(Surv(t, t_stop, Y) ~ W + X,  weights = dat2l$wt,
+                     data = dat2l, timefix = FALSE)
+mod_naive <- coxph(Surv(t, t_stop, Y) ~ W + X, weights = rep(1, nrow(dat2l)),
+                     data = dat2l, timefix = FALSE)
+```
+
 ```{r check_XY_mv, eval=TRUE, warn=FALSE}
-ps <- predict(glm(X ~ W + X_l1 + Z1 + Z2, data=dat2l, family=binomial), type="response")
-wt <- dat2l$X/ps + (1-dat2l$X)/(1-ps)
-glmY <- svyglm(I(1-Y) ~ W + X, family=binomial(log), start=c(-1,1/10,-1/5), 
-               design=svydesign(~1, weights=wt, data=dat2l))
-summary(glmY)$coefficients
+tab_correct <- cbind(pars$Y$beta[-c(1)], -mod_correct$coef, summary(mod_correct)$coef[,-c(1,3)])
+tab_correct[,4] <- pt(abs((tab_correct[,2]-tab_correct[,1])/tab_correct[,3]), df=n-4, lower.tail = FALSE)
+tab_naive <- cbind(pars$Y$beta[-c(1)], -mod_naive$coef, summary(mod_naive)$coef[,-c(1,3)])
+tab_naive[,4] <- pt(abs((tab_naive[,2]-tab_naive[,1])/tab_naive[,3]), df=n-4, lower.tail = FALSE)
+library(kableExtra)
+kableExtra::kbl(tab_naive, digits = c(2,3,5,2), booktabs=TRUE, format="latex")  %>%  
+  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "p-value"))
+kableExtra::kbl(tab_correct, digits = c(2,3,5,2), booktabs=TRUE, format="latex")  %>%  
+  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "p-value"))
 ```
 
 

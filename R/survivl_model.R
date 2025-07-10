@@ -55,7 +55,8 @@ print.survivl_model <- function (x, ...) {
 ##' This function can be used to modify
 ##'
 ##' @export
-modify.survivl_model <- function (x, over=FALSE, formulas, family, pars, link, dat, method,
+modify.survivl_model <- function (x, over=FALSE, formulas, family, pars, 
+                                  T, link, dat, method,qtls,
                                 kwd) {
   if (!is(x, "survivl_model")) stop("Must include an object of class 'survivl_model'")
   
@@ -73,9 +74,15 @@ modify.survivl_model <- function (x, over=FALSE, formulas, family, pars, link, d
   if (missing(dat)) dat <- x$dat
   if (missing(method)) method <- x$method
   if (missing(kwd)) kwd <- x$kwd
+  if(missing(T)) T <- x$T
+  if(missing(qtls)) qtls <- x$qtls
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop=x$kwd, censor="Cen", 
+             start_at=surv_model$start_at,
+             pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,quan_tol = 1e3*.Machine$double.eps)
   
   out <- process_inputs(formulas=formulas, family=family, pars=pars,
-                        link=link, dat=dat, method=method, kwd=kwd)
+                        link=link, dat=dat, method=method, T = T, control = con,
+                        qtls = qtls)
   
   return(out)
 }

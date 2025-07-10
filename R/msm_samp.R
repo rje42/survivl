@@ -209,7 +209,7 @@ msm_samp <- function (n, dat=NULL,qtls = NULL, T, formulas, family, pars, link=N
       surv[surv] <- surv[surv] & surv_this
       # out <- causl::sim_inversion(out, mod2)
       # qZ <- cbind(qZ, attr(out, "qZs"))
-
+    
       ## if no-one has survived, then end the simulation
       if (!any(surv)) break
     }
@@ -436,16 +436,15 @@ rmsm <- function(n, surv_model, control = list()){
   # var_nms_Y <- tmp$var_nms_Y
   # var_nms_cop <- tmp$var_nms_cop
   
-  
+
   ## simulate static covariates
   baseline_vars <- unlist(LHS_C)
   j <- 1
   for (i in seq_along(LHS_C)) {
-    
     if(all(is.na(out[[LHS_C[[i]]]]))){
       ## now compute etas
       eta <- model.matrix(update(formulas[[1]][[j]], NULL ~ .), data=out) %*% pars[[LHS_C[i]]]$beta
-      tmp <- causl::glm_sim(family=family[[1]][j], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
+      tmp <- causl::glm_sim(family=family[[1]][[j]], eta=eta, phi=pars[[LHS_C[[i]]]]$phi,
                             other_pars=pars[[LHS_C[[i]]]], link=link[[1]][j])
       out[[LHS_C[[i]]]] <- tmp
       #qtls[[LHS_C[[i]]]] <- attr(tmp, "quantile")
@@ -538,6 +537,13 @@ rmsm <- function(n, surv_model, control = list()){
       surv[surv] <- surv[surv] & surv_this
       # out <- causl::sim_inversion(out, mod2)
       # qZ <- cbind(qZ, attr(out, "qZs"))
+      if (mean(surv) < 0.05) {
+        warning(paste0("Time: ", t, " Many samples lost. 
+                       May result in unstable calculations."))
+      }
+      if(sum(surv) < 20){
+        stop("Time: ", t, " Too many samples lost. Stopping simulation.")
+      }
       
       ## if no-one has survived, then end the simulation
       if (!any(surv)) break
