@@ -44,7 +44,7 @@ rmv_time_stamps <- function (nms) {
   out
 }
 
-##' Remove time or lag suffix
+##' Remove time or lag suffix or I(.) function
 ##'
 ##' @param x vector to trim
 ##'
@@ -58,6 +58,24 @@ rmv_lag <- function (x) {
   rx <- regexpr("_l[0-9]+$", x)
   x[rx > 0] <- substr(x[rx > 0], 1, rx[rx > 0]-1)
   return(x)
+}
+
+##' Cleans tms object in `process_inputs`
+##' 
+##' @param tms a vector of tms (already flattened) that may have + ,_lk, or I(.) around them
+##' 
+clean_tms <- function(tms){
+  #remove functionals in the I function
+  tms <- unlist(strsplit(tms, "[\\s\\+\\-\\*\\/\\^\\(\\),]+"))
+  tms <- trimws(tms) # gets rid of white space
+  tms <- tms[tms != ""]  # remove empty strings
+  
+  tms <- tms[!tms %in% c("I", "exp", "sin", "cos", "sqrt", "log")]
+
+  
+  tms <- rmv_time(rmv_lag(tms))
+  return(unique(tms))
+  
 }
 
 

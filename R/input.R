@@ -4,17 +4,17 @@
 ## @param pars list of lists of parameters
 ## @param family families for Z,X,Y and copula
 ## @param link list of link functions
-## @param kwd keyword for copula
 ##' @inheritParams msm_samp
 ## @param control control variables
 ## @param method method to be used for sampling
 ## @param ordering logical: should an ordering of variables be computed?
 ##'
-process_inputs <- function (formulas, pars, family, link, dat, T, method, control) {
+process_inputs <- function (formulas, pars, family, link, 
+                            dat, qtls, T, method = "inversion", control) {
 
   for (i in 1:5) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
-
   ## check for censoring
+  # TODO: Fix censoring logic for future
   cens <- check_censoring(formulas[[4]], pars, cns_kwd = control$censor)
   censoring <- cens$censoring
   if (censoring) {
@@ -26,7 +26,7 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   LHS_C <- LHSs[[1]]; LHS_Z <- LHSs[[2]]; LHS_X <- LHSs[[3]]; LHS_Y <- LHSs[[4]]
   if(!is.null(dat)){
     prev_vars <- colnames(dat)
-    LHS_C <- c(prev_vars[which(prev_vars == rmv_time(prev_vars))], LHS_C) # have subset of baseline variables
+    LHS_C <- unique(c(prev_vars[which(prev_vars == rmv_time(prev_vars))], LHS_C)) # have subset of baseline variables
   }
   # LHS_C <- causl::lhs(formulas[[1]])
   # LHS_Z <- causl::lhs(formulas[[2]])
@@ -40,20 +40,20 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
   ## check right number of parameters supplied
   forms <- lapply(formulas[1:4], function (x) lapply(x, terms))
   tms <- lapply(forms, function(x) lapply(x,  attr, "term.labels"))
-
+  
   ## get response variables list
-  RHS_vars <- rmv_lag(unlist(tms))
-
+  RHS_vars <- clean_tms(unlist(tms))
   if (!all(RHS_vars %in% c(unlist(LHSs), colnames(dat)))) {
     wh <- RHS_vars[!RHS_vars %in% unlist(LHSs)]
     wh <- unique.default(wh)
-    stop(paste0("Variables ", paste(wh, collapse=", "), " appear on right hand side but are not simulated"))
+    stop(paste0("Variables ", paste(wh, collapse=", "),
+                " appear on right hand side but are not simulated.
+                This may be because user inputed non-conventional function in I(.)"))
   }
 
   ## introduce code from causl
   dims <- lengths(formulas)
   family <- causl::process_family(family=family, dims=dims, func_return=get_surv_family)
-
   ## now set up link functions
   link <- causl::link_setup(link, family = family[-(5)], vars=LHSs,
                             sources=c(links_list, surv_links_list))
@@ -68,7 +68,6 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
     npar <- length(tms[[j]][[i]]) + attr(forms[[j]][[i]], "intercept")
     if (length(pars[[LHSs[[j]][i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHSs[[j]][i], " does not match number of coefficients provided"))
   }
-
   ## useful summaries
   nms_t <- c(LHS_Z, LHS_X, LHS_Y)
   nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"), "status")
@@ -82,7 +81,7 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
 
   ## copula related things
   kwd <- control$cop
-
+  
   if (method == 'inversion' || method == 'bootstrap') {
     tmp <- causl::pair_copula_setup(formulas=formulas[[5]], family=family[[5]], pars=pars[[kwd]],
                                      LHSs=LHSs, quans=character(0), ord=ord)
@@ -92,22 +91,45 @@ process_inputs <- function (formulas, pars, family, link, dat, T, method, contro
 
   }
 
-
   ## check that at least one outcomes are OK for time-to-event
+  # do this by using _l0 to mean it is survival 
+  # TODO: make more generealizable for multiple non-survival events
   survival_outcome <- NULL
-  if (any(!is_surv_outcome(family[[4]]))) {
-    whn <- which(!is_surv_outcome(family[[4]]))[1]
-    if(all(!is_surv_outcome(family[[4]]))){
-      stop(paste0("at least one outcome must be of 
+
+  terms <- lapply(formulas[[4]], function(x) all.vars(x))
+  survival_outcome <- unlist(lapply(terms, function(x) any(grepl("_l\\d+", x))))
+  if(any(survival_outcome)){
+    if(any(!is_surv_outcome(family[[4]][which(survival_outcome)]))){
+      stop(paste0("Specified a survival outcome without a 
                   survival type (non-negative and continuous)"))
     }
-    survival_outcome <- nms_t[dZ + dX + whn]
-    
   }
+  # get quantiles if there is none
+  # TODO: if both dat and quantiles there but one variable has dat but no quantiles
+  if (!(is.null(dat)) && is.null(qtls)) {
+    n <- nrow(dat)
+    # different than causl, we need all quantiles to do weaving
+    wh_q <- names(dat)
+    qtls <- process_prespecified(dat, prespec = wh_q, cond = control$pm_cond,
+                                      nlevs = control$pm_nlevs,
+                                      cor_thresh = control$pm_cor_thresh,
+                                      tol = control$quan_tol)
+    # renaming L quantile names to work for parametrization (L1, L2 -> L2|L1, L1)
+    time_vars <- lhs(formulas[[2]])
+    p <- length(time_vars)
+    # only assuming that we have one time window for now plasmode
+    for(i in rev(seq_len(p)[-1])){
+        L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_0")
+        names(qtls)[names(qtls) == paste0(time_vars[i], "_0")] <- L_col
+        
+    }
+  }
+
   out <- list(formulas=formulas, pars=pars, family=family, link=link,
               LHSs=list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
               std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t,
-              survival_outcome = survival_outcome)
+              survival_outcome = survival_outcome, method = method, dat = dat,
+              censoring = censoring, T = T, kwd = kwd, qtls = qtls, start_at = control$start_at)
 }
 
 

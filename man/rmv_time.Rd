@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility.R
 \name{rmv_time}
 \alias{rmv_time}
-\title{Remove time or lag suffix}
+\title{Remove time or lag suffix or I(.) function}
 \usage{
 rmv_time(x)
 }
@@ -10,5 +10,5 @@ rmv_time(x)
 \item{x}{vector to trim}
 }
 \description{
-Remove time or lag suffix
+Remove time or lag suffix or I(.) function
 }
