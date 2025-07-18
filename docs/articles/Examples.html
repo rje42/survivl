@@ -56,6 +56,9 @@
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
+      <a href="../articles/Longitudinal-Outcome.html">Longitudinal Non-Survival Outcomes</a>
+    </li>
+    <li>
       <a href="../articles/MSMs.html">Marginal Structural Survival Models</a>
     </li>
     <li>
@@ -158,7 +161,7 @@ weights for time varying confounding.</p>
 <span><span class="va">mod_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>,<span class="va">Y</span><span class="op">)</span><span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, id <span class="op">=</span> <span class="va">id</span>, data <span class="op">=</span> <span class="va">datl</span>,</span>
 <span>                               weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
-<h3 id="example-2-doesnt-work">Example 2 (doesn’t work)<a class="anchor" aria-label="anchor" href="#example-2-doesnt-work"></a>
+<h3 id="example-2-gamma-distributed-requires-by-hand-ipw-calculation">Example 2 (Gamma distributed requires by hand ipw calculation)<a class="anchor" aria-label="anchor" href="#example-2-gamma-distributed-requires-by-hand-ipw-calculation"></a>
 </h3>
 <p>We assume: - <span class="math inline">\(C\)</span> is a Bernoulli
 r.v. with parameter <span class="math inline">\(1/2\)</span>; - <span class="math inline">\(Z_t\)</span> is a normal random variable with mean

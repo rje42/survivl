@@ -1,0 +1,129 @@
+---
+title: "Longitudinal Non-Survival Outcomes"
+author: "Chase Mathis"
+date: "`r Sys.Date()`"
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{Longitudinal-Single-Outcome}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Marginal Structural Models
+
+In this vignette we consider *marginal structural models* for *non*-time-to-event data. Begin by loading the library.
+
+```{r load}
+library(survivl)
+options(digits=4)
+```
+
+We follow the situation as researched in Bodnar et al. (2004), which examines the causal effect of iron supplement use during pregancy on the odds of anemia at delivery. Therefore, we have a longitudinal data structure with one, non survival outcome. We have time varying covariates as treatment is not fixed and hemoglobin levels dictate further treatment assignments.
+
+The baseline covariates are $Z$ which is the set {B = pre-pregnancy obesity, C = age}. $L$ is our single time varying covariate: Hemoglobin levels. The outcome $Y$ is a binary {0,1} indicating anemia at delivery.
+
+We set at $t = 0$, $B \sim \rm{Bernoulli}(0.1), C \sim U(25, 35), L_0 \sim N(11−0.05 B−0.02 C, 0.5)$ and $A_0 \sim \rm{Bernoulli}(0.5)$.
+
+For $k > 0$, we have $L_k \sim N(L_{k−1} + 0.5 A_{k−1}, 0.1)$, $A_0 = A_1 = A_2$ and $A_k \sim \rm{Bernoulli}(\rm{expit}(10 - L_k + 0.1A_{k-1})$ for $k = 3,4$.
+
+Our structural causal model is
+
+$$\PM(Y = 1 \mid \rm{do}(\bar{A_k}, B, C) = \rm{expit}(-2 + 0.1B + 0.02C - \beta \sum_{j = 1}^{4}A_j))$$
+
+## Simulate t = 0, 1, 2
+Here, we set up the number of samples and our quantiles data frame.
+Note that we assume $A_k$ is the same for $k = 0,1,2$, so the quantiles for those variables are set to be the same.
+```{r}
+# t = 0, n = 10,000
+n <- 1e4
+qtls <- data.frame(matrix(runif(n*4), ncol = 4))
+colnames(qtls) <- c("B", "C", "L_0", "A_0")
+qtls <- cbind(qtls, qtls[["A_0"]], qtls[["A_0"]])
+colnames(qtls) <- c("B", "C", "L_0", "A_0", "A_1", "A_2")
+```
+
+Now we use the inverse cdf to get random samples from our quantiles. We
+collect them in `dat0` variable.
+```{r}
+B <- qbinom(qtls[["B"]], 1, 0.1);  C <- qunif(qtls[["C"]], 25, 35)
+L_0 <- qnorm(qtls[["L_0"]], 11 - 0.05 * B - 0.02 * C, 0.5)
+A_0 <- A_1 <- A_2 <- qbinom(qtls[["A_0"]], 1, 0.5)
+
+dat0 <- cbind(B, C, L_0, A_0, A_1, A_2)
+
+```
+
+This code chunk sets up our `surv_model` object by defining the structur
+and parameters we imposed above.
+```{r}
+forms <- list(list(B ~ 1, C ~ 1),
+              L ~ B + C,
+              A ~ L_l0 + A_l1,
+              Y ~ B + C + I(A_0 + A_1 + A_2 + A_3 + A_4),
+              L ~ 1)
+fams <- list(list(5, 4),
+             1,
+             5,
+             5,
+             2)
+causal_parameters <- c(-2, 0.1, 0.02, -0.5)
+pars <- list(
+  B = list(beta = 0.1), 
+  C = list(beta = 1),
+  L = list(beta = c(11, -0.05, -0.02), phi = 0.5),
+  A = list(beta = c(10, -1, 0.1)),
+  Y = list(beta = causal_parameters),
+  cop = list(Y = list(L = list(beta = 0.4, par2 = 5))))
+
+surv_model <- survivl_model(formulas = forms, family = fams,
+                            pars = pars, T = 5, dat = dat0, qtls = qtls)
+```
+We call `rmsm` to simulate from this model. 
+```{r}
+dat <- rmsm(n, surv_model)
+```
+
+Now, we choose to use the IPW estimator to recover our estimates we specified.
+
+```{r}
+
+glm_A0 <- glm(A_0 ~ L_0, family = binomial(), data = dat)
+glm_A3 <- glm(A_3 ~ L_0 + L_1 + L_2 + A_0 , family = binomial(), data = dat)
+glm_A4 <- glm(A_4 ~ L_0 + L_1 + L_2 + L_3 + A_0  + A_3, family = binomial(), data = dat)
+
+glm_A0_num <- glm(A_0 ~ 1, family = binomial(), data = dat)
+glm_A3_num <- glm(A_3 ~ A_0, family = binomial(), data = dat)
+glm_A4_num <- glm(A_4 ~ A_0 + A_3, family = binomial(), data = dat)
+
+ps_A0_num <- predict(glm_A0_num, type = "response")
+ps_A3_num <- predict(glm_A3_num, type = "response")
+ps_A4_num <- predict(glm_A4_num, type = "response")
+
+ps_A0 <- predict(glm_A0, type = "response")
+ps_A3 <- predict(glm_A3, type = "response")
+ps_A4 <- predict(glm_A4, type = "response")
+
+# Compute weights depending on actual values of X_t
+w0 <- ifelse(dat$A_0 == 1, ps_A0, 1 - ps_A0)
+w1 <- w2 <- rep(1,n) #  always 1 because A_1 and A_2 are deterministic conditional on A_0
+w3 <- ifelse(dat$A_3 == 1, ps_A3, 1 - ps_A3)
+w4 <- ifelse(dat$A_4 == 1, ps_A4, 1 - ps_A4)
+w0_num <- ifelse(dat$A_0 == 1, ps_A0_num, 1 - ps_A0_num)
+w3_num <- ifelse(dat$A_3 == 1, ps_A3_num, 1 - ps_A3_num)
+w4_num <- ifelse(dat$A_4 == 1, ps_A4_num, 1 - ps_A4_num)
+
+dat$iptw_weights <- w0_num * w3_num * w4_num / (w0 * w1 * w2 * w3 * w4 )
+
+glm_Y <- glm(Y ~ B + C + I(A_0 + A_1 + A_2 + A_3 + A_4), 
+             data = dat, weights = iptw_weights, family = binomial())
+```
+
+```{r}
+sumY <- summary(glm_Y)
+abs(sumY$coefficients[,1] - causal_parameters)/sumY$coefficients[,2]
+# should be less than 2 s.e. 95% of the time
+```

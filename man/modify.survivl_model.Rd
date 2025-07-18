@@ -10,9 +10,11 @@ modify.survivl_model(
   formulas,
   family,
   pars,
+  T,
   link,
   dat,
   method,
+  qtls,
   kwd
 )
 }

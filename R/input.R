@@ -14,6 +14,7 @@ process_inputs <- function (formulas, pars, family, link,
 
   for (i in 1:5) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
   ## check for censoring
+  # TODO: Fix censoring logic for future
   cens <- check_censoring(formulas[[4]], pars, cns_kwd = control$censor)
   censoring <- cens$censoring
   if (censoring) {
@@ -25,7 +26,7 @@ process_inputs <- function (formulas, pars, family, link,
   LHS_C <- LHSs[[1]]; LHS_Z <- LHSs[[2]]; LHS_X <- LHSs[[3]]; LHS_Y <- LHSs[[4]]
   if(!is.null(dat)){
     prev_vars <- colnames(dat)
-    LHS_C <- c(prev_vars[which(prev_vars == rmv_time(prev_vars))], LHS_C) # have subset of baseline variables
+    LHS_C <- unique(c(prev_vars[which(prev_vars == rmv_time(prev_vars))], LHS_C)) # have subset of baseline variables
   }
   # LHS_C <- causl::lhs(formulas[[1]])
   # LHS_Z <- causl::lhs(formulas[[2]])
@@ -39,14 +40,15 @@ process_inputs <- function (formulas, pars, family, link,
   ## check right number of parameters supplied
   forms <- lapply(formulas[1:4], function (x) lapply(x, terms))
   tms <- lapply(forms, function(x) lapply(x,  attr, "term.labels"))
-
+  
   ## get response variables list
-  RHS_vars <- rmv_lag(unlist(tms))
-
+  RHS_vars <- clean_tms(unlist(tms))
   if (!all(RHS_vars %in% c(unlist(LHSs), colnames(dat)))) {
     wh <- RHS_vars[!RHS_vars %in% unlist(LHSs)]
     wh <- unique.default(wh)
-    stop(paste0("Variables ", paste(wh, collapse=", "), " appear on right hand side but are not simulated"))
+    stop(paste0("Variables ", paste(wh, collapse=", "),
+                " appear on right hand side but are not simulated.
+                This may be because user inputed non-conventional function in I(.)"))
   }
 
   ## introduce code from causl
@@ -79,7 +81,7 @@ process_inputs <- function (formulas, pars, family, link,
 
   ## copula related things
   kwd <- control$cop
-
+  
   if (method == 'inversion' || method == 'bootstrap') {
     tmp <- causl::pair_copula_setup(formulas=formulas[[5]], family=family[[5]], pars=pars[[kwd]],
                                      LHSs=LHSs, quans=character(0), ord=ord)
@@ -89,20 +91,22 @@ process_inputs <- function (formulas, pars, family, link,
 
   }
 
-
   ## check that at least one outcomes are OK for time-to-event
+  # do this by using _l0 to mean it is survival 
+  # TODO: make more generealizable for multiple non-survival events
   survival_outcome <- NULL
-  if (any(!is_surv_outcome(family[[4]]))) {
-    whn <- which(!is_surv_outcome(family[[4]]))[1]
-    if(all(!is_surv_outcome(family[[4]]))){
-      stop(paste0("at least one outcome must be of 
+
+  terms <- lapply(formulas[[4]], function(x) all.vars(x))
+  survival_outcome <- unlist(lapply(terms, function(x) any(grepl("_l\\d+", x))))
+  if(any(survival_outcome)){
+    if(any(!is_surv_outcome(family[[4]][which(survival_outcome)]))){
+      stop(paste0("Specified a survival outcome without a 
                   survival type (non-negative and continuous)"))
     }
-    survival_outcome <- nms_t[dZ + dX + whn]
-    
   }
   # get quantiles if there is none
-  if (!is.null(dat)) {
+  # TODO: if both dat and quantiles there but one variable has dat but no quantiles
+  if (!(is.null(dat)) && is.null(qtls)) {
     n <- nrow(dat)
     # different than causl, we need all quantiles to do weaving
     wh_q <- names(dat)

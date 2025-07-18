@@ -4,7 +4,7 @@ author: "Chase Mathis"
 date: "`r Sys.Date()`"
 output: html_document
 vignette: >
-  %\VignetteIndexEntry{MSMs}
+  %\VignetteIndexEntry{Plasmode}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -26,6 +26,7 @@ Begin by loading the library.
 ```{r load}
 library(survivl)
 library(ipw)
+library(survival)
 rho_to_beta <- function(rho){
   x <- (rho + 1)/2
   return(log(x/(1-x)))
@@ -102,7 +103,7 @@ surv_model <- survivl_model(formulas=formulas, family=family,
 ```
 
 We simulate the rest of the data `dat2`, starting with `dat`.
-```{r}
+```{r simulate}
 dat2 <- rmsm(n, surv_model)
 ```
 

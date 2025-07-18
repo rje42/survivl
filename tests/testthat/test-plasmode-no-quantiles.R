@@ -18,7 +18,7 @@ n <- 1e4
 
 dat <- data.frame(X1=rnorm(n,mean = 0, sd = 1),
                   X2 = rbinom(n, size = 1, prob = 0.5))
-dat$B1 <- rnorm(qtls$B1, 0.4*dat$X2 -0.2, sd = 1)
+dat$B1 <- rnorm(n, 0.4*dat$X2 -0.2, sd = 1)
 
 dat[["Z1_0"]] <- rnorm(n, 0.2*dat$X1, sd = 1)
 dat[["Z2_0"]] <- rbinom(n, 1, expit(-0.2 + 0.4 * dat$X2))

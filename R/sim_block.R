@@ -23,7 +23,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     if(!all(is.na(out[[vnm]]))){
       next;
     }
-    insert_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k)
+    #insert_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k)
 
     if(j ==1 & i > 1){
         vnm_q <- paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k)
@@ -56,7 +56,10 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     }
   }
 
+  if(!proc_inputs$survival_outcome){
+    return(list(dat=out, quantiles=quantiles))
 
+  }
   vnm <- lhs(formulas[[3]])
   vnm_stm <- rmv_time(vnm)
   # vnm_t <- paste0(vnm, "_", proc_inputs$t)
@@ -80,6 +83,8 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
   ## code to get Y quantiles conditional on different Zs
 
+
+ 
   for (i in seq_along(formulas[[3]])) {
     ## simulate Y variable
     # qY <- runif(n)
@@ -99,7 +104,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
                                  dat = out, quantiles=quantiles, type_event)
 
-    collect_events(out, "Y")
+
     # out <- causl::sim_variable(nrow(out), forms, fams, prs, lnk,
     #                            dat=out, quantiles=quantiles)
     quantiles <- attr(out, "quantiles")

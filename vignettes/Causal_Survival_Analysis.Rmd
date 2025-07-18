@@ -42,7 +42,7 @@ formulas <- list(list(),
                  Z ~ X_l1,
                  X ~ Z_l0,
                  Y ~ X_l0,
-                 cop ~ 1)
+                 list(Y = list(Z~1)))
 family <- list(integer(0), 1, 5, 3, 1)
 ```
 
@@ -61,7 +61,7 @@ $Z_t$ and $Y_t^*$.
 pars <- list(Z = list(beta=c(1,0.5), phi=1),
              X = list(beta=c(-1,1)),
              Y = list(beta=c(1.1,-0.5), phi=1),
-             cop = list(beta=1))
+             cop = list(Y = list(Z = list(beta=1))))
 ```
 
 Now we create a `survivl_model` which contains all of our inputted information.

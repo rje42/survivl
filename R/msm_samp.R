@@ -173,6 +173,7 @@ msm_samp <- function (n, dat=NULL,qtls = NULL, T, formulas, family, pars, link=N
         }
         colnames(qtls)[(dC + 1):ncol(qtls)] <- sapply(colnames(qtls)[(dC+1):ncol(qtls)], function(z) paste0(z,"_prev"))
       }
+      
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,, drop = FALSE], kwd=kwd)
       out[surv, ] <- tmp$dat
       if(is.null(qtls)){
@@ -465,7 +466,10 @@ rmsm <- function(n, surv_model, control = list()){
   surv <- rep(TRUE, nrow(out))
   
   method <- surv_model$method
-  if (method == "inversion") {
+  if(surv_model$survival_outcome){
+    method <- paste0(method, "-survivl")
+  }
+  if (method == "inversion-survivl") {
     mod_inputs <- modify_inputs(surv_model)
     formulas <- mod_inputs$formulas
     done <- unlist(LHS_C)
@@ -500,8 +504,8 @@ rmsm <- function(n, surv_model, control = list()){
         }
         colnames(qtls)[(dC + 1):ncol(qtls)] <- sapply(colnames(qtls)[(dC+1):ncol(qtls)], function(z) paste0(z,"_prev"))
       }
-
       tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,, drop = FALSE], kwd=kwd)
+
       out[surv, ] <- tmp$dat
       if(is.null(qtls)){
         qtls <- tmp$quantiles
@@ -537,6 +541,7 @@ rmsm <- function(n, surv_model, control = list()){
       surv[surv] <- surv[surv] & surv_this
       # out <- causl::sim_inversion(out, mod2)
       # qZ <- cbind(qZ, attr(out, "qZs"))
+
       if (mean(surv) < 0.05) {
         warning(paste0("Time: ", t, " Many samples lost. 
                        May result in unstable calculations."))
@@ -549,7 +554,83 @@ rmsm <- function(n, surv_model, control = list()){
       if (!any(surv)) break
     }
   }
-  
+  else if(method == "inversion"){
+    mod_inputs <- modify_inputs(surv_model)
+    formulas <- mod_inputs$formulas
+    done <- unlist(LHS_C)
+    for (t in seq_len(T)-1) {
+      
+      # this_time <- data.frame(rep(list(rep(NA,n)), dZ+dX+dY))
+      # names(this_time) <- paste0(vars_t, "_", t)
+      # out <- cbind(out, this_time)
+      ## function to standardize formulae
+      mod_inputs$t <- t
+
+      cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
+                          done=done, t=t, vars_t=vars_t, kwd=kwd)
+      mod_inputs$formulas <- cinp$formulas
+      # print(mod_inputs$formulas)
+      mod_inputs$pars <- cinp$pars
+      # tmp_pars <- rapply(mod_inputs$formulas, function(x) attr(x, "beta"), how="list")
+      # while (pluck_depth(tmp_pars) > 2) {
+      #   tmp_pars <- list_flatten(tmp_pars)
+      # }
+      
+      mod2 <- modify_LHSs(mod_inputs, t=t)
+      done <- c(done, paste0(vars_t, "_", t))
+      ## use sim_inversion()
+      # setnames(qtls,
+      #          old = names(qtls)[grepl(t-1, names(qtls))],
+      #          new = paste0(names(qtls)[grepl(t-1, names(qtls))], "_prev"))
+      
+     #  if(t > 0){
+     #    if(t > 1){
+     #      qtls <- dplyr::select(qtls, -contains("prev"))
+     #    }
+     #    colnames(qtls)[(dC + 1):ncol(qtls)] <- sapply(colnames(qtls)[(dC+1):ncol(qtls)], function(z) paste0(z,"_prev"))
+     #  }
+      
+      tmp <- sim_block(out[surv,], mod_inputs, quantiles=qtls[surv,, drop = FALSE], kwd=kwd)
+      out[surv, ] <- tmp$dat
+      if(is.null(qtls)){
+        qtls <- tmp$quantiles
+      }else{
+        for(name in names(tmp$quantiles)){
+          qtls[surv, name] <- tmp$quantiles[[name]]
+        }
+      }
+    }
+
+    # start with unif(0,1)
+    vt <- runif(n, 0, 1)
+    # go through 
+    cop_pars <- cinp$pars[[kwd]]
+    cop_fams <- family[[5]][[1]] #only one Y formula
+    time_vars <- surv_model$LHSs$LHS_Z; p <- length(time_vars)
+    for(t in seq_len(T)){
+      for(i in rev(seq_len(p)[-1])){
+        L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], 
+                                                 collapse = ""), "_",T-t)
+        qs <- cbind(
+          qtls[[L_col]],
+          vt
+        )
+        
+      vt <- compute_copula_quantiles(qs, list(integer(0), cop_fams), 
+                                                pars$cop[[1]], i, inv = TRUE)
+      }
+      L_col <- paste0(time_vars[1], "_", T-t)
+      qs <- cbind(qtls[[L_col]], vt)
+      vt <- compute_copula_quantiles(qs, cop_fams, 
+                                     pars$cop[[1]], 1, inv = TRUE)
+      
+    }
+    qY <- vt
+    X <- model.matrix(delete.response(terms(formulas[[3]][[1]])), data = out)
+    Y <- rescale_var(qY, X=X, family=family[[4]][[1]], pars=pars[["Y"]], link=link[[4]])
+    out[["Y"]] <- Y
+    
+  }
   else if (method == "rejection") {
     ## simulate time-varying covariates and survival
     for (t in seq_len(T)) {
@@ -702,7 +783,10 @@ rmsm <- function(n, surv_model, control = list()){
   #
   #     # cum_haz <- cum_haz + exp(gam_aft)
   #   }
+
+
   out <- cbind(id=seq_len(nrow(out)), out)
+  out <- out[, colSums(is.na(out)) < nrow(out)]
   # out$status <- 1*surv
   class(out) <- c("survivl_dat", "data.frame")
   
