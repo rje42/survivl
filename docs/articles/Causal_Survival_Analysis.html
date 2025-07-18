@@ -56,7 +56,7 @@
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
-      <a href="../articles/Longitudinal-Outcome.html">Longitudinal Non-Survival Outcomes</a>
+      <a href="../articles/Longitudinal-Single-Outcome.html">Longitudinal Non-Survival Outcomes</a>
     </li>
     <li>
       <a href="../articles/MSMs.html">Marginal Structural Survival Models</a>
@@ -117,7 +117,7 @@ a Gaussian copula.</p>
 <span>                 <span class="va">Z</span> <span class="op">~</span> <span class="va">X_l1</span>,</span>
 <span>                 <span class="va">X</span> <span class="op">~</span> <span class="va">Z_l0</span>,</span>
 <span>                 <span class="va">Y</span> <span class="op">~</span> <span class="va">X_l0</span>,</span>
-<span>                 <span class="va">cop</span> <span class="op">~</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>                 <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">Z</span><span class="op">~</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">family</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <p>The parameters to be specified will depend upon the particular
 families used. Note that all the following distributions are conditional
@@ -136,7 +136,7 @@ between <span class="math inline">\(Z_t\)</span> and <span class="math inline">\
 <code class="sourceCode R"><span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0.5</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
 <span>             X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.1</span>,<span class="op">-</span><span class="fl">0.5</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
-<span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Now we create a <code>survivl_model</code> which contains all of our
 inputted information. To simulate samples from this MSM call the
 <code>rmsm</code> function.</p>
@@ -146,7 +146,6 @@ inputted information. To simulate samples from this MSM call the
 <span>                    pars<span class="op">=</span><span class="va">pars</span>, T <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>                    link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">1e4</span>, <span class="va">surv_model</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: package 'copula' was built under R version 4.3.3</span></span>
 <span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">

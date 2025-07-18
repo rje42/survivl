@@ -56,7 +56,7 @@
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
-      <a href="../articles/Longitudinal-Outcome.html">Longitudinal Non-Survival Outcomes</a>
+      <a href="../articles/Longitudinal-Single-Outcome.html">Longitudinal Non-Survival Outcomes</a>
     </li>
     <li>
       <a href="../articles/MSMs.html">Marginal Structural Survival Models</a>
@@ -108,14 +108,14 @@ Evans</h4>
 <span>                 <span class="va">Z</span> <span class="op">~</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">C</span>,</span>
 <span>                 <span class="va">X</span> <span class="op">~</span> <span class="va">Z_l0</span> <span class="op">+</span> <span class="va">C</span>,</span>
 <span>                 <span class="va">Y</span> <span class="op">~</span> <span class="va">X_l0</span> <span class="op">+</span> <span class="va">C</span>,</span>
-<span>                 <span class="va">cop</span> <span class="op">~</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>                 <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">Z</span> <span class="op">~</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">family</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">5</span>,<span class="fl">1</span>,<span class="fl">5</span>,<span class="fl">3</span>,<span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">link</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"logit"</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"inverse"</span><span class="op">)</span></span>
 <span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>C <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">0</span><span class="op">)</span>,</span>
 <span>             Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">2</span>,<span class="fl">0.25</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span>,</span>
 <span>             X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.05</span>,<span class="fl">0.5</span>,<span class="fl">0.05</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
-<span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">0.8472979</span><span class="op">)</span><span class="op">)</span>  <span class="co"># gives correlation 0.4</span></span></code></pre></div>
+<span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">0.8472979</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>  <span class="co"># gives correlation 0.4</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="simulating-data">Simulating Data<a class="anchor" aria-label="anchor" href="#simulating-data"></a>
@@ -125,13 +125,6 @@ Evans</h4>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">1e4</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: package 'copula' was built under R version 4.3.3</span></span>
-<span><span class="co">#&gt; Warning in rmsm(n, surv_model): Time: 4 Many samples lost. </span></span>
-<span><span class="co">#&gt;                        May result in unstable calculations.</span></span>
-<span><span class="co">#&gt; Warning in rmsm(n, surv_model): Time: 5 Many samples lost. </span></span>
-<span><span class="co">#&gt;                        May result in unstable calculations.</span></span>
-<span><span class="co">#&gt; Warning in rmsm(n, surv_model): Time: 6 Many samples lost. </span></span>
-<span><span class="co">#&gt;                        May result in unstable calculations.</span></span>
 <span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sinhrks/ggfortify" class="external-link">ggfortify</a></span><span class="op">)</span></span>
@@ -160,6 +153,11 @@ weights for time varying confounding.</p>
 <span></span>
 <span><span class="va">mod_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>,<span class="va">Y</span><span class="op">)</span><span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, id <span class="op">=</span> <span class="va">id</span>, data <span class="op">=</span> <span class="va">datl</span>,</span>
 <span>                               weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'kableExtra'</span></span>
+<span><span class="co">#&gt; The following object is masked from 'package:dplyr':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     group_rows</span></span></code></pre>
 <div class="section level3">
 <h3 id="example-2-gamma-distributed-requires-by-hand-ipw-calculation">Example 2 (Gamma distributed requires by hand ipw calculation)<a class="anchor" aria-label="anchor" href="#example-2-gamma-distributed-requires-by-hand-ipw-calculation"></a>
 </h3>
@@ -170,7 +168,7 @@ mean <span class="math inline">\(Z_t/3 + C/3\)</span>; - <span class="math inlin
 distribution with rate <span class="math inline">\(X_t + C\)</span>; -
 the copula between <span class="math inline">\(Y_t\)</span> and <span class="math inline">\(Z_t\)</span> is Gaussian with fixed
 correlation.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">formulas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">C</span> <span class="op">~</span> <span class="fl">1</span>,</span>
 <span>                 <span class="va">Z</span> <span class="op">~</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">C</span>,</span>
 <span>                 <span class="va">X</span> <span class="op">~</span> <span class="va">Z_l0</span> <span class="op">+</span> <span class="va">C</span>,</span>
@@ -187,18 +185,12 @@ correlation.</p>
 <div class="section level3">
 <h3 id="simulating-data-1">Simulating Data<a class="anchor" aria-label="anchor" href="#simulating-data-1"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">surv_model2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
 <span><span class="va">dat2</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="fl">1e4</span>, <span class="va">surv_model2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in rmsm(10000, surv_model2): Time: 4 Many samples lost. </span></span>
-<span><span class="co">#&gt;                        May result in unstable calculations.</span></span>
-<span><span class="co">#&gt; Warning in rmsm(10000, surv_model2): Time: 5 Many samples lost. </span></span>
-<span><span class="co">#&gt;                        May result in unstable calculations.</span></span>
-<span><span class="co">#&gt; Warning in rmsm(10000, surv_model2): Time: 6 Many samples lost. </span></span>
-<span><span class="co">#&gt;                        May result in unstable calculations.</span></span>
 <span><span class="va">datl2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat2</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sinhrks/ggfortify" class="external-link">ggfortify</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
 <span><span class="va">survplot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survfit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>, <span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">C</span>, data<span class="op">=</span><span class="va">datl2</span><span class="op">)</span></span>
@@ -208,7 +200,7 @@ correlation.</p>
 the gamma family. Since we assume our exposure <code>X</code> is Gamma
 (conditional on <code>Z, C</code>), we must calcualte the ipw by
 hand.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod_den</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">Z</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">datl2</span><span class="op">)</span></span>
 <span><span class="va">mu_den</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">mod_den</span><span class="op">)</span></span>
 <span><span class="va">phi_den</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_den</span><span class="op">)</span><span class="op">$</span><span class="va">dispersion</span></span>
@@ -229,7 +221,7 @@ hand.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Fit the coxph model with and without weights, then recover
 estimates.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod_correct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>,<span class="va">Y</span><span class="op">)</span><span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, id <span class="op">=</span> <span class="va">id</span>, data <span class="op">=</span> <span class="va">datl2</span>,</span>
 <span>                               weights <span class="op">=</span> <span class="va">ipw</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
