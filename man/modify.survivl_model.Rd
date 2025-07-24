@@ -4,7 +4,7 @@
 \alias{modify.survivl_model}
 \title{Modify \code{survivl_model} object}
 \usage{
-modify.survivl_model(
+\method{modify}{survivl_model}(
   x,
   over = FALSE,
   formulas,

@@ -351,7 +351,7 @@ compute_copula_quantiles <- function(qs, X, family, pars, i, inv, p = FALSE) {
   beta <- copPars$beta
   df <- copPars$df
   if(fam == 11){stop("Not supported for fgm")}
-  qY <- rescale_cop(qs, X, beta, family = fam, df = df, cdf = p)
+  qY <- rescale_cop(qs, X, beta, family = fam, df = df, inv = inv, cdf = p)
 
   return(qY)
 }

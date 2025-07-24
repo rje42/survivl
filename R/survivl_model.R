@@ -39,9 +39,20 @@ survivl_model <- function (formulas, family, pars, link, T = T, dat=NULL, qtls =
 ##' @exportS3Method base::print
 print.survivl_model <- function (x, ...) {
   forms <- unlist(x$formulas)
-  cat("Frugal model with variables ", paste(unique(rmv_time(x$vars[1:(length(x$vars)-1)])), collapse=", "),"\n")
+  cat("Frugal survivl model with variables ", paste(unique(rmv_time(x$vars[1:(length(x$vars)-1)])), collapse=", "),"\n")
   
   invisible(x)
+}
+
+##' @export
+modify <- function (x, ...) {
+  UseMethod("modify")
+}
+
+##' @export
+modify.default <- function (x, ...) {
+  args <- list(...)
+  for (i in seq_along(args)) x[[names(args)[i]]] <- args[[i]]
 }
 
 ##' Modify `survivl_model` object
@@ -54,7 +65,7 @@ print.survivl_model <- function (x, ...) {
 ##'
 ##' This function can be used to modify
 ##'
-##' @export
+##' @exportS3Method
 modify.survivl_model <- function (x, over=FALSE, formulas, family, pars, 
                                   T, link, dat, method,qtls,
                                 kwd) {
