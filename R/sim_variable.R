@@ -29,26 +29,30 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles, type_
   time_vars <- sapply(as.character(unlist(formulas[[2]])), function(x) sub("_.*", "", x))
   p <- length(time_vars)
   vnm <- rmv_time(vnm_t)
-  X <- model.matrix(formulas[[1]], data=dat)
 
+
+  X <- model.matrix(formulas[[2]][[1]], data=dat)
   if(type_event == "primary"){
     # Pass all needed variables to survival_loop
     quantiles <- survival_loop(k=k, p=p, vnm=vnm, time_vars=time_vars, 
-                             quantiles=quantiles, family=family[[2]], pars=pars$cop[[1]])
+                             quantiles=quantiles, family=family[[2]], 
+                             pars=pars$cop[[1]], X = X)
     
   }else if(type_event == "competing"){
     quantiles <- competing_loop(k=k, p=p, vnm=vnm, time_vars=time_vars, 
-                                quantiles=quantiles, family=family[[2]], pars=pars$cop[[1]])
+                                quantiles=quantiles, family=family[[2]], 
+                                pars=pars$cop[[1]], X = X)
   }else{
     stop("Must be one of primary or competing")
   }
 
   qY <- quantiles[[vnm]]
   ## now rescale to correct margin
-  X <- model.matrix(delete.response(terms(formulas[[1]])), data=dat)
 
-  Y <- rescale_var(qY, X=X, family=family[[1]], pars=pars[["doPar"]], link=link[[1]])
-  eta <- X %*% pars[["doPar"]]$beta
+  X_do <- model.matrix(delete.response(terms(formulas[[1]])), data=dat)
+
+  Y <- rescale_var(qY, X=X_do, family=family[[1]], pars=pars[["doPar"]], link=link[[1]])
+  eta <- X_do %*% pars[["doPar"]]$beta
 
   lambda <- 1/ (link_apply(eta, link[[1]], family = family[[1]]$name)) # not working with ordinal or categorical
   quantiles[[paste0("q1_0")]] <- pexp(1, lambda)
@@ -71,7 +75,7 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles, type_
       if(i+1 > p){
         insert_col <- paste0("q1", "_", j+1)
       }
-      quantiles[[insert_col]] <- compute_copula_quantiles(qs, family[[2]], pars$cop[[1]], i, inv = FALSE)
+      quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family[[2]], pars$cop[[1]], i, inv = FALSE)
     }
   }
 
@@ -87,9 +91,8 @@ sim_variable <- function (n, formulas, family, pars, link, dat, quantiles, type_
 
 
 
-survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
+survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars, X){
   # Get the Quantiles of Y and L
-
   if (k >0){
     #get the distributions of Ls in the survivors
     for (j in (1:k)){
@@ -102,10 +105,10 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
             quantiles[[Y_col]]
           )
           insert_col = gsub("_prev", "", L_col)
-          # quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
+          # quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family,
           #                                                     pars, i, inv = F)
         
-          numerator <- quantiles[[L_col]] - compute_copula_quantiles(qs, family,
+          numerator <- quantiles[[L_col]] - compute_copula_quantiles(qs, X, family,
                                                                      pars, i, inv = F, p = TRUE)
           
 
@@ -118,7 +121,7 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
           quantiles[[Y_col]]
         )
         insert_col = gsub("_prev", "", L_col)
-        numerator <- quantiles[[L_col]] - compute_copula_quantiles(qs, family,
+        numerator <- quantiles[[L_col]] - compute_copula_quantiles(qs, X, family,
                                                                    pars, 1, inv = F, p = TRUE)
         
         
@@ -139,7 +142,7 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
         )
         insert_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""),
                             "_", k-j, "_", time_vars[i],"_", k-j-1)
-        quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
+        quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family,
                                                             pars, i, inv = T)
         
         Y_col = insert_col
@@ -151,7 +154,7 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
         quantiles[[Y_col]]
       )
       insert_col = paste0(vnm, "|", paste0(time_vars, collapse = ""), "_", k-j-1)
-      quantiles[[insert_col]] = compute_copula_quantiles(qs, family, pars, 1, inv = T)
+      quantiles[[insert_col]] = compute_copula_quantiles(qs, X, family, pars, 1, inv = T)
       
       
     }else{
@@ -165,7 +168,7 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
           quantiles[[Y_col]]
         )
         insert_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j)
-        quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
+        quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family,
                                                             pars, i, inv = T)
       }
       L_col <- paste0(time_vars[1], "_0")
@@ -176,7 +179,7 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
         quantiles[[L_col]],
         quantiles[[Y_col]]
       )
-      qY <- compute_copula_quantiles(qs, family, pars, 1, inv = T)
+      qY <- compute_copula_quantiles(qs, X, family, pars, 1, inv = T)
       quantiles[[insert_col]] <- qY
       
     }
@@ -185,7 +188,7 @@ survival_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
 }
 
 
-competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
+competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars, X){
   # Get the Quantiles of Y and L
   if (k >0){
     #get the distributions of Ls in the survivors
@@ -202,7 +205,7 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
             quantiles[[L_col]]
           )
           insert_col = gsub("_prev", "", L_col)
-          quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
+          quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family,
                                                               pars, i, inv = F)
         }
         Y_col = paste0(vnm, "|", paste0(time_vars, collapse = ""), "_", k-j-1, "_prev")
@@ -212,7 +215,7 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
           quantiles[[L_col]]
         )
         insert_col = gsub("_prev", "", L_col)
-        quantiles[[insert_col]] <- compute_copula_quantiles(qs, family, pars, 1, F)
+        quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family, pars, 1, F)
         
       } else{
         
@@ -224,7 +227,7 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
             quantiles[[L_col]]
           )
           insert_col = gsub("_prev", "", L_col)
-          quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
+          quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family,
                                                               pars, i, inv = F)
         }
         L_col = paste0(time_vars[1], "_0_prev")
@@ -234,7 +237,7 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
           quantiles[[L_col]]
         )
         insert_col = gsub("_prev", "", L_col)
-        quantiles[[insert_col]] <- compute_copula_quantiles(qs, family, pars, 1, F)
+        quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family, pars, 1, F)
         
       }
     }}
@@ -252,7 +255,7 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
         )
         insert_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""),
                             "_", k-j, "_", time_vars[i],"_", k-j-1)
-        quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
+        quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family,
                                                             pars, i, inv = T)
         
         Y_col = insert_col
@@ -264,7 +267,7 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
         quantiles[[Y_col]]
       )
       insert_col = paste0(vnm, "|", paste0(time_vars, collapse = ""), "_", k-j-1)
-      quantiles[[insert_col]] = compute_copula_quantiles(qs, family, pars, 1, inv = T)
+      quantiles[[insert_col]] = compute_copula_quantiles(qs, X, family, pars, 1, inv = T)
       
       
     }else{
@@ -277,7 +280,7 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
           quantiles[[Y_col]]
         )
         insert_col = paste0(vnm, "|", paste0(time_vars[1:(i-1)], collapse = ""), "_", k-j)
-        quantiles[[insert_col]] <- compute_copula_quantiles(qs, family,
+        quantiles[[insert_col]] <- compute_copula_quantiles(qs, X, family,
                                                             pars, i, inv = T)
       }
       L_col <- paste0(time_vars[1], "_0")
@@ -288,7 +291,8 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
         quantiles[[L_col]],
         quantiles[[Y_col]]
       )
-      qY <- compute_copula_quantiles(qs, family, pars, 1, inv = T)
+
+      qY <- compute_copula_quantiles(qs, X, family, pars, 1, inv = T)
       quantiles[[insert_col]] <- qY
       
     }
@@ -300,7 +304,7 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
 ##' copula CDF if p = TRUE
 ##' @importFrom copula cCopula pCopula
 ##' @importFrom copula normalCopula tCopula
-##' @importFrom copula claytonCopula gumbelCopula frankCopula joeCopula
+##' @importFrom copula claytonCopula gumbelCopula frankCopula joeCopula fgmCopula
 ##' @param qs a matrix of two quantiles qs = (q1, q2) as we are using bivariate copulas.
 ##' @param family A list of numeric copula family 1,2,3,4,5 see `copula_vals` for more.
 ##' @param pars Parameter for the copula.
@@ -308,16 +312,17 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars){
 ##' @param inv Boolean if inverse or regular h function
 ##' @param p Boolean if wewant to compute a cdf instead of h function required for survival outcomes.
 ##' @export
-compute_copula_quantiles <- function(qs, family, pars, i, inv, p = FALSE) {
+compute_copula_quantiles <- function(qs, X, family, pars, i, inv, p = FALSE) {
 
   copula_functions_p <- list(
     #function(U, param, par2, inv) pnorm(qnorm(U[, 2]) * sqrt(1 - param^2) + param * qnorm(U[, 1])),
-    function(U, param, par2) pCopula(U, copula = tCopula(param = param, dim = 2, dispstr = "un")),#pCopNorm(U, param),
+    function(U, param, par2) pCopula(U, copula = normalCopula(param = param, dim = 2, dispstr = "un")),#pCopNorm(U, param),
     function(U, param, par2) pCopula(U, copula = tCopula(param = param, df = par2, dim = 2, dispstr = "un")),
     function(U, param, par2) pCopula(U, copula = claytonCopula(param = param, dim = 2)),
     function(U, param, par2) pCopula(U, copula = gumbelCopula(param = param, dim = 2)),
     function(U, param, par2) pCopula(U, copula = frankCopula(param = param, dim = 2)),
     function(U, param, par2) pCopula(U, copula = joeCopula(param = param, dim = 2))
+    #function(U, param, par2) pCopula(U, copula = fgmCopula(param = param, dim = 2))
   )
   copula_functions <- list(    
     #function(U, param, par2, inv) pnorm(qnorm(U[, 2]) * sqrt(1 - param^2) + param * qnorm(U[, 1])),
@@ -327,27 +332,27 @@ compute_copula_quantiles <- function(qs, family, pars, i, inv, p = FALSE) {
     function(U, param, par2, inv) cCopula(U, copula = gumbelCopula(param = param, dim = 2), inverse = inv),
     function(U, param, par2, inv) cCopula(U, copula = frankCopula(param = param, dim = 2), inverse = inv),
     function(U, param, par2, inv) cCopula(U, copula = joeCopula(param = param, dim = 2), inverse = inv)
+    #function(U, param, par2, inv) cCopula(U, copula = copula::fgmCopula(param = param, dim = 2), inverse = inv)
+  )
+  # vectorized copulas. Takes a bit longer
+  copula_functions_v <- list(
+    #function(U, param, par2, inv) pnorm(qnorm(U[, 2]) * sqrt(1 - param^2) + param * qnorm(U[, 1])),
+    function(U, param, par2, inv) cVCopula(U, copula = normalCopula(param = param, dispstr = "un"), inverse = inv),
+    function(U, param, par2, inv) cVCopula(U, copula = tCopula(param = param, df = par2, dim = 2, dispstr = "un"), inverse = inv),
+    function(U, param, par2, inv) cVCopula(U, copula = claytonCopula(param = param, dim = 2), inverse = inv),
+    function(U, param, par2, inv) cVCopula(U, copula = gumbelCopula(param = param, dim = 2), inverse = inv),
+    function(U, param, par2, inv) cVCopula(U, copula = frankCopula(param = param, dim = 2), inverse = inv),
+    function(U, param, par2, inv) cVCopula(U, copula = joeCopula(param = param, dim = 2), inverse = inv)
+    #function(U, param, par2, inv) cVCopula(U, copula = fgmCopula(param = param, dim = 2), inverse = inv)
   )
   # pin from 1 to 1-eps for eps = 0.0005
   fam <- family[[i]]
-  copPars <- unlist(pars[[i]])
-  beta <- copPars[1]
-  par2 <- copPars[2]
-  if(fam != 4){
-    beta <- 2 * expit(beta) - 1
-  }
-  
-  if (fam >= 1 && fam <= 6) {
-    if(p){
+  copPars <- pars[[i]]
+  beta <- copPars$beta
+  df <- copPars$df
+  if(fam == 11){stop("Not supported for fgm")}
+  qY <- rescale_cop(qs, X, beta, family = fam, df = df, cdf = p)
 
-      qY <- copula_functions_p[[fam]](qs, beta, par2 = par2)
-    }else{
-      qY <- copula_functions[[fam]](qs, beta, par2 = par2, inv)[,2]
-      
-    }
-  } else {
-    stop("family must be between 0 and 5")
-  }
   return(qY)
 }
 

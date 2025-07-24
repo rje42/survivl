@@ -84,7 +84,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   ## code to get Y quantiles conditional on different Zs
 
 
- 
+
   for (i in seq_along(formulas[[3]])) {
     ## simulate Y variable
     # qY <- runif(n)
@@ -101,6 +101,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     }else{
       type_event <- "competing"
     }
+
     out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
                                  dat = out, quantiles=quantiles, type_event)
 

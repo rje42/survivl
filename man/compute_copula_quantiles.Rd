@@ -5,7 +5,7 @@
 \title{A wrapper function to compute h or inverse h functions. Also can apply a
 copula CDF if p = TRUE}
 \usage{
-compute_copula_quantiles(qs, family, pars, i, inv, p = FALSE)
+compute_copula_quantiles(qs, X, family, pars, i, inv, p = FALSE)
 }
 \arguments{
 \item{qs}{a matrix of two quantiles qs = (q1, q2) as we are using bivariate copulas.}

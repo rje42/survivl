@@ -184,7 +184,7 @@ effect of <span class="math inline">\(X\)</span> on <span class="math inline">\(
 <span>                               weights <span class="op">=</span> <span class="va">datl</span><span class="op">$</span><span class="va">wt</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">glmY</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
 <span><span class="co">#&gt;      coef exp(coef) se(coef) robust se      z   Pr(&gt;|z|)</span></span>
-<span><span class="co">#&gt; X 0.50452    1.6562 0.022049  0.028498 17.704 3.9272e-70</span></span></code></pre></div>
+<span><span class="co">#&gt; X 0.51371    1.6715  0.02168  0.027469 18.701 4.8175e-78</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="naïve-approaches">Naïve Approaches<a class="anchor" aria-label="anchor" href="#na%C3%AFve-approaches"></a>
@@ -198,9 +198,9 @@ obtain a biased estimate of the coefficient of <span class="math inline">\(X\)</
 <span>                                 weights<span class="op">=</span><span class="op">~</span><span class="fl">1</span>,</span>
 <span>                                 data<span class="op">=</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_naive</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
-<span><span class="co">#&gt;              Estimate Std. Error  t value Pr(&gt;|t|)</span></span>
-<span><span class="co">#&gt; (Intercept) -0.436305  0.0065753 -66.3555 0.000000</span></span>
-<span><span class="co">#&gt; X           -0.015734  0.0095505  -1.6474 0.099506</span></span></code></pre></div>
+<span><span class="co">#&gt;              Estimate Std. Error t value  Pr(&gt;|t|)</span></span>
+<span><span class="co">#&gt; (Intercept) -0.461192  0.0066474 -69.379 0.0000000</span></span>
+<span><span class="co">#&gt; X           -0.029642  0.0099870  -2.968 0.0030042</span></span></code></pre></div>
 </div>
   </div>
 

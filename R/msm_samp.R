@@ -169,7 +169,7 @@ rmsm <- function(n, surv_model, control = list()){
       # setnames(qtls,
       #          old = names(qtls)[grepl(t-1, names(qtls))],
       #          new = paste0(names(qtls)[grepl(t-1, names(qtls))], "_prev"))
-      
+
       if(t > 0){
         if(t > 1){
           qtls <- dplyr::select(qtls, -contains("prev"))
@@ -272,9 +272,9 @@ rmsm <- function(n, surv_model, control = list()){
         }
       }
     }
-
     # start with unif(0,1)
     vt <- runif(n, 0, 1)
+    X <- model.matrix(delete.response(terms(formulas[[4]]$Y[[1]])), data = out)
     # go through 
     cop_pars <- cinp$pars[[kwd]]
     cop_fams <- family[[5]][[1]] #only one Y formula
@@ -287,19 +287,20 @@ rmsm <- function(n, surv_model, control = list()){
           qtls[[L_col]],
           vt
         )
-        
-      vt <- compute_copula_quantiles(qs, list(integer(0), cop_fams), 
+
+      vt <- compute_copula_quantiles(qs, X = X, cop_fams, 
                                                 pars$cop[[1]], i, inv = TRUE)
       }
       L_col <- paste0(time_vars[1], "_", T-t)
       qs <- cbind(qtls[[L_col]], vt)
-      vt <- compute_copula_quantiles(qs, cop_fams, 
+
+      vt <- compute_copula_quantiles(qs, X = X, cop_fams, 
                                      pars$cop[[1]], 1, inv = TRUE)
       
     }
     qY <- vt
-    X <- model.matrix(delete.response(terms(formulas[[3]][[1]])), data = out)
-    Y <- rescale_var(qY, X=X, family=family[[4]][[1]], pars=pars[["Y"]], link=link[[4]])
+    X_do <- model.matrix(delete.response(terms(formulas[[3]][[1]])), data = out)
+    Y <- rescale_var(qY, X=X_do, family=family[[4]][[1]], pars=pars[["Y"]], link=link[[4]])
     out[["Y"]] <- Y
     
   }

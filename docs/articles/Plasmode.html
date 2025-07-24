@@ -87,7 +87,7 @@
                         <h4 data-toc-skip class="author">Chase
 Mathis</h4>
             
-            <h4 data-toc-skip class="date">2025-07-18</h4>
+            <h4 data-toc-skip class="date">2025-07-24</h4>
       
       
       <div class="hidden name"><code>Plasmode.Rmd</code></div>
@@ -186,10 +186,12 @@ t-copula with 5 degrees of freedom and correlation parameters <span class="math 
 <code>dat</code>.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dat2</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Warning in rmsm(n, surv_model): Time: 3 Many samples lost. </span></span>
+<span><span class="co">##                        May result in unstable calculations.</span></span></code></pre>
 <pre><code><span><span class="co">## Warning in rmsm(n, surv_model): Time: 4 Many samples lost. </span></span>
 <span><span class="co">##                        May result in unstable calculations.</span></span></code></pre>
 <p>We are able to recover the causal estimand.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat2</span><span class="op">)</span></span>
 <span></span>
 <span></span>
@@ -214,20 +216,20 @@ t-copula with 5 degrees of freedom and correlation parameters <span class="math 
 <span><span class="co">## coxph(formula = Surv(t, t_stop, Y) ~ A, data = datl, weights = datl$wt, </span></span>
 <span><span class="co">##     id = id, timefix = FALSE)</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">##   n= 20643, number of events= 9799 </span></span>
+<span><span class="co">##   n= 20489, number of events= 9888 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##      coef exp(coef) se(coef) robust se     z Pr(&gt;|z|)    </span></span>
-<span><span class="co">## A -0.2024    0.8168   0.0215    0.0232 -8.72   &lt;2e-16 ***</span></span>
+<span><span class="co">## A -0.2128    0.8083   0.0214    0.0231 -9.22   &lt;2e-16 ***</span></span>
 <span><span class="co">## ---</span></span>
 <span><span class="co">## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##   exp(coef) exp(-coef) lower .95 upper .95</span></span>
-<span><span class="co">## A     0.817       1.22      0.78     0.855</span></span>
+<span><span class="co">## A     0.808       1.24     0.773     0.846</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## Concordance= 0.523  (se = 0.003 )</span></span>
-<span><span class="co">## Likelihood ratio test= 90.4  on 1 df,   p=&lt;2e-16</span></span>
-<span><span class="co">## Wald test            = 76  on 1 df,   p=&lt;2e-16</span></span>
-<span><span class="co">## Score (logrank) test = 88.8  on 1 df,   p=&lt;2e-16,   Robust = 76  p=&lt;2e-16</span></span>
+<span><span class="co">## Concordance= 0.522  (se = 0.003 )</span></span>
+<span><span class="co">## Likelihood ratio test= 101  on 1 df,   p=&lt;2e-16</span></span>
+<span><span class="co">## Wald test            = 84.9  on 1 df,   p=&lt;2e-16</span></span>
+<span><span class="co">## Score (logrank) test = 99.5  on 1 df,   p=&lt;2e-16,   Robust = 84.9  p=&lt;2e-16</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##   (Note: the likelihood ratio and score tests assume independence of</span></span>
 <span><span class="co">##      observations within a cluster, the Wald and robust score tests do not).</span></span></code></pre>

@@ -39,7 +39,7 @@ link <- list("logit", "identity", "logit", "inverse")
 pars <- list(C = list(beta=0),
              Z = list(beta = c(-1/2,1/2,0.25), phi=0.5),
              X = list(beta = c(0,1/2,1/10)),
-             Y = list(beta = c(0.05,0.5,0.05), phi=1),
+             Y = list(beta = c(0.25,0.5,0.05), phi=1),
              cop = list(Y = list(Z = list(beta=0.8472979))))  # gives correlation 0.4
 ```
 
@@ -115,7 +115,7 @@ link <- list("logit", "identity", "log", "inverse")
 pars <- list(C = list(beta=0),
              Z = list(beta = c(-1/2,1/4,1), phi=0.5),
              X = list(beta = c(0,1/4,1/20), phi=0.25),
-             Y = list(beta = c(0,0.2,0.05), phi=1),
+             Y = list(beta = c(0.5, 0.2, 0.05), phi=1),
              cop = list(beta=1))
 ```
 

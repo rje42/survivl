@@ -87,7 +87,7 @@
                         <h4 data-toc-skip class="author">Robin
 Evans</h4>
             
-            <h4 data-toc-skip class="date">2025-07-18</h4>
+            <h4 data-toc-skip class="date">2025-07-24</h4>
       
       
       <div class="hidden name"><code>MSMs.Rmd</code></div>
@@ -158,17 +158,17 @@ regressions to test the distributions of the <span class="math inline">\(Z\)</sp
 <span><span class="co">## alternative hypothesis: two-sided</span></span></code></pre>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Z</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">Z_l1</span> <span class="op">+</span> <span class="va">X_l1</span>, data<span class="op">=</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span></code></pre></div>
-<pre><code><span><span class="co">##              Estimate Std. Error  t value  Pr(&gt;|t|)</span></span>
-<span><span class="co">## (Intercept) -0.005016   0.013589  -0.3691 7.120e-01</span></span>
-<span><span class="co">## W           -0.001837   0.010284  -0.1786 8.582e-01</span></span>
-<span><span class="co">## Z_l1         0.697434   0.005762 121.0411 0.000e+00</span></span>
-<span><span class="co">## X_l1         0.212808   0.014288  14.8941 6.393e-50</span></span></code></pre>
+<pre><code><span><span class="co">##             Estimate Std. Error t value  Pr(&gt;|t|)</span></span>
+<span><span class="co">## (Intercept) -0.02238   0.013799  -1.622 1.049e-01</span></span>
+<span><span class="co">## W            0.02471   0.010490   2.355 1.852e-02</span></span>
+<span><span class="co">## Z_l1         0.70138   0.005825 120.408 0.000e+00</span></span>
+<span><span class="co">## X_l1         0.19647   0.014445  13.601 5.984e-42</span></span></code></pre>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z</span>, data<span class="op">=</span><span class="va">datl</span>, family<span class="op">=</span><span class="va">binomial</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span></code></pre></div>
 <pre><code><span><span class="co">##             Estimate Std. Error z value   Pr(&gt;|z|)</span></span>
-<span><span class="co">## (Intercept)  -0.5162    0.02048 -25.202 3.804e-140</span></span>
-<span><span class="co">## X_l1          0.2726    0.02958   9.217  3.046e-20</span></span>
-<span><span class="co">## Z             0.4993    0.01215  41.088  0.000e+00</span></span></code></pre>
+<span><span class="co">## (Intercept)  -0.5100    0.02071 -24.624 6.993e-134</span></span>
+<span><span class="co">## X_l1          0.2632    0.02989   8.808  1.272e-18</span></span>
+<span><span class="co">## Z             0.4871    0.01222  39.851  0.000e+00</span></span></code></pre>
 <p>Indeed, each of these variables is consistent with the parameters we
 used. For the survival outcome, we can use inverse probability
 weighting. The <code>ipw</code> package can estimate ipw weights for
