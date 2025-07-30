@@ -116,7 +116,7 @@ pars <- list(C = list(beta=0),
              Z = list(beta = c(-1/2,1/4,1), phi=0.5),
              X = list(beta = c(0,1/4,1/20), phi=0.25),
              Y = list(beta = c(0.5, 0.2, 0.05), phi=1),
-             cop = list(beta=1))
+             cop = list(Y = list(Z = list(beta=1))))
 ```
 
 ### Simulating Data

@@ -5,7 +5,7 @@
 \title{A wrapper function to compute h or inverse h functions. Also can apply a
 copula CDF if p = TRUE}
 \usage{
-compute_copula_quantiles(qs, X, family, pars, i, inv, p = FALSE)
+compute_copula_quantiles(qs, X, family, pars, idxs, inv, p = FALSE)
 }
 \arguments{
 \item{qs}{a matrix of two quantiles qs = (q1, q2) as we are using bivariate copulas.}
@@ -14,11 +14,11 @@ compute_copula_quantiles(qs, X, family, pars, i, inv, p = FALSE)
 
 \item{pars}{Parameter for the copula.}
 
-\item{i}{Use i as an index for which copula we are working with if there are multiple}
-
 \item{inv}{Boolean if inverse or regular h function}
 
-\item{p}{Boolean if wewant to compute a cdf instead of h function required for survival outcomes.}
+\item{p}{Boolean if we want to compute a cdf instead of h function required for survival outcomes.}
+
+\item{i}{Use i as an index for which copula we are working with if there are multiple}
 }
 \description{
 A wrapper function to compute h or inverse h functions. Also can apply a

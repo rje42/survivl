@@ -144,6 +144,7 @@ rmsm <- function(n, surv_model, control = list()){
   if (method == "inversion-survivl") {
     mod_inputs <- modify_inputs(surv_model)
     formulas <- mod_inputs$formulas
+    
     done <- unlist(LHS_C)
     for (t in seq_len(T)-1) {
 
@@ -153,16 +154,21 @@ rmsm <- function(n, surv_model, control = list()){
       
       ## function to standardize formulae
       mod_inputs$t <- t
+
       cinp <- curr_inputs(formulas=formulas, pars=pars, ordering=order,
                           done=done, t=t, vars_t=vars_t, kwd=kwd)
+
+
       mod_inputs$formulas <- cinp$formulas
+      
+      # mod_inputs$formulas <- cinp$formulas
       # print(mod_inputs$formulas)
       mod_inputs$pars <- cinp$pars
       # tmp_pars <- rapply(mod_inputs$formulas, function(x) attr(x, "beta"), how="list")
       # while (pluck_depth(tmp_pars) > 2) {
       #   tmp_pars <- list_flatten(tmp_pars)
       # }
-      
+
       mod2 <- modify_LHSs(mod_inputs, t=t)
       done <- c(done, paste0(vars_t, "_", t))
       ## use sim_inversion()
@@ -272,32 +278,57 @@ rmsm <- function(n, surv_model, control = list()){
         }
       }
     }
+
     # start with unif(0,1)
     vt <- runif(n, 0, 1)
-    X <- model.matrix(delete.response(terms(formulas[[4]]$Y[[1]])), data = out)
-    # go through 
-    cop_pars <- cinp$pars[[kwd]]
-    cop_fams <- family[[5]][[1]] #only one Y formula
-    time_vars <- surv_model$LHSs$LHS_Z; p <- length(time_vars)
-    for(t in seq_len(T)){
-      for(i in rev(seq_len(p)[-1])){
+
+    # make a (k+1) x dZ upper matrix (list) of copula formulas, pars, and families
+    cop_fams <- array(vector("list", (T)*dZ), dim = c(dZ, T))
+    cop_forms <- array(vector("list", (T)*dZ), dim = c(dZ, T))
+    cop_pars <- array(vector("list", (T)*dZ), dim = c(dZ, T))
+    idx <- 1
+    
+    for (j in seq_len(T)) {
+      for (l in seq_len(dZ)) {
+        cop_fams[[l, j]] <- family[[5]][[1]][[l]]
+        cop_forms[[l, j]] <- mod_inputs$formulas[[4]][[1]][[l]][[idx]]
+        cop_pars[[l, j]] <- list(beta = mod_inputs$pars$cop[[1]][[l]]$beta[[idx]], 
+                                 df =  mod_inputs$pars$cop[[1]][[l]]$df)
+        
+      }
+      idx <- idx + 1
+      
+    }
+    
+    time_vars <- surv_model$LHSs$LHS_Z; 
+    for(j in rev(seq_len(T)-1)){
+      for(i in rev(seq_len(dZ)[-1])){
         L_col = paste0(time_vars[i], "|", paste0(time_vars[1:(i-1)], 
-                                                 collapse = ""), "_",T-t)
+                                                 collapse = ""), "_",j)
         qs <- cbind(
           qtls[[L_col]],
           vt
         )
-
+        
+      idxs <- c(i, j+1)
+      form <- do.call("[[", c(list(cop_forms), as.list(idxs)))
+      X <- model.matrix(form, data = out)
+      
       vt <- compute_copula_quantiles(qs, X = X, cop_fams, 
-                                                pars$cop[[1]], i, inv = TRUE)
+                                     cop_pars, idxs, inv = TRUE)
       }
-      L_col <- paste0(time_vars[1], "_", T-t)
+      L_col <- paste0(time_vars[1], "_", j)
       qs <- cbind(qtls[[L_col]], vt)
-
+      
+      idxs <- c(1, j+1)
+      form <- do.call("[[", c(list(cop_forms), as.list(idxs)))
+      X <- model.matrix(form, data = out)
+      
       vt <- compute_copula_quantiles(qs, X = X, cop_fams, 
-                                     pars$cop[[1]], 1, inv = TRUE)
+                                     cop_pars, idxs, inv = TRUE)
       
     }
+    
     qY <- vt
     X_do <- model.matrix(delete.response(terms(formulas[[3]][[1]])), data = out)
     Y <- rescale_var(qY, X=X_do, family=family[[4]][[1]], pars=pars[["Y"]], link=link[[4]])

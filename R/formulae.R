@@ -206,9 +206,16 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
     LHSs <- lhs(form_copY)
 
     for (j in seq_along(form_copY)) {
-      tmp <- mod_args(form_copY[[j]], pars_copY[[LHSs[j]]]$beta, t = t, modLHS = TRUE)
-      form_copY[[j]] <- tmp$form
-      pars_copY[[LHSs[j]]]$beta <- tmp$beta
+      form_cops <- c()
+      par_cops <- list()
+      for(dt in 0:t){
+        tmp <- mod_args(form_copY[[j]], pars_copY[[LHSs[j]]]$beta, t = dt, modLHS = TRUE)
+        form_cops <- c(form_cops, tmp$form)
+        par_cops <- c(par_cops, list(tmp$beta))
+      }
+      
+      form_copY[[j]] <- form_cops
+      pars_copY[[LHSs[j]]]$beta <- par_cops
     }
     formulas[[4]][[LHS]] <- form_copY
     pars[[kwd]][[LHS]] <- pars_copY

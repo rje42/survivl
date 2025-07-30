@@ -27,6 +27,7 @@ Suggests:
     ggfortify,
     knitr,
     rmarkdown,
+    kableExtra,
     survey,
     nnet,
     ipw,

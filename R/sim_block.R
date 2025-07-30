@@ -18,6 +18,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   d <- lengths(formulas)
   k = proc_inputs$t
   ## simulate covariates and treatments
+
   for (j in 1:2) for (i in seq_len(d[j])) {
     vnm_q <- vnm <- vars[i+(j-1)*length(formulas[[1]])]
     if(!all(is.na(out[[vnm]]))){
@@ -64,6 +65,7 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   vnm_stm <- rmv_time(vnm)
   # vnm_t <- paste0(vnm, "_", proc_inputs$t)
   first <- TRUE
+
   prev <- paste0(time_vars, collapse = "")
   for(outcome_vnm in outcome_vars) {
       quantiles[[paste0(outcome_vnm, "|", prev, "_", k)]] <- runif(nrow(out))
@@ -84,12 +86,11 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
   ## code to get Y quantiles conditional on different Zs
 
 
-
+  p <- d[1]
   for (i in seq_along(formulas[[3]])) {
     ## simulate Y variable
-    # qY <- runif(n)
-    # print(wh)
-    forms <- list(formulas[[3]][[i]], formulas[[4]][[i]])
+
+    forms <- list(formulas[[3]][[i]], formulas[[4]][[1]])
     fams <- list(family[[3]][[i]], family[[4]][[i]])
     prs <- list(c(pars[[vnm[i]]], list(x=proc_inputs$t)), pars[[kwd]][[vnm_stm[i]]])
     if (!is.null(prs[[1]]$lambda0)) prs[[1]]$phi <- 1 #prs[[1]]$phi <- prs[[1]]$lambda0
@@ -103,11 +104,9 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     }
 
     out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
-                                 dat = out, quantiles=quantiles, type_event)
+                                 dat = out, 
+                                 quantiles=quantiles, type_event, num_time_varying = d[1])
 
-
-    # out <- causl::sim_variable(nrow(out), forms, fams, prs, lnk,
-    #                            dat=out, quantiles=quantiles)
     quantiles <- attr(out, "quantiles")
     attr(out, "quantiles") <- NULL
 

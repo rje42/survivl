@@ -3,18 +3,20 @@
 ## Two Examples
 
 formulas <- list(C ~ 1,
-                 Z ~ X_l1 + C,
-                 X ~ Z_l0 + C,
+                 list(Z ~ X_l1 + C, W ~ Z_l1 + C),
+                 X ~ Z_l0 +W_l0 +  C,
                  Y ~ X_0 + X_1 + X_2 + X_3 + X_4 + X_5 + X_6 + C,
-                 cop ~ 1)
-family <- list(5,1,5,3,1)
-link <- list("logit", "identity", "logit", "inverse")
+                 list(Y = list(Z ~ Z_l1, W~1)))
+family <- list(5,c(1,1),5,3,c(1,1))
+link <- list("logit",rep("identity",2) ,"logit", "inverse")
 do_pars <- c(0.05,0.5, 0.25, 0, 0.34, 0.25, 0.45, 0.2, 0.05) # needs to be of length 1 + 7 + 1 (intercept, X, C)
 pars <- list(C = list(beta=0),
              Z = list(beta = c(-1/2,1/2,0.25), phi=0.5),
-             X = list(beta = c(0,1/2,1/10)),
+             W = list(beta = c(0, 0.25, 0.35), phi = 0.25),
+             X = list(beta = c(0,1/2,1/10, -1/2)),
              Y = list(beta = do_pars, phi=1),
-             cop = list(beta=0.8472979))  # gives correlation 0.4
+             cop = list(Y = list(Z = list(beta=c(0.25, 0.8472979)),
+                                 W = list(beta = -0.5))))
 
 
 set.seed(123)
@@ -79,7 +81,7 @@ pars <- list(C = list(beta=0),
              Z = list(beta = c(-1/2,1/2,0.25), phi=0.5),
              X = list(beta = c(0,1/2,1/10)),
              Y = list(beta = do_pars, phi=1), # needs to be of length 1 + 7 + 1 (intercept, X, C)
-             cop = list(beta=0.8472979))  # gives correlation 0.4
+             cop = list(Y = list(Z = list(beta=0.8472979))))  # gives correlation 0.4
 
 
 set.seed(123)
