@@ -124,6 +124,7 @@ sim_variable <- function (n, formulas, family, pars, link,
 survival_loop <- function(k, p, vnm, time_vars, quantiles, 
                           family, pars, formulas, data){
   # Get the Quantiles of Y and L
+
   if (k >0){
     #get the distributions of Ls in the survivors
     for (j in rev(0:(k-1))){

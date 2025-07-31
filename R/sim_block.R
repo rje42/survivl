@@ -102,7 +102,6 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
     }else{
       type_event <- "competing"
     }
-
     out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
                                  dat = out, 
                                  quantiles=quantiles, type_event, num_time_varying = d[1])

@@ -12,14 +12,13 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="Marginal Structural Survival Models">
-<meta property="og:description" content="survivl">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -45,12 +44,15 @@
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
       <a href="../articles/Causal_Survival_Analysis.html">Causal Survival Analysis</a>
+    </li>
+    <li>
+      <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
       <a href="../articles/Examples.html">Examples</a>
@@ -78,7 +80,7 @@
 </div>
 <!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -87,9 +89,9 @@
                         <h4 data-toc-skip class="author">Robin
 Evans</h4>
             
-            <h4 data-toc-skip class="date">2025-07-24</h4>
+            <h4 data-toc-skip class="date">2025-07-31</h4>
       
-      
+
       <div class="hidden name"><code>MSMs.Rmd</code></div>
 
     </div>
@@ -107,18 +109,26 @@ time-to-event data. Begin by loading the library.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>digits<span class="op">=</span><span class="fl">4</span><span class="op">)</span></span></code></pre></div>
 <p>Then we define our formulas and family variables. We will have one
 baseline variable, and a single time-varying covariate, treatment and
-outcome. More specifically, let: <span class="math display">\[\begin{align*}
+outcome. More specifically, let:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><mi>W</mi></mtd><mtd columnalign="left" style="text-align: left"><mo>∼</mo><mo>Gamma</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mi>/</mi><mn>2</mn><mo>,</mo><mspace width="0.167em"></mspace><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>Z</mi><mi>t</mi></msub><mo>∣</mo><msub><mover><mi>Z</mi><mo accent="true">¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mover><mi>X</mi><mo accent="true">¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0.7</mn><msub><mi>Z</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><mn>0.2</mn><msub><mi>X</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><mspace width="0.167em"></mspace><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>X</mi><mi>t</mi></msub><mo>∣</mo><msub><mover><mi>Z</mi><mo accent="true">¯</mo></mover><mi>t</mi></msub><mo>,</mo><msub><mover><mi>X</mi><mo accent="true">¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>∼</mo><mo>Bernoulli</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>expit</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0.5</mn><msub><mi>X</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><mn>0.25</mn><msub><mi>Z</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>t</mi></msub><mo>=</mo><mn>1</mn><mo>∣</mo><mi>d</mi><mi>o</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>X</mi><mo accent="true">¯</mo></mover><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mi>W</mi><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mo>exp</mo><mo stretchy="false" form="prefix">{</mo><mi>−</mi><msub><mi>X</mi><mi>t</mi></msub><mo>+</mo><mi>W</mi><mi>/</mi><mn>10</mn><mo stretchy="false" form="postfix">}</mo><mo>,</mo></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align*}
 W &amp;\sim \operatorname{Gamma}(1/2, \, 2)  \\
-Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1} &amp;\sim N(0.7 Z_{t-1}
-+ 0.2 X_{t-1}, \, 1)\\
-X_t \mid \overline{Z}_{t}, \overline{X}_{t-1} &amp;\sim
-\operatorname{Bernoulli}(\operatorname{expit}(0.5 X_{t-1} + 0.25 Z_t))\\
+Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1} &amp;\sim N(0.7 Z_{t-1} + 0.2 X_{t-1}, \, 1)\\
+X_t \mid \overline{Z}_{t}, \overline{X}_{t-1} &amp;\sim \operatorname{Bernoulli}(\operatorname{expit}(0.5 X_{t-1} + 0.25 Z_t))\\ 
 P(Y_t = 1 \mid do(\overline{X}_{t}), W) &amp;= \exp\{ - X_t + W/10\},
-\end{align*}\]</span> and assume that there is a Gaussian pair-copula
-linking <span class="math inline">\(Y_t\)</span> with <span class="math inline">\(Z_{t-1},Z_t\)</span>, which also depends upon
-<span class="math inline">\(W\)</span>. We assume that the parameter for
-the <span class="math inline">\(Y_t\)</span>-<span class="math inline">\(Z_{t-1}\)</span> interaction is 0.2, and that for
-<span class="math inline">\(Y_t\)</span>-<span class="math inline">\(Z_{t}\)</span> given <span class="math inline">\(Z_{t-1}\)</span> is 0.3.</p>
+\end{align*}</annotation></semantics></math> and assume that there is a
+Gaussian pair-copula linking
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>
+with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Z</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>Z</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">Z_{t-1},Z_t</annotation></semantics></math>,
+which also depends upon
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>.
+We assume that the parameter for the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">Z_{t-1}</annotation></semantics></math>
+interaction is 0.2, and that for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Z_{t}</annotation></semantics></math>
+given
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">Z_{t-1}</annotation></semantics></math>
+is 0.3.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">forms</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">W</span> <span class="op">~</span> <span class="fl">1</span>,</span>
 <span>              <span class="va">Z</span> <span class="op">~</span> <span class="va">Z_l1</span> <span class="op">+</span> <span class="va">X_l1</span>,</span>
@@ -134,7 +144,8 @@ the <span class="math inline">\(Y_t\)</span>-<span class="math inline">\(Z_{t-1}
 <span><span class="op">)</span></span>
 <span><span class="va">link</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"log"</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"log"</span><span class="op">)</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T <span class="op">=</span> <span class="fl">10</span>, formulas <span class="op">=</span> <span class="va">forms</span>, family <span class="op">=</span> <span class="va">fams</span>, pars <span class="op">=</span> <span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span></code></pre></div>
-<p>We can now simulate <span class="math inline">\(n=10^4\)</span>
+<p>We can now simulate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><msup><mn>10</mn><mn>4</mn></msup></mrow><annotation encoding="application/x-tex">n=10^4</annotation></semantics></math>
 observations from the model over 10 time points.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">1e4</span></span>
@@ -146,8 +157,12 @@ observations from the model over 10 time points.</p>
 </h4>
 <p>We can check that our simulation has the correct parametric
 distributions. We use a Kolmogorov-Smirnov test to check the
-distribution of <span class="math inline">\(W\)</span>, and then
-regressions to test the distributions of the <span class="math inline">\(Z\)</span>s and <span class="math inline">\(X\)</span>s.</p>
+distribution of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>,
+and then regressions to test the distributions of the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Z</mi><annotation encoding="application/x-tex">Z</annotation></semantics></math>s
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>s.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/ks.test.html" class="external-link">ks.test</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">W</span>, <span class="st">"pgamma"</span>, scale<span class="op">=</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span>, shape<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
@@ -159,16 +174,16 @@ regressions to test the distributions of the <span class="math inline">\(Z\)</sp
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Z</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">Z_l1</span> <span class="op">+</span> <span class="va">X_l1</span>, data<span class="op">=</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span></code></pre></div>
 <pre><code><span><span class="co">##             Estimate Std. Error t value  Pr(&gt;|t|)</span></span>
-<span><span class="co">## (Intercept) -0.02238   0.013799  -1.622 1.049e-01</span></span>
-<span><span class="co">## W            0.02471   0.010490   2.355 1.852e-02</span></span>
-<span><span class="co">## Z_l1         0.70138   0.005825 120.408 0.000e+00</span></span>
-<span><span class="co">## X_l1         0.19647   0.014445  13.601 5.984e-42</span></span></code></pre>
+<span><span class="co">## (Intercept) -0.01676   0.013718  -1.222 2.217e-01</span></span>
+<span><span class="co">## W            0.01598   0.010402   1.536 1.244e-01</span></span>
+<span><span class="co">## Z_l1         0.69978   0.005809 120.462 0.000e+00</span></span>
+<span><span class="co">## X_l1         0.20279   0.014349  14.132 3.863e-45</span></span></code></pre>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z</span>, data<span class="op">=</span><span class="va">datl</span>, family<span class="op">=</span><span class="va">binomial</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span></code></pre></div>
 <pre><code><span><span class="co">##             Estimate Std. Error z value   Pr(&gt;|z|)</span></span>
-<span><span class="co">## (Intercept)  -0.5100    0.02071 -24.624 6.993e-134</span></span>
-<span><span class="co">## X_l1          0.2632    0.02989   8.808  1.272e-18</span></span>
-<span><span class="co">## Z             0.4871    0.01222  39.851  0.000e+00</span></span></code></pre>
+<span><span class="co">## (Intercept)  -0.4972    0.02057 -24.164 5.369e-129</span></span>
+<span><span class="co">## X_l1          0.2296    0.02976   7.716  1.204e-14</span></span>
+<span><span class="co">## Z             0.5062    0.01224  41.366  0.000e+00</span></span></code></pre>
 <p>Indeed, each of these variables is consistent with the parameters we
 used. For the survival outcome, we can use inverse probability
 weighting. The <code>ipw</code> package can estimate ipw weights for
@@ -230,7 +245,7 @@ object without redefining it.</p>
 <span><span class="va">pars2</span><span class="op">$</span><span class="va">cop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z1<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>,<span class="fl">0.2</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                         Z2<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.25</span>,<span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co"># should be able to just use modify</span></span>
-<span><span class="va">surv_model2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/modify.survivl_model.html">modify.survivl_model</a></span><span class="op">(</span><span class="va">surv_model</span>, formulas <span class="op">=</span> <span class="va">forms2</span>,</span>
+<span><span class="va">surv_model2</span> <span class="op">&lt;-</span> <span class="fu">modify</span><span class="op">(</span><span class="va">surv_model</span>, formulas <span class="op">=</span> <span class="va">forms2</span>,</span>
 <span>                                    family <span class="op">=</span> <span class="va">fams2</span>,</span>
 <span>                                    pars <span class="op">=</span> <span class="va">pars2</span>, link <span class="op">=</span> <span class="va">link</span><span class="op">)</span></span></code></pre></div>
 <p>We can then simulate as before.</p>
@@ -277,9 +292,7 @@ object without redefining it.</p>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
-    </nav>
-</div>
+      </div>
 
 </div>
 
@@ -292,16 +305,16 @@ object without redefining it.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
       </footer>
 </div>
 
-  
 
 
-  
+
+
 
   </body>
 </html>
