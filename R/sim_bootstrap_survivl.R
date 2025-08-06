@@ -66,10 +66,16 @@ sim_bootstrap_survivl <- function(out, surv_model) {
 
     if(direct_risk){
       g_t <- link_apply(eta, curr_link, "binomial")
-    }else{browser()
+    }else{
       # TODO: continuos time for seamon and keogh
-      g_t <- causl::glm_sim(mod_inputs$family[[3]][[1]],eta=eta, phi=curr_phi,
-                            other_pars=pars[[vnm]])
+      if(mod_inputs$family[[3]][[1]]$name == "Gamma"){
+        lambda <- causl::glm_sim(mod_inputs$family[[3]][[1]],eta=eta, phi=curr_phi,
+                              other_pars=pars[[vnm]])
+        g_t <- 1 - exp(-lambda)
+      }else{
+        #TODO: weibull distribution
+      }
+
     }
 
     # create risk function model matrix interventions, covariates, baseline covariates
@@ -104,9 +110,9 @@ sim_bootstrap_survivl <- function(out, surv_model) {
     Hs <- matrix(H, nrow=sum(surv), ncol=M)
     us <- (rowSums(empirical_ys < Hs) + 1)/(M + 1) - runif(sum(surv), max=1/(M+1))
 
-    if(direct_risk){
-      # now with quantile and correlation coef, use copula, to get probability
 
+      # now with quantile and correlation coef, use copula, to get probability
+     
       zs <- qnorm(us)
       zY <- rnorm(sum(surv), rho * zs, 1 - rho^2)
       probs_sim <- pnorm(zY)
@@ -120,35 +126,34 @@ sim_bootstrap_survivl <- function(out, surv_model) {
       # browser()
       
       tmp$dat[[paste0("Y_", t)]] <- y_k1
-      surv_this <- y_k1 == 1
+      surv_this <- y_k1 == 0
+      if(!direct_risk){
+        cont_t <- t + log(1 - probs_sim[!surv_this]) / log(1 - g_t[!surv_this])
+      }else{
+        cont_t <- t + 1
+      }
+      
       out[surv,] <- tmp$dat
 
-      surv[surv] <- surv[surv] & surv_this
-    }else{
-      
-      ## determine if the individual had an event
-      indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
-      if (dY == 1) {
-        surv_this <- out[surv, indYt] == 0
-      }
-      else {
-        surv_this <- apply(out[surv, indYt] == 0, 1, all)
-      }
-      ## get time of event and which one
-      out$T[surv][!surv_this] <- t + do.call(pmin, out[surv,][!surv_this, indYt, drop=FALSE])
-      wh_fail <- max.col(-out[surv,][!surv_this, indYt, drop=FALSE])
-      out$status[surv][!surv_this] <- wh_fail - (censoring)
-      
-      ## record 0 for intervals survived/censored, and i for failure due to ith competing risk
-      out[surv, indYt] <- 0L
-      out[cbind(which(surv)[!surv_this], indYt[wh_fail])] <- 1L
+      #surv[surv] <- surv[surv] & surv_this
+
+      # ## determine if the individual had an event
+      # indYt <- dC + (t-con$start_at)*length(vars_t) + dZ + dX + seq_len(dY)  # indices of responses
+      # if (dY == 1) {
+      #   surv_this <- out[surv, indYt] == 0
+      # }
+      # else {
+      #   surv_this <- apply(out[surv, indYt] == 0, 1, all)
+      # }
+      # ## get time of event and which one
+      out$T[surv][!surv_this] <- cont_t
       
       ## update list of survivors
       surv[surv] <- surv[surv] & surv_this
       
       ## if no-one has survived, then end the simulation
       if (!any(surv)) break
-    }
+
 
     
 
