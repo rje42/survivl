@@ -1,6 +1,5 @@
 #longitudinal-no-survivl
 
-## Two Examples
 
 formulas <- list(C ~ 1,
                  list(Z ~ X_l1 + C, W ~ Z_l1 + C),

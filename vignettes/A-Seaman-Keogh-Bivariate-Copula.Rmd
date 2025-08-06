@@ -1,0 +1,106 @@
+---
+title: "Survival Outcomes using Risk Functions"
+author: "Chase Mathis"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Seaman Keogh Bivariate Copulas}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+# Seaman & Keogh's Bivariate Copula Framework
+
+In this vignette, we consider simulating longitudinal, survival data
+using Seaman & Keogh's risk function method. For a refresher on the
+basics of MSMs see the Marginal Structural Model vignettes.
+
+```{r load}
+library(survivl)
+library(survival) # for coxph
+options(digits=4)
+```
+
+We define our survival model the same as the modle in the Marginal
+Structural Model Vignette. One thing that is different is that the
+copula formula is just one list entry. This formula no longer specifies
+the copula, but specifies the risk function necessary for the simulation
+technique. Similarly, the copula parameters only have a $\rho$ entry as
+we only have one parameter.
+
+```{r formulas}
+forms <- list(W ~ 1,
+              Z ~ Z_l1 + X_l1,
+              X ~ X_l1 + Z_l0,
+              Y ~ W + X_l0,
+              list(Y ~ Z_l0))
+fams <- list(3, 1, 5, 0, c(1))
+pars <- list(W = list(beta=0, phi=1/2),
+             Z = list(beta=c(0,0.7,0.2), phi=1),
+             X = list(beta=c(-0.5,0.25,0.5)),
+             Y = list(beta=c(1,-1/10,-1/5), phi=1),
+             cop =list(Y=list(rho = -0.5)))
+link <- list("log", "identity", "logit", "logit")
+
+```
+
+We put this all together and add the `method` = "bootstrap" argument to
+calculate. Also, the default number of simulations is 5e3 -1, but for
+this simulation we will do less at 2.5e2 for sake of time.
+
+```{r build-model}
+
+sm <- survivl_model(formulas=forms, family=fams,
+                    pars=pars, T = 7,
+                    link = link, method = "bootstrap",
+                    control = list(bootsims = 2.5e2))
+```
+
+We can now simulate $n=10^4$ observations from the model over 10 time
+points. You can see the bootstrap simulations printing out. We note this
+method takes a bit longer than the h-function methods.
+
+```{r sim_data}
+n <- 1e4
+set.seed(124)
+dat <- rmsm(n, sm)
+datl <- surv_to_long(dat)
+```
+
+### Estimating the Causal Effect
+
+```{r ipw-estimate}
+temp <- ipw::ipwtm(
+  exposure = X, 
+  family = "binomial",
+  link = "logit",
+  numerator = ~ W,
+  denominator = ~Z,
+  id = id,
+  timevar = t,
+  type = "all",
+  data = datl
+)
+datl$wt <- temp$ipw.weights
+```
+
+```{r}
+summary(glm(Y ~ W + X, family = binomial(link = "logit"), data = datl,
+                    weights = wt))
+```
+
+We recover the causal effect by using the ipw estimator. If we had not
+use the weights, then our estimate would be very far from the truth we
+had specified showing the strength of the $Z$ variable confounding on
+the effect of $X$ on $Y$.
+
+```{r}
+glm(Y ~ W + X, family = binomial(link = "logit"), data = datl)
+```

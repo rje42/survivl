@@ -16,8 +16,11 @@ survivl_model <- function (formulas, family, pars, link, T = T, dat=NULL, qtls =
                          kwd="cop", control=list()) {
 
   con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0,
-             pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,quan_tol = 1e3*.Machine$double.eps)
+             pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,
+             quan_tol = 1e3*.Machine$double.eps,
+             risk_h = \(row) sum(row), risk_form = NULL, bootsims = 1e3)
   matches = match(names(control), names(con))
+  print(matches)
   con[matches] = control[!is.na(matches)]
   if (any(is.na(matches))) warning("Some names in control not matched: ",
                                    paste(names(control[is.na(matches)]),
@@ -87,9 +90,11 @@ modify.survivl_model <- function (x, over=FALSE, formulas, family, pars,
   if (missing(kwd)) kwd <- x$kwd
   if(missing(T)) T <- x$T
   if(missing(qtls)) qtls <- x$qtls
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop=x$kwd, censor="Cen", 
-             start_at=surv_model$start_at,
-             pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,quan_tol = 1e3*.Machine$double.eps)
+  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0,
+             pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,
+             quan_tol = 1e3*.Machine$double.eps,
+             risk_h = x$risk$risk_h, risk_form = x$risk$risk_form, 
+             bootsims = x$bootsims)
   
   out <- process_inputs(formulas=formulas, family=family, pars=pars,
                         link=link, dat=dat, method=method, T = T, control = con,

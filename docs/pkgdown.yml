@@ -2,10 +2,11 @@ pandoc: '3.4'
 pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
+  A-Seaman-Keogh-Bivariate-Copula: A-Seaman-Keogh-Bivariate-Copula.html
   Causal_Survival_Analysis: Causal_Survival_Analysis.html
   Complicated-Copulas: Complicated-Copulas.html
   Examples: Examples.html
   Longitudinal-Single-Outcome: Longitudinal-Single-Outcome.html
   MSMs: MSMs.html
   Plasmode: Plasmode.html
-last_built: 2025-07-31T16:11Z
+last_built: 2025-08-06T01:12Z

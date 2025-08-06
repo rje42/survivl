@@ -2,9 +2,7 @@
 title: "Examples"
 author: "Robin J. Evans"
 date: "24/05/2022"
-output:
-  pdf_document: default
-  html_document: default
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Examples}
   %\VignetteEngine{knitr::rmarkdown}

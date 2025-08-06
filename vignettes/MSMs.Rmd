@@ -2,9 +2,7 @@
 title: "Marginal Structural Survival Models"
 author: "Robin Evans"
 date: "`r Sys.Date()`"
-output:
-  pdf_document: default
-  html_document: default
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{MSMs}
   %\VignetteEngine{knitr::rmarkdown}

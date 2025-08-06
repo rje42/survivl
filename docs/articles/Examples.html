@@ -49,6 +49,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/A-Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
       <a href="../articles/Causal_Survival_Analysis.html">Causal Survival Analysis</a>
     </li>
     <li>
@@ -126,7 +129,10 @@ Evans</h4>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">1e4</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
+<span><span class="co">#&gt; integer(0)</span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 012345</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sinhrks/ggfortify" class="external-link">ggfortify</a></span><span class="op">)</span></span>
@@ -204,7 +210,9 @@ is Gaussian with fixed correlation.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">surv_model2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
+<span><span class="co">#&gt; integer(0)</span></span>
 <span><span class="va">dat2</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="fl">1e4</span>, <span class="va">surv_model2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 0123456</span></span>
 <span><span class="va">datl2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat2</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sinhrks/ggfortify" class="external-link">ggfortify</a></span><span class="op">)</span></span>

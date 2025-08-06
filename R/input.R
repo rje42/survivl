@@ -55,6 +55,7 @@ process_inputs <- function (formulas, pars, family, link,
   dims <- lengths(formulas)
   family <- causl::process_family(family=family, dims=dims, func_return=get_surv_family)
   ## now set up link functions
+
   link <- causl::link_setup(link, family = family[-(5)], vars=LHSs,
                             sources=c(links_list, surv_links_list))
   # link[[4]] <- "inverse"
@@ -82,7 +83,7 @@ process_inputs <- function (formulas, pars, family, link,
   ## copula related things
   kwd <- control$cop
   
-  if (method == 'inversion' || method == 'bootstrap') {
+  if (method == 'inversion' || method == 'bootstrap' || method == "rejection") {
     tmp <- causl::pair_copula_setup(formulas=formulas[[5]], family=family[[5]], pars=pars[[kwd]],
                                      LHSs=LHSs, quans=character(0), ord=ord)
     formulas[[5]] <- tmp$formulas
@@ -90,6 +91,7 @@ process_inputs <- function (formulas, pars, family, link,
     pars[[kwd]] <- tmp$pars
 
   }
+  
 
   ## check that at least one outcomes are OK for time-to-event
   # do this by using _l0 to mean it is survival 
@@ -100,8 +102,13 @@ process_inputs <- function (formulas, pars, family, link,
   survival_outcome <- unlist(lapply(terms, function(x) any(grepl("_l\\d+", x))))
   if(any(survival_outcome)){
     if(any(!is_surv_outcome(family[[4]][which(survival_outcome)]))){
-      stop(paste0("Specified a survival outcome without a 
+      if(family[[4]][[which(survival_outcome)]]$name == "binomial"){
+        warning("User is specifying explicit probability risk function structural model.")
+      }else{
+        stop(paste0("Specified a survival outcome without a 
                   survival type (non-negative and continuous)"))
+      }
+
     }
   }
   # get quantiles if there is none
@@ -130,6 +137,18 @@ process_inputs <- function (formulas, pars, family, link,
               std_form=std_form, ordering=ord, vars=nms, vars_t=nms_t,
               survival_outcome = survival_outcome, method = method, dat = dat,
               censoring = censoring, T = T, kwd = kwd, qtls = qtls, start_at = control$start_at)
+  if(method == "bootstrap"){
+    risk_form <- formulas[[5]][[LHS_Y]][[1]]
+    if(is.null(risk_form)){stop("Must specify risk formula in copula formulas.
+                                See Seaman-Keogh vignette for more details.")}
+    risk_h <- control$risk_h
+    bootsims = control$bootsims
+    out[["risk"]] <- list(risk_h = risk_h, risk_form = risk_form)
+    out[["bootsims"]] <- control$bootsims
+    
+  }
+  return(out)
+  
 }
 
 

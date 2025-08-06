@@ -2,9 +2,7 @@
 title: "Complicated Copulas"
 author: "Chase Mathis"
 date: "`r Sys.Date()`"
-output:
-  pdf_document: default
-  html_document: default
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Complicated Copulas}
   %\VignetteEngine{knitr::rmarkdown}

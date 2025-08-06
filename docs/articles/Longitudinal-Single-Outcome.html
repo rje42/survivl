@@ -49,6 +49,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/A-Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
       <a href="../articles/Causal_Survival_Analysis.html">Causal Survival Analysis</a>
     </li>
     <li>
@@ -89,7 +92,7 @@
                         <h4 data-toc-skip class="author">Chase
 Mathis</h4>
             
-            <h4 data-toc-skip class="date">2025-07-31</h4>
+            <h4 data-toc-skip class="date">2025-08-05</h4>
       
 
       <div class="hidden name"><code>Longitudinal-Single-Outcome.Rmd</code></div>
@@ -183,12 +186,13 @@ defining the structur and parameters we imposed above.</p>
 <span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>formulas <span class="op">=</span> <span class="va">forms</span>, family <span class="op">=</span> <span class="va">fams</span>,</span>
 <span>                            pars <span class="op">=</span> <span class="va">pars</span>, T <span class="op">=</span> <span class="fl">5</span>, dat <span class="op">=</span> <span class="va">dat0</span>, qtls <span class="op">=</span> <span class="va">qtls</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## integer(0)</span></span></code></pre>
 <p>We call <code>rmsm</code> to simulate from this model.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span></code></pre></div>
 <p>Now, we choose to use the IPW estimator to recover our estimates we
 specified.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">glm_A0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">A_0</span> <span class="op">~</span> <span class="va">L_0</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
 <span><span class="va">glm_A3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">A_3</span> <span class="op">~</span> <span class="va">L_0</span> <span class="op">+</span> <span class="va">L_1</span> <span class="op">+</span> <span class="va">L_2</span> <span class="op">+</span> <span class="va">A_0</span> , family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
 <span><span class="va">glm_A4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">A_4</span> <span class="op">~</span> <span class="va">L_0</span> <span class="op">+</span> <span class="va">L_1</span> <span class="op">+</span> <span class="va">L_2</span> <span class="op">+</span> <span class="va">L_3</span> <span class="op">+</span> <span class="va">A_0</span>  <span class="op">+</span> <span class="va">A_3</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
@@ -219,14 +223,14 @@ specified.</p>
 <span><span class="va">glm_Y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">B</span> <span class="op">+</span> <span class="va">C</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="va">A_0</span> <span class="op">+</span> <span class="va">A_1</span> <span class="op">+</span> <span class="va">A_2</span> <span class="op">+</span> <span class="va">A_3</span> <span class="op">+</span> <span class="va">A_4</span><span class="op">)</span>, </span>
 <span>             data <span class="op">=</span> <span class="va">dat</span>, weights <span class="op">=</span> <span class="va">iptw_weights</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Warning in eval(family$initialize): non-integer #successes in a binomial glm!</span></span></code></pre>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sumY</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">glm_Y</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">sumY</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span> <span class="op">-</span> <span class="va">causal_parameters</span><span class="op">)</span><span class="op">/</span><span class="va">sumY</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">##                    (Intercept)                              B </span></span>
 <span><span class="co">##                         1.0531                         0.8112 </span></span>
 <span><span class="co">##                              C I(A_0 + A_1 + A_2 + A_3 + A_4) </span></span>
 <span><span class="co">##                         1.2965                         2.7277</span></span></code></pre>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># should be less than 2 s.e. 95% of the time</span></span></code></pre></div>
 </div>
 </div>

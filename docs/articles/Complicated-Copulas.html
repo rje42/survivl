@@ -49,6 +49,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/A-Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
       <a href="../articles/Causal_Survival_Analysis.html">Causal Survival Analysis</a>
     </li>
     <li>
@@ -89,7 +92,7 @@
                         <h4 data-toc-skip class="author">Chase
 Mathis</h4>
             
-            <h4 data-toc-skip class="date">2025-07-31</h4>
+            <h4 data-toc-skip class="date">2025-08-05</h4>
       
 
       <div class="hidden name"><code>Complicated-Copulas.Rmd</code></div>
@@ -144,7 +147,10 @@ is the same and it is a gaussian copula with parameter
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">2e4</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
+<span><span class="co">#&gt; integer(0)</span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 012345</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">datl1</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="cn">T</span>, <span class="va">Z</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
@@ -190,7 +196,10 @@ the correlation parameter is
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">2e4</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
+<span><span class="co">#&gt; integer(0)</span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 012345</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">datl2</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="cn">T</span>, <span class="va">Z</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
@@ -242,7 +251,11 @@ is conditioned on
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
+<span><span class="co">#&gt; integer(0)</span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 01234</span></span>
+<span><span class="co">#&gt; 5</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">datl3</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="cn">T</span>, <span class="va">Z1</span>, <span class="va">Z2</span><span class="op">)</span><span class="op">)</span></span>
@@ -292,7 +305,11 @@ construction.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
+<span><span class="co">#&gt; integer(0)</span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 01234</span></span>
+<span><span class="co">#&gt; 5</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">datl4</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="cn">T</span>, <span class="va">Z1</span>, <span class="va">Z2</span><span class="op">)</span><span class="op">)</span></span>

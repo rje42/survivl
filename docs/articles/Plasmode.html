@@ -49,6 +49,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/A-Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
       <a href="../articles/Causal_Survival_Analysis.html">Causal Survival Analysis</a>
     </li>
     <li>
@@ -89,7 +92,7 @@
                         <h4 data-toc-skip class="author">Chase
 Mathis</h4>
             
-            <h4 data-toc-skip class="date">2025-07-31</h4>
+            <h4 data-toc-skip class="date">2025-08-05</h4>
       
 
       <div class="hidden name"><code>Plasmode.Rmd</code></div>
@@ -190,14 +193,16 @@ and
 <span>                    link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"identity"</span><span class="op">)</span>,</span>
 <span>                    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"identity"</span>, <span class="st">"logit"</span><span class="op">)</span>,</span>
 <span>                    <span class="st">"logit"</span>, <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## integer(0)</span></span></code></pre>
 <p>We simulate the rest of the data <code>dat2</code>, starting with
 <code>dat</code>.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dat2</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning in rmsm(n, surv_model): Time: 4 Many samples lost. </span></span>
+<pre><code><span><span class="co">## 01234</span></span></code></pre>
+<pre><code><span><span class="co">## Warning in sim_inversion_survivl(out, surv_model): Time: 4 Many samples lost. </span></span>
 <span><span class="co">##                        May result in unstable calculations.</span></span></code></pre>
 <p>We are able to recover the causal estimand.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat2</span><span class="op">)</span></span>
 <span></span>
 <span></span>

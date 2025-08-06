@@ -1,7 +1,7 @@
 ##' @importFrom causl sim_variable
 ##' @importFrom causl `lhs<-`
 ##' @importFrom rje printCount expit
-sim_block <- function (out, proc_inputs, quantiles, kwd) {
+sim_block <- function (out, proc_inputs, quantiles, kwd, sim_Y = TRUE) {
   ## unpack proc_inputs
   formulas <- proc_inputs$formulas
   pars <- proc_inputs$pars
@@ -85,32 +85,34 @@ sim_block <- function (out, proc_inputs, quantiles, kwd) {
 
   ## code to get Y quantiles conditional on different Zs
 
-
-  p <- d[1]
-  for (i in seq_along(formulas[[3]])) {
-    ## simulate Y variable
-
-    forms <- list(formulas[[3]][[i]], formulas[[4]][[1]])
-    fams <- list(family[[3]][[i]], family[[4]][[i]])
-    prs <- list(c(pars[[vnm[i]]], list(x=proc_inputs$t)), pars[[kwd]][[vnm_stm[i]]])
-    if (!is.null(prs[[1]]$lambda0)) prs[[1]]$phi <- 1 #prs[[1]]$phi <- prs[[1]]$lambda0
-    lnk <- list(link[[3]][i], list()) # link[[4]][[i]])
-    cop_pars <- pars[grepl("^cop", names(pars))]
-    cop_pars[["doPar"]] <- pars[[vnm[i]]]
-    if(i == 1){ #TODO: fix logic here
-      type_event <- "primary"
-    }else{
-      type_event <- "competing"
+  if(sim_Y){
+    p <- d[1]
+    for (i in seq_along(formulas[[3]])) {
+      ## simulate Y variable
+      
+      forms <- list(formulas[[3]][[i]], formulas[[4]][[1]])
+      fams <- list(family[[3]][[i]], family[[4]][[i]])
+      prs <- list(c(pars[[vnm[i]]], list(x=proc_inputs$t)), pars[[kwd]][[vnm_stm[i]]])
+      if (!is.null(prs[[1]]$lambda0)) prs[[1]]$phi <- 1 #prs[[1]]$phi <- prs[[1]]$lambda0
+      lnk <- list(link[[3]][i], list()) # link[[4]][[i]])
+      cop_pars <- pars[grepl("^cop", names(pars))]
+      cop_pars[["doPar"]] <- pars[[vnm[i]]]
+      if(i == 1){ #TODO: fix logic here
+        type_event <- "primary"
+      }else{
+        type_event <- "competing"
+      }
+      out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
+                                   dat = out, 
+                                   quantiles=quantiles, type_event, num_time_varying = d[1])
+      
+      quantiles <- attr(out, "quantiles")
+      attr(out, "quantiles") <- NULL
+      
     }
-    out <- survivl::sim_variable(nrow(out), forms, fams, cop_pars, lnk,
-                                 dat = out, 
-                                 quantiles=quantiles, type_event, num_time_varying = d[1])
-
-    quantiles <- attr(out, "quantiles")
-    attr(out, "quantiles") <- NULL
-
+    
   }
-
+ 
 
   return(list(dat=out, quantiles=quantiles))
   }
