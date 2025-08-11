@@ -50,7 +50,7 @@ sim_inversion_survivl <- function(out, surv_model) {
     }
     
     
-    
+
     
     
     ## determine if the individual had an event

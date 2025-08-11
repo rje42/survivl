@@ -125,15 +125,10 @@ rmsm <- function(n, surv_model, control = list()){
     out <- sim_inversion_longitudinal(out, surv_model)
     
   }
-  else if (method == "rejection") {
-    
-    out <- sim_rejection_survivl(out, surv_model)
-    
-  }
   else if(method == "bootstrap-survivl"){
     out <- sim_bootstrap_survivl(out, surv_model)
   }
-  else stop("'method' should be \"inversion\" , \"rejection\" or \"bootstrap\" ")
+  else stop("'method' should be \"inversion\" or \"bootstrap\" ")
   
 
   out <- cbind(id=seq_len(nrow(out)), out)

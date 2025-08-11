@@ -72,11 +72,15 @@ sim_variable <- function (n, formulas, family, pars, link,
   X_do <- model.matrix(delete.response(terms(formulas[[1]])), data=dat)
 
   Y <- rescale_var(qY, X=X_do, family=family[[1]], pars=pars[["doPar"]], link=link[[1]])
+  
   eta <- X_do %*% pars[["doPar"]]$beta
   phi <- pars[["doPar"]]$phi
   lambda <- (link_apply(eta, link[[1]], family = family[[1]]$name)) # not working with ordinal or categorical
   for(i in 1:p){
-    quantiles[[paste0("q", k, "_", 0, "_", i)]] = family[[1]]$pdist(1, lambda, phi)
+    pdist_pars <- pars[["doPar"]]; pdist_pars$x <- 1; 
+    pdist_pars$beta <- NULL; pdist_pars$mu <- lambda;
+    quantiles[[paste0("q", k, "_", 0, "_", i)]] = do.call(family[[1]]$pdist, 
+                                                          pdist_pars)
   }
   
   
@@ -368,6 +372,7 @@ compute_copula_quantiles <- function(qs, X, family, pars, idxs, inv, p = FALSE) 
   beta <- copPars$beta
   df <- copPars$df
   if(fam == 11){stop("Not supported for fgm")}
+
   qY <- rescale_cop(qs, X, beta, family = fam, df = df, inv = inv, cdf = p)
 
   return(qY)

@@ -4,11 +4,14 @@
 \alias{survivl_fams}
 \alias{weibull_surv_fam}
 \alias{exp_surv_fam}
+\alias{lnorm_surv_fam}
 \title{Families for survival distributions}
 \usage{
 weibull_surv_fam(link)
 
 exp_surv_fam(link)
+
+lnorm_surv_fam(link)
 }
 \arguments{
 \item{link}{link function to use}
@@ -24,5 +27,7 @@ function.  These have the generic names \code{ddist}, \code{rdist}, \code{qdist}
 \item \code{weibull_surv_fam()}: Weibull distribution
 
 \item \code{exp_surv_fam()}: Exponential distribution
+
+\item \code{lnorm_surv_fam()}: Log-normal distribution
 
 }}

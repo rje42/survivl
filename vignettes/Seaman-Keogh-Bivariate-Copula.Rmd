@@ -214,3 +214,4 @@ kableExtra::kbl(tab_naive, digits = c(2,3,5), booktabs=TRUE, format="latex")  %>
 kableExtra::kbl(tab_correct, digits = c(2,3,5), booktabs=TRUE, format="latex")  %>%
   kableExtra::add_header_above(c(" " = 1, "IPW Model" = 3))
 ```
+

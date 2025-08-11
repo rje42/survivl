@@ -53,6 +53,7 @@ process_inputs <- function (formulas, pars, family, link,
 
   ## introduce code from causl
   dims <- lengths(formulas)
+
   family <- causl::process_family(family=family, dims=dims, func_return=get_surv_family)
   ## now set up link functions
 
@@ -140,7 +141,7 @@ process_inputs <- function (formulas, pars, family, link,
   if(method == "bootstrap"){
     risk_form <- formulas[[5]][[LHS_Y]][[1]]
     if(is.null(risk_form)){stop("Must specify risk formula in copula formulas.
-                                See Seaman-Keogh vignette for more details.")}
+                                See Risk Function vignette for more details.")}
     risk_h <- control$risk_h
     bootsims = control$bootsims
     out[["risk"]] <- list(risk_h = risk_h, risk_form = risk_form)

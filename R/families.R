@@ -12,14 +12,15 @@
 ##' @format `surv_family_vals` is a `data.frame` with 2 rows and 2 columns
 ##'
 ##' @export
-surv_family_vals <- data.frame(val=1:2,
-                               family=c("exp", "weibull"))
+surv_family_vals <- data.frame(val=1:3,
+                               family=c("exp", "weibull", "lnorm"))
 
 ##' @describeIn surv_family_vals List of links for each family
 ##' @format `surv_links_list` is a list of length 2
 ##' @export
 surv_links_list <- list(exp=c("inverse", "log", "identity"),
-                        weibull=c("log"))
+                        weibull=c("log"),
+                        lnorm = c("identity", "log"))
 
 ##' Families for survival distributions
 ##'
@@ -182,7 +183,7 @@ weibull_surv_fam <- function (link) {
   default <- function(theta) list(x=1, shape=1, scale=1, p=0.5)
 
   out <- list(name="weibull", ddist=dens, qdist=quan, rdist=sim, #rcdist=csim,
-              pdist=probs, pars=c("shape", "scale"), default=default, link=link)
+              pdist=probs, pars=c("mu", "shape", "scale"), default=default, link=link)
   class(out) <- c("surv_family", "causl_family")
 
   return(out)
@@ -213,6 +214,33 @@ exp_surv_fam <- function (link) {
               pars=c("mu"), default=default, link=link)
   class(out) <- c("surv_family", "causl_family")
 
+  return(out)
+}
+
+##' @describeIn survivl_fams Log-normal distribution
+##' @export
+lnorm_surv_fam <- function (link) {
+  if (missing(link)) link <- "identity"
+  
+  dens <- function (x, mu, phi, log=FALSE) {
+    return(dlnorm(x, meanlog = mu, sdlog = phi, log=log))
+  }
+  quan <- function (p, mu, phi) {
+    return(qlnorm(p, meanlog =mu, sdlog = phi))
+  }
+  sim <- function (n, mu, phi) {
+    return(rlnorm(n, meanlog = mu, sdlog =phi))
+  }
+  probs <- function (x, mu, phi) {
+    return(plnorm(x, meanlog = mu, sdlog = phi))
+  }
+  
+  default <- function(theta) list(x=1, mu=0, phi = 1)
+  
+  out <- list(name="lognormal", ddist=dens, qdist=quan, rdist=sim, pdist=probs,
+              pars=c("mu", "phi"), default=default, link=link)
+  class(out) <- c("surv_family", "causl_family")
+  
   return(out)
 }
 

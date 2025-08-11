@@ -11,7 +11,7 @@ sim_bootstrap_survivl <- function(out, surv_model) {
   mod_inputs <- modify_inputs(surv_model)
   formulas <- mod_inputs$formulas
   LHS_C <- surv_model$LHSs$LHS_C; done <- unlist(LHS_C)
-  
+
 
   rho <- unlist(surv_model$pars$cop)
   rho <- 2 * rje::expit(rho) - 1
@@ -67,14 +67,28 @@ sim_bootstrap_survivl <- function(out, surv_model) {
     if(direct_risk){
       g_t <- link_apply(eta, curr_link, "binomial")
     }else{
+      Y_fam <- mod_inputs$family[[3]][[1]]
       # TODO: continuos time for seamon and keogh
-      if(mod_inputs$family[[3]][[1]]$name == "Gamma"){
-        lambda <- causl::glm_sim(mod_inputs$family[[3]][[1]],eta=eta, phi=curr_phi,
+      if(Y_fam$name == "Gamma"){
+        lambda <- causl::glm_sim(Y_fam,eta=eta, phi=curr_phi,
                               other_pars=pars[[vnm]])
         g_t <- 1 - exp(-lambda)
-      }else{
-        #TODO: weibull distribution
-      }
+      }else if(Y_fam$name == "weibull"){
+
+        lambda <- causl::glm_sim(Y_fam, eta =eta, phi = curr_phi, 
+                                 other_pars = pars[[vnm]])
+        # g_t <- (1/lambda^shape) ((t+1)^shape - t^shape)
+        shape <- pars[[vnm]]$shape
+        # sometimes really small so pin to eps
+        exp_lambda_t <- pmax(exp(-(lambda^(-shape) * ((t+1)^shape - t^shape))), 0.005)
+        g_t <- 1 - exp_lambda_t
+        
+      } else if(Y_fam$name == "lognormal"){
+        stop("Numerical integration required for lognormal hazard. \n
+             Not supported for Seaman + Keogh method.")
+
+      }else(stop("Distribution must be one a survival family."))
+     
 
     }
 
@@ -117,14 +131,8 @@ sim_bootstrap_survivl <- function(out, surv_model) {
       zY <- rnorm(sum(surv), rho * zs, 1 - rho^2)
       probs_sim <- pnorm(zY)
       y_k1 <- as.numeric(probs_sim < g_t)
-      
-      
-      
-      # # now with probability, can sample next value
-      # probs <- pnorm((qnorm(g_t) - rho * qnorm(us)) / sqrt(1 - rho^2))
-      # y_k1 <- rbinom(sum(surv), 1, probs)
-      # browser()
-      
+
+
       tmp$dat[[paste0("Y_", t)]] <- y_k1
       surv_this <- y_k1 == 0
       if(!direct_risk){
