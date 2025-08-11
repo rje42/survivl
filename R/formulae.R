@@ -82,6 +82,76 @@ replace_vars <- function(formula, replace) {
 #   as.formula(form, env = NULL)
 # }
 
+##' Modify conditional specified lagged formuals to correct formulas
+##'
+##' @param form The conditional specified formulas with V_lk
+##' @param beta the parameters specified 
+##' @param t the time point we are at currently
+##' @param modLHS should we modify the left hand side variables in the formula?
+##'
+##' @export
+mod_args <- function (form, beta, t, modLHS=FALSE) {
+  start_at <- 0
+  trms <- terms(form)
+  LHS <- lhs(form)
+  trm_labs <- attr(trms, "term.labels")
+  
+  if (modLHS) {
+    # LHSn <- paste0(regex_extr("_l([0-9]+)", LHS), "_", t)
+    rgx <- regex_extr("_l([0-9]+)$", LHS)[[1]] # obtain lag
+    if (nchar(rgx[[1]]) > 0) {
+      LHS_lag <- as.numeric(substr(rgx, 3, nchar(rgx)))
+      if (LHS_lag > t - start_at) {
+        ## CODE TO DROP THIS FORMULA
+        return(list(form=NA, beta=NA))
+      }
+      else {
+        LHS_new <- sub("_l([0-9]+)$", paste0("_", t-LHS_lag), LHS)
+      }
+    }
+    else LHS_new <- paste0(LHS, "_", t)
+    form <- update.formula(form, paste0(LHS_new, " ~ ."))
+  }
+  # nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
+  # form <- update.formula(form, as.formula(paste0(lhs(form), "_", t, " ~ .")))
+  
+  nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
+  nos <- rapply(nos, function(x) substr(x, 3, nchar(x)))  # extract lags
+  nos <- lapply(nos, as.numeric)
+  drp <- sapply(nos, function(x) any(x > t-start_at))
+  if (any(na.omit(drp))) {
+    intc <- attr(trms, "intercept")
+    if (!any(is.na(drp)) && all(drp)) {
+      if (intc > 0) form <- update.formula(form, . ~ 1)
+      else form <- update.formula(form, . ~ 0)
+      beta <- beta[intc]
+      # attr(form, "beta") <- pars[[LHS]]$beta
+      return(list(form=form, beta=beta))
+    }
+    trms <- drop.terms(trms, which(drp), keep.response=TRUE)
+    beta <- beta[c(intc, which(!drp | is.na(drp))+intc)]
+  }
+  
+  chr <- as.character(trms)[3]
+  wh <- gregexpr("_l([0-9]+)", chr)[[1]]
+  if (wh[1] < 0) {
+    # attributes(trms) <- list(class="formula")
+    return(list(form=update.formula(form, paste0(". ~ ", chr)), beta=beta))
+  }
+  ml <- attr(wh, "match.length")
+  if (any(ml < 3)) stop("All matches should be at least three characters")
+  nos <- integer(length(wh))
+  
+  for (i in seq_along(wh)) {
+    nos[i] <- as.numeric(substr(chr, wh[i]+2, wh[i]+ml[i]-1))
+  }
+  for (i in seq_along(wh)) {
+    chr <- sub("_l([0-9]+)", paste0("_", t-nos[i]), chr)
+  }
+  
+  list(form=update.formula(form, paste0(". ~ ", chr)), beta=beta)
+}
+
 ##' Obtain reduced formulas and parameter vectors for earlier time-points
 ##'
 ##' @inheritParams process_inputs
@@ -93,70 +163,6 @@ replace_vars <- function(formula, replace) {
 ##'
 ##'
 curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
-  start_at <- 0
-
-  ## function to modify arguments
-  mod_args <- function (form, beta, t, modLHS=FALSE) {
-    trms <- terms(form)
-    LHS <- lhs(form)
-    trm_labs <- attr(trms, "term.labels")
-
-    if (modLHS) {
-      # LHSn <- paste0(regex_extr("_l([0-9]+)", LHS), "_", t)
-      rgx <- regex_extr("_l([0-9]+)$", LHS)[[1]] # obtain lag
-      if (nchar(rgx[[1]]) > 0) {
-        LHS_lag <- as.numeric(substr(rgx, 3, nchar(rgx)))
-        if (LHS_lag > t - start_at) {
-          ## CODE TO DROP THIS FORMULA
-          return(list(form=NA, beta=NA))
-        }
-        else {
-          LHS_new <- sub("_l([0-9]+)$", paste0("_", t-LHS_lag), LHS)
-        }
-      }
-      else LHS_new <- paste0(LHS, "_", t)
-      form <- update.formula(form, paste0(LHS_new, " ~ ."))
-    }
-    # nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
-    # form <- update.formula(form, as.formula(paste0(lhs(form), "_", t, " ~ .")))
-
-    nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
-    nos <- rapply(nos, function(x) substr(x, 3, nchar(x)))  # extract lags
-    nos <- lapply(nos, as.numeric)
-    drp <- sapply(nos, function(x) any(x > t-start_at))
-    if (any(na.omit(drp))) {
-      intc <- attr(trms, "intercept")
-      if (!any(is.na(drp)) && all(drp)) {
-        if (intc > 0) form <- update.formula(form, . ~ 1)
-        else form <- update.formula(form, . ~ 0)
-        beta <- beta[intc]
-        # attr(form, "beta") <- pars[[LHS]]$beta
-        return(list(form=form, beta=beta))
-      }
-      trms <- drop.terms(trms, which(drp), keep.response=TRUE)
-      beta <- beta[c(intc, which(!drp | is.na(drp))+intc)]
-    }
-
-    chr <- as.character(trms)[3]
-    wh <- gregexpr("_l([0-9]+)", chr)[[1]]
-    if (wh[1] < 0) {
-      # attributes(trms) <- list(class="formula")
-      return(list(form=update.formula(form, paste0(". ~ ", chr)), beta=beta))
-    }
-    ml <- attr(wh, "match.length")
-    if (any(ml < 3)) stop("All matches should be at least three characters")
-    nos <- integer(length(wh))
-
-    for (i in seq_along(wh)) {
-      nos[i] <- as.numeric(substr(chr, wh[i]+2, wh[i]+ml[i]-1))
-    }
-    for (i in seq_along(wh)) {
-      chr <- sub("_l([0-9]+)", paste0("_", t-nos[i]), chr)
-    }
-
-    list(form=update.formula(form, paste0(". ~ ", chr)), beta=beta)
-  }
-
   # for (i in seq_along(formulas)) for (j in seq_along(formulas[[i]])) {
   #   LHS <- lhs(formulas[[i]][[j]])
   #   tmp <- mod_args(formulas[[i]][[j]], pars[[LHS]]$beta, t=t, modLHS = TRUE)
@@ -206,9 +212,16 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
     LHSs <- lhs(form_copY)
 
     for (j in seq_along(form_copY)) {
-      tmp <- mod_args(form_copY[[j]], pars_copY[[LHSs[j]]]$beta, t = t, modLHS = TRUE)
-      form_copY[[j]] <- tmp$form
-      pars_copY[[LHSs[j]]]$beta <- tmp$beta
+      form_cops <- c()
+      par_cops <- list()
+      for(dt in 0:t){
+        tmp <- mod_args(form_copY[[j]], pars_copY[[LHSs[j]]]$beta, t = dt, modLHS = TRUE)
+        form_cops <- c(form_cops, tmp$form)
+        par_cops <- c(par_cops, list(tmp$beta))
+      }
+      
+      form_copY[[j]] <- form_cops
+      pars_copY[[LHSs[j]]]$beta <- par_cops
     }
     formulas[[4]][[LHS]] <- form_copY
     pars[[kwd]][[LHS]] <- pars_copY

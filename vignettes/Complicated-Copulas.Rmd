@@ -1,0 +1,262 @@
+---
+title: "Complicated Copulas"
+author: "Chase Mathis"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Complicated Copulas}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = TRUE,
+  warning = FALSE
+)
+```
+
+```{r load, message=FALSE}
+library(survivl)
+library(dplyr)
+library(ipw)
+library(broom)
+library(knitr)
+library(dplyr)
+library(survival)
+```
+
+This vignette will discuss the different ways a user can specify the dependence structure
+between the outcome variable and covariates with increasing copmlexity. 
+
+## A Simple Example
+This example mimics the example in `Examples.Rmd`. We specify the copula as 
+the last argument in the formulas list as a list itself. We specify that $Y$, the outcome,
+has a copula with our time-varying covariate $Z$ only. The last entry in the family
+variable specify that this is a Gaussian copula and the last entry in the parameters
+list gives the beta value for the linear value.
+
+Mathematically, for $j,k \in \{0,1,2,3,4,5,6\}^2$ the dependence between 
+$$Y_j, Z_k$$ is the same and it is a gaussian copula with parameter $rho = 0.4$. 
+
+```{r sim_data1}
+formulas <- list(C ~ 1,
+                 Z ~ X_l1 + C,
+                 X ~ Z_l0 + C,
+                 Y ~ X_l0 + C,
+                 list(Y = list(Z ~1)))
+family <- list(5,1,5,3,1)
+link <- list("logit", "identity", "logit", "inverse")
+pars <- list(C = list(beta=0),
+             Z = list(beta = c(-1/2,1/2,0.25), phi=0.5),
+             X = list(beta = c(0,1/2,1/10)),
+             Y = list(beta = c(0.25,0.5,0.05), phi=1),
+             cop = list(Y = list(Z = list(beta=0.8472979))))  # gives correlation 0.4
+
+set.seed(123)
+n <- 2e4
+surv_model <- survivl_model(T=7, formulas=formulas, family=family, pars=pars, link=link)
+dat <- rmsm(n, surv_model)
+datl1 <- surv_to_long(dat)
+
+head(cor(datl1 %>% select(T, Z)))
+```
+
+## Conditional Copulas
+Similar to `causl`, we can set the dependence between $Y$ and $X$ to be conditional 
+on some other variables. Here, we set the dependence between $Y_k$ and $Z_j$
+to be a student's t copula conditional on $C, X_0$. Our latent correlation
+variable $\eta$ is defined as $\eta_i = 2 * \rm{expit}(0*1 + 0.5*C_i + 0.8472979 * X_{0,i}) - 1$ and for each observation of $Y_k, Z_j$ the correlation parameter is $\eta_i$.
+```{r sim_data2}
+formulas <- list(C ~ 1,
+                 Z ~ X_l1 + C,
+                 X ~ Z_l0 + C,
+                 Y ~ X_l0 + C,
+                 list(Y = list(Z ~ C + X_0)))
+family <- list(5,1,5,3,1)
+link <- list("logit", "identity", "logit", "inverse")
+pars <- list(C = list(beta=0),
+             Z = list(beta = c(-1/2,1/2,0.25), phi=0.5),
+             X = list(beta = c(0,1/2,1/10)),
+             Y = list(beta = c(0.25,0.5,0.05), phi=1),
+             cop = list(Y = list(Z = list(beta=c(0, 0.5, 0.8472979), df = 5))))  
+
+set.seed(123)
+n <- 2e4
+surv_model <- survivl_model(T=7, formulas=formulas, family=family, pars=pars, link=link)
+dat <- rmsm(n, surv_model)
+datl2 <- surv_to_long(dat)
+
+head(cor(datl2 %>% select(T, Z)))
+```
+
+## Multiple Time Varying Covariates
+
+This example includes multiple time-varying confounders. We have both $Z1$ and $Z2$ and therefore
+need to model the dependence between $Y$ and $Z1$ and between $Y$ and $Z2 \mid Z1$.
+The ordering of this is natural from the order of the time-varying covariates.
+
+Previously, we had the same copula for all time steps $t$, but now we are specifying
+a markov formula for the copula like the other formulas. So, the dependency 
+between $Y_k$ and $Z2_j$ is conditioned on $Z1_j$. 
+
+```{r sim_data3}
+n <- 2e4
+formulas <- list(C ~ 1,
+                 list(Z1 ~ X_l1 + C,Z2 ~ X_l1 + Z1_l0),
+                 X ~ Z1_l0 + Z2_l0 + C,
+                 Y ~ X_l0 + C,
+                 list(Y = list(Z1 ~1, Z2 ~ Z1_l0)))
+family <- list(5,c(5,1),5,3,c(1,1))
+link <- list("logit", c("logit","identity"), "logit", "inverse")
+pars <- list(C = list(beta=0),
+             Z1 = list(beta = c(-1/2,1/2,0.25), phi=0.5),
+             Z2 = list(beta = c(0, -1/4, 2/5), phi = 0.65),
+             X = list(beta = c(0,1/4, 1/2,1/10)),
+             Y = list(beta = c(0.25,0.5,0.05), phi=1),
+             cop = list(Y = list(Z1 = list(beta= 0.847), Z2 = list(beta=c(0.5,0.847))))) 
+
+set.seed(123)
+surv_model <- survivl_model(T=7, formulas=formulas, family=family, pars=pars, link=link)
+dat <- rmsm(n, surv_model)
+datl3 <- surv_to_long(dat)
+
+cor(datl3 %>% select(T, Z1, Z2))
+
+```
+## Conditioning on Treatments
+In addition to conditioning on other time-varying covariates,
+the user can also condition on past treatments. This example extends on our previous,
+but now the dependence between $Z1_j$ and $Y_k$ depends on $X_{j-1}$ and the dependence
+between $Y_k$ and $Z2_j$ depends on $Z1_j$ (like before) and on $X_0$. This has a lot
+of moving parts and a probably over-complicated model, but its meant to illustrate the flexiblity
+of the copula construction.
+
+ 
+
+
+```{r sim_data4}
+n <- 2e4
+formulas <- list(C ~ 1,
+                 list(Z1 ~ X_l1 + C,Z2 ~ X_l1 + Z1_l0),
+                 X ~ Z1_l0 + Z2_l0 + C,
+                 Y ~ X_l0 + C,
+                 list(Y = list(Z1 ~X_l1, Z2 ~ Z1_l0 + X_0)))
+family <- list(5,c(5,1),5,3,c(1,1))
+link <- list("logit", c("logit","identity"), "logit", "inverse")
+pars <- list(C = list(beta=0),
+             Z1 = list(beta = c(-1/2,1/2,0.25), phi=0.5),
+             Z2 = list(beta = c(0, -1/4, 2/5), phi = 0.65),
+             X = list(beta = c(0,1/4, 1/2,1/10)),
+             Y = list(beta = c(0.25,0.5,0.05), phi=1),
+             cop = list(Y = list(Z1 = list(beta= c(0,0.847)), 
+                                           Z2 = list(beta=c(0, 0.5,0.847)))))
+
+set.seed(123)
+surv_model <- survivl_model(T=7, formulas=formulas, family=family, pars=pars, link=link)
+dat <- rmsm(n, surv_model)
+datl4 <- surv_to_long(dat)
+
+cor(datl4 %>% select(T, Z1, Z2))
+```
+
+## Verifying The Correct Marginal Quantity
+We can estimate the marginal causal quantity $p(y \mid \rm{do}(X))$ with IPW. We
+calculate the models and print the estimates at the end. All estimates are within 2
+s.es.
+```{r}
+
+# Compute IPW weights
+ipw_weights <- ipwtm(
+  exposure = X,
+  family = "binomial", # all of our treatments are binary
+  link = "logit",
+  numerator = ~C,
+  denominator = ~Z,
+  id = id,
+  timevar = t,
+  type = "all",
+  data = datl1
+)
+datl1$wt <- ipw_weights$ipw.weights
+sumY1 <- coxph(Surv(t, t_stop, Y) ~ X + C, data = datl1, timefix = FALSE, id =id,
+              weight = wt)
+
+
+# Compute IPW weights
+ipw_weights <- ipwtm(
+  exposure = X,
+  family = "binomial", # all of our treatments are binary
+  link = "logit",
+  numerator = ~C,
+  denominator = ~Z,
+  id = id,
+  timevar = t,
+  type = "all",
+  data = datl2
+)
+datl2$wt <- ipw_weights$ipw.weights
+sumY2 <- coxph(Surv(t, t_stop, Y) ~ X + C, data = datl2, timefix = FALSE, id =id,
+              weight = wt)
+```
+
+```{r}
+# Compute IPW weights
+ipw_weights <- ipwtm(
+  exposure = X,
+  family = "binomial", # all of our treatments are binary
+  link = "logit",
+  numerator = ~C,
+  denominator = ~Z1 + Z2,
+  id = id,
+  timevar = t,
+  type = "all",
+  data = datl3
+)
+datl3$wt <- ipw_weights$ipw.weights
+sumY3 <- coxph(Surv(t, t_stop, Y) ~ X + C, data = datl3, timefix = FALSE, id =id,
+              weight = wt)
+
+# Compute IPW weights
+ipw_weights <- ipwtm(
+  exposure = X,
+  family = "binomial", # all of our treatments are binary
+  link = "logit",
+  numerator = ~C,
+  denominator = ~Z1 + Z2,
+  id = id,
+  timevar = t,
+  type = "all",
+  data = datl4
+)
+datl4$wt <- ipw_weights$ipw.weights
+sumY4 <- coxph(Surv(t, t_stop, Y) ~ X + C, data = datl4, timefix = FALSE, id =id,
+              weight = wt)
+
+```
+
+```{r pretty-print-output, echo=FALSE}
+
+# Tidy the model summaries
+sumY_list <- list(sumY1, sumY2, sumY3, sumY4)
+model_names <- paste0("Model ", 1:4)
+
+tidy_list <- lapply(sumY_list, function(fit) {
+  broom::tidy(fit) %>%
+    select(term, estimate, std.error, statistic, p.value)
+})
+
+# Add model name to each
+for (i in seq_along(tidy_list)) {
+  tidy_list[[i]]$Model <- model_names[i]
+}
+
+# Combine into one data frame
+results_tbl <- bind_rows(tidy_list) %>%
+  select(Model, everything())
+
+# Print as a table
+kable(results_tbl, digits = 3, caption = "Cox Model Results for sumY1 - sumY4")
+```

@@ -12,14 +12,13 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="Examples">
-<meta property="og:description" content="survivl">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -33,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
       </span>
     </div>
 
@@ -45,7 +44,7 @@
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
@@ -53,13 +52,22 @@
       <a href="../articles/Causal_Survival_Analysis.html">Causal Survival Analysis</a>
     </li>
     <li>
-      <a href="../articles/Censoring.html">Censoring</a>
+      <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
+      <a href="../articles/Longitudinal-Single-Outcome.html">Longitudinal Non-Survival Outcomes</a>
+    </li>
+    <li>
       <a href="../articles/MSMs.html">Marginal Structural Survival Models</a>
+    </li>
+    <li>
+      <a href="../articles/Plasmode.html">Plasmode</a>
+    </li>
+    <li>
+      <a href="../articles/Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
     </li>
   </ul>
 </li>
@@ -75,7 +83,7 @@
 </div>
 <!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -86,7 +94,7 @@ Evans</h4>
             
             <h4 data-toc-skip class="date">24/05/2022</h4>
       
-      
+
       <div class="hidden name"><code>Examples.Rmd</code></div>
 
     </div>
@@ -95,7 +103,8 @@ Evans</h4>
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">survivl</span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">ipw</span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="two-examples">Two Examples<a class="anchor" aria-label="anchor" href="#two-examples"></a>
 </h2>
@@ -104,14 +113,14 @@ Evans</h4>
 <span>                 <span class="va">Z</span> <span class="op">~</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">C</span>,</span>
 <span>                 <span class="va">X</span> <span class="op">~</span> <span class="va">Z_l0</span> <span class="op">+</span> <span class="va">C</span>,</span>
 <span>                 <span class="va">Y</span> <span class="op">~</span> <span class="va">X_l0</span> <span class="op">+</span> <span class="va">C</span>,</span>
-<span>                 <span class="va">cop</span> <span class="op">~</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>                 <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">Z</span> <span class="op">~</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">family</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">5</span>,<span class="fl">1</span>,<span class="fl">5</span>,<span class="fl">3</span>,<span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">link</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"logit"</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"inverse"</span><span class="op">)</span></span>
 <span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>C <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">0</span><span class="op">)</span>,</span>
 <span>             Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">2</span>,<span class="fl">0.25</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span>,</span>
 <span>             X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.05</span>,<span class="fl">0.5</span>,<span class="fl">0.05</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
-<span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">0.8472979</span><span class="op">)</span><span class="op">)</span>  <span class="co"># gives correlation 0.4</span></span></code></pre></div>
+<span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.25</span>,<span class="fl">0.5</span>,<span class="fl">0.05</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
+<span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">0.8472979</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>  <span class="co"># gives correlation 0.4</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="simulating-data">Simulating Data<a class="anchor" aria-label="anchor" href="#simulating-data"></a>
@@ -119,7 +128,11 @@ Evans</h4>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">1e4</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/msm_samp.html">msm_samp</a></span><span class="op">(</span><span class="va">n</span>, T<span class="op">=</span><span class="fl">20</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
+<span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
+<span><span class="co">#&gt; integer(0)</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 012345</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sinhrks/ggfortify" class="external-link">ggfortify</a></span><span class="op">)</span></span>
@@ -127,76 +140,56 @@ Evans</h4>
 <span><span class="va">survplot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survfit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>, <span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">C</span>, data<span class="op">=</span><span class="va">datl</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">survplot</span><span class="op">)</span></span></code></pre></div>
 <p><img src="Examples_files/figure-html/plot_dat1-1.png" width="700"></p>
+<p>We recommend using <code><a href="https://rdrr.io/pkg/ipw/man/ipwtm.html" class="external-link">ipw::ipwtm</a></code> function to calculate ipw
+weights for time varying confounding.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">modX</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">Z</span> <span class="op">+</span> <span class="va">C</span>, family<span class="op">=</span><span class="va">binomial</span>, data<span class="op">=</span><span class="va">datl</span><span class="op">)</span></span>
-<span><span class="va">prop_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">modX</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
-<span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="va">datl</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>wt<span class="op">=</span><span class="va">datl</span><span class="op">$</span><span class="va">X</span><span class="op">/</span><span class="va">prop_score</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">datl</span><span class="op">$</span><span class="va">X</span><span class="op">)</span><span class="op">/</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">prop_score</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://r-survey.r-forge.r-project.org/survey/" class="external-link">survey</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Loading required package: grid</span></span>
-<span><span class="co">#&gt; Loading required package: Matrix</span></span>
+<code class="sourceCode R"><span><span class="va">temp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ipw/man/ipwtm.html" class="external-link">ipwtm</a></span><span class="op">(</span></span>
+<span>  exposure <span class="op">=</span> <span class="va">X</span>,</span>
+<span>  family <span class="op">=</span> <span class="st">"binomial"</span>,</span>
+<span>  numerator <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>,</span>
+<span>  denominator <span class="op">=</span> <span class="op">~</span> <span class="va">Z</span>,</span>
+<span>  link <span class="op">=</span> <span class="st">"logit"</span>,</span>
+<span>  id <span class="op">=</span> <span class="va">id</span>,</span>
+<span>  timevar <span class="op">=</span> <span class="va">t</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">datl</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="va">datl</span><span class="op">$</span><span class="va">wt</span> <span class="op">&lt;-</span> <span class="va">temp</span><span class="op">$</span><span class="va">ipw.weights</span></span>
+<span><span class="va">mod_correct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>,<span class="va">Y</span><span class="op">)</span><span class="op">~</span><span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, id <span class="op">=</span> <span class="va">id</span>, data <span class="op">=</span> <span class="va">datl</span>,</span>
+<span>                               weights <span class="op">=</span> <span class="va">datl</span><span class="op">$</span><span class="va">wt</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">mod_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>,<span class="va">Y</span><span class="op">)</span><span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, id <span class="op">=</span> <span class="va">id</span>, data <span class="op">=</span> <span class="va">datl</span>,</span>
+<span>                               weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'kableExtra'</span></span>
+<span><span class="co">#&gt; The following object is masked from 'package:dplyr':</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'survey'</span></span>
-<span><span class="co">#&gt; The following object is masked from 'package:graphics':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     dotchart</span></span>
-<span><span class="va">mod_w</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span>link<span class="op">=</span><span class="va">log</span><span class="op">)</span>, start<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.01</span>,<span class="op">-</span><span class="fl">.5</span>,<span class="op">-</span><span class="fl">.05</span><span class="op">)</span>,</span>
-<span>                design<span class="op">=</span><span class="fu"><a href="https://rdrr.io/pkg/survey/man/svydesign.html" class="external-link">svydesign</a></span><span class="op">(</span>ids<span class="op">=</span><span class="op">~</span><span class="fl">1</span>, data<span class="op">=</span><span class="va">datl</span>, weights<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">mod_c</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span>link<span class="op">=</span><span class="va">log</span><span class="op">)</span>, start<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.01</span>,<span class="op">-</span><span class="fl">.5</span>,<span class="op">-</span><span class="fl">.05</span><span class="op">)</span>,</span>
-<span>                design<span class="op">=</span><span class="fu"><a href="https://rdrr.io/pkg/survey/man/svydesign.html" class="external-link">svydesign</a></span><span class="op">(</span>ids<span class="op">=</span><span class="op">~</span><span class="fl">1</span>, data<span class="op">=</span><span class="va">datl</span>, weights<span class="op">=</span><span class="va">datl</span><span class="op">$</span><span class="va">wt</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in eval(family$initialize): non-integer #successes in a binomial glm!</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_w</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Call:</span></span>
-<span><span class="co">#&gt; svyglm(formula = I(1 - Y) ~ X + C, design = svydesign(ids = ~1, </span></span>
-<span><span class="co">#&gt;     data = datl, weights = rep(1, nrow(datl))), family = binomial(link = log), </span></span>
-<span><span class="co">#&gt;     start = c(-0.01, -0.5, -0.05))</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Survey design:</span></span>
-<span><span class="co">#&gt; svydesign(ids = ~1, data = datl, weights = rep(1, nrow(datl)))</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Coefficients:</span></span>
-<span><span class="co">#&gt;              Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">#&gt; (Intercept) -0.055791   0.002061  -27.07   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; X           -0.445769   0.006175  -72.19   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; C           -0.057687   0.003970  -14.53   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; ---</span></span>
-<span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; (Dispersion parameter for binomial family taken to be 1.000039)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Number of Fisher Scoring iterations: 3</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_c</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Call:</span></span>
-<span><span class="co">#&gt; svyglm(formula = I(1 - Y) ~ X + C, design = svydesign(ids = ~1, </span></span>
-<span><span class="co">#&gt;     data = datl, weights = datl$wt), family = binomial(link = log), </span></span>
-<span><span class="co">#&gt;     start = c(-0.01, -0.5, -0.05))</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Survey design:</span></span>
-<span><span class="co">#&gt; svydesign(ids = ~1, data = datl, weights = datl$wt)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Coefficients:</span></span>
-<span><span class="co">#&gt;              Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">#&gt; (Intercept) -0.049662   0.001866  -26.62   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; X           -0.502693   0.006624  -75.89   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; C           -0.050970   0.003653  -13.95   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; ---</span></span>
-<span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; (Dispersion parameter for binomial family taken to be 1.000041)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Number of Fisher Scoring iterations: 3</span></span></code></pre></div>
+<span><span class="co">#&gt;     group_rows</span></span></code></pre>
 <div class="section level3">
-<h3 id="example-2-doesnt-work">Example 2 (doesn’t work)<a class="anchor" aria-label="anchor" href="#example-2-doesnt-work"></a>
+<h3 id="example-2-gamma-distributed-requires-by-hand-ipw-calculation">Example 2 (Gamma distributed requires by hand ipw calculation)<a class="anchor" aria-label="anchor" href="#example-2-gamma-distributed-requires-by-hand-ipw-calculation"></a>
 </h3>
-<p>We assume: - <span class="math inline">\(C\)</span> is a Bernoulli
-r.v. with parameter <span class="math inline">\(1/2\)</span>; - <span class="math inline">\(Z_t\)</span> is a normal random variable with mean
-<span class="math inline">\(C - 1/2 + X_{t-1}\)</span>; - <span class="math inline">\(X_t\)</span> is a Gamma random variable with log
-mean <span class="math inline">\(Z_t/3 + C/3\)</span>; - <span class="math inline">\(Y_t\)</span> is an underlying exponential
-distribution with rate <span class="math inline">\(X_t + C\)</span>; -
-the copula between <span class="math inline">\(Y_t\)</span> and <span class="math inline">\(Z_t\)</span> is Gaussian with fixed
-correlation.</p>
+<p>We assume: -
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math>
+is a Bernoulli r.v. with parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">1/2</annotation></semantics></math>;
+-
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Z_t</annotation></semantics></math>
+is a normal random variable with mean
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><mo>−</mo><mn>1</mn><mi>/</mi><mn>2</mn><mo>+</mo><msub><mi>X</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">C - 1/2 + X_{t-1}</annotation></semantics></math>;
+-
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mi>t</mi></msub><annotation encoding="application/x-tex">X_t</annotation></semantics></math>
+is a Gamma random variable with log mean
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Z</mi><mi>t</mi></msub><mi>/</mi><mn>3</mn><mo>+</mo><mi>C</mi><mi>/</mi><mn>3</mn></mrow><annotation encoding="application/x-tex">Z_t/3 + C/3</annotation></semantics></math>;
+-
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>
+is an underlying exponential distribution with rate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>t</mi></msub><mo>+</mo><mi>C</mi></mrow><annotation encoding="application/x-tex">X_t + C</annotation></semantics></math>;
+- the copula between
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Z_t</annotation></semantics></math>
+is Gaussian with fixed correlation.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">formulas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">C</span> <span class="op">~</span> <span class="fl">1</span>,</span>
 <span>                 <span class="va">Z</span> <span class="op">~</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">C</span>,</span>
@@ -208,137 +201,63 @@ correlation.</p>
 <span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>C <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">0</span><span class="op">)</span>,</span>
 <span>             Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">4</span>,<span class="fl">1</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span>,</span>
 <span>             X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">4</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">20</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">0.25</span><span class="op">)</span>,</span>
-<span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0.2</span>,<span class="fl">0.05</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
-<span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.2</span>, <span class="fl">0.05</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
+<span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="simulating-data-1">Simulating Data<a class="anchor" aria-label="anchor" href="#simulating-data-1"></a>
 </h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/msm_samp.html">msm_samp</a></span><span class="op">(</span><span class="fl">1e4</span>, T<span class="op">=</span><span class="fl">20</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
-<span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">surv_model2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
+<span><span class="co">#&gt; integer(0)</span></span>
+<span><span class="va">dat2</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="fl">1e4</span>, <span class="va">surv_model2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 0123456</span></span>
+<span><span class="va">datl2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat2</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sinhrks/ggfortify" class="external-link">ggfortify</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
-<span><span class="va">survplot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survfit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>, <span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">C</span>, data<span class="op">=</span><span class="va">datl</span><span class="op">)</span></span>
+<span><span class="va">survplot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survfit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>, <span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">C</span>, data<span class="op">=</span><span class="va">datl2</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">survplot</span><span class="op">)</span></span></code></pre></div>
 <p><img src="Examples_files/figure-html/plot_dat2-1.png" width="700"></p>
+<p>The <code>ipwtm</code> function allows for certain families, but not
+the gamma family. Since we assume our exposure <code>X</code> is Gamma
+(conditional on <code>Z, C</code>), we must calcualte the ipw by
+hand.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">modX</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">Z</span> <span class="op">+</span> <span class="va">C</span>, family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link<span class="op">=</span><span class="va">log</span><span class="op">)</span>, data<span class="op">=</span><span class="va">datl</span><span class="op">)</span></span>
-<span><span class="va">prop_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">modX</span>, type <span class="op">=</span> <span class="st">"link"</span><span class="op">)</span></span>
-<span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="va">datl</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>wt<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html" class="external-link">dgamma</a></span><span class="op">(</span><span class="va">datl</span><span class="op">$</span><span class="va">X</span>,shape<span class="op">=</span><span class="fl">1</span><span class="op">/</span><span class="va">pars</span><span class="op">$</span><span class="va">X</span><span class="op">$</span><span class="va">phi</span>, rate<span class="op">=</span><span class="fl">1</span><span class="op">/</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">pars</span><span class="op">$</span><span class="va">X</span><span class="op">$</span><span class="va">beta</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">datl</span><span class="op">$</span><span class="va">Z</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">datl</span><span class="op">$</span><span class="va">C</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">*</span><span class="va">pars</span><span class="op">$</span><span class="va">X</span><span class="op">$</span><span class="va">phi</span><span class="op">)</span><span class="op">)</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html" class="external-link">dgamma</a></span><span class="op">(</span><span class="va">datl</span><span class="op">$</span><span class="va">X</span>, shape<span class="op">=</span><span class="fl">1</span><span class="op">/</span><span class="va">pars</span><span class="op">$</span><span class="va">X</span><span class="op">$</span><span class="va">phi</span>, rate<span class="op">=</span><span class="fl">1</span><span class="op">/</span><span class="op">(</span><span class="va">pars</span><span class="op">$</span><span class="va">X</span><span class="op">$</span><span class="va">phi</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">prop_score</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co"># datl$wt[is.na(datl$wt)] &lt;- 0</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">mod_den</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">Z</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">datl2</span><span class="op">)</span></span>
+<span><span class="va">mu_den</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">mod_den</span><span class="op">)</span></span>
+<span><span class="va">phi_den</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_den</span><span class="op">)</span><span class="op">$</span><span class="va">dispersion</span></span>
+<span></span>
+<span><span class="co">## 2. Numerator model</span></span>
+<span><span class="va">mod_num</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="fl">1</span>,   family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">datl2</span><span class="op">)</span></span>
+<span><span class="va">mu_num</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">mod_num</span><span class="op">)</span></span>
+<span><span class="va">phi_num</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_num</span><span class="op">)</span><span class="op">$</span><span class="va">dispersion</span></span>
+<span></span>
+<span><span class="va">num_dens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html" class="external-link">dgamma</a></span><span class="op">(</span><span class="va">datl2</span><span class="op">$</span><span class="va">X</span>, shape <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="va">phi_num</span>, rate <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="op">(</span><span class="va">phi_num</span><span class="op">*</span><span class="va">mu_num</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">den_dens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html" class="external-link">dgamma</a></span><span class="op">(</span><span class="va">datl2</span><span class="op">$</span><span class="va">X</span>, shape <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="va">phi_den</span>, rate <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="op">(</span><span class="va">phi_den</span><span class="op">*</span><span class="va">mu_den</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">datl2</span> <span class="op">&lt;-</span> <span class="va">datl2</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>ipw_instantaneous <span class="op">=</span> <span class="va">num_dens</span> <span class="op">/</span> <span class="va">den_dens</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>      <span class="co"># instantaneous weight</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>ipw <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumprod</a></span><span class="op">(</span><span class="va">ipw_instantaneous</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>Fit the coxph model with and without weights, then recover
+estimates.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://r-survey.r-forge.r-project.org/survey/" class="external-link">survey</a></span><span class="op">)</span></span>
-<span><span class="va">mod_w</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span>link<span class="op">=</span><span class="va">log</span><span class="op">)</span>, start<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="op">-</span><span class="fl">.2</span>,<span class="op">-</span><span class="fl">.05</span><span class="op">)</span>,</span>
-<span>                design<span class="op">=</span><span class="fu"><a href="https://rdrr.io/pkg/survey/man/svydesign.html" class="external-link">svydesign</a></span><span class="op">(</span>ids<span class="op">=</span><span class="op">~</span><span class="fl">1</span>, data<span class="op">=</span><span class="va">datl</span>, weights<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">mod_c</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span>link<span class="op">=</span><span class="va">log</span><span class="op">)</span>, start<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="op">-</span><span class="fl">.2</span>,<span class="op">-</span><span class="fl">.05</span><span class="op">)</span>,</span>
-<span>                design<span class="op">=</span><span class="fu"><a href="https://rdrr.io/pkg/survey/man/svydesign.html" class="external-link">svydesign</a></span><span class="op">(</span>ids<span class="op">=</span><span class="op">~</span><span class="fl">1</span>, data<span class="op">=</span><span class="va">datl</span>, weights<span class="op">=</span><span class="va">datl</span><span class="op">$</span><span class="va">wt</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in eval(family$initialize): non-integer #successes in a binomial glm!</span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
+<code class="sourceCode R"><span><span class="va">mod_correct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>,<span class="va">Y</span><span class="op">)</span><span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, id <span class="op">=</span> <span class="va">id</span>, data <span class="op">=</span> <span class="va">datl2</span>,</span>
+<span>                               weights <span class="op">=</span> <span class="va">ipw</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning: step size truncated: out of bounds</span></span>
-<span><span class="co">#&gt; Warning: glm.fit: algorithm did not converge</span></span>
-<span><span class="co">#&gt; Warning: glm.fit: algorithm stopped at boundary value</span></span>
-<span><span class="co">#&gt; Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_w</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Call:</span></span>
-<span><span class="co">#&gt; svyglm(formula = I(1 - Y) ~ X + C, design = svydesign(ids = ~1, </span></span>
-<span><span class="co">#&gt;     data = datl, weights = rep(1, nrow(datl))), family = binomial(link = log), </span></span>
-<span><span class="co">#&gt;     start = c(0, -0.2, -0.05))</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Survey design:</span></span>
-<span><span class="co">#&gt; svydesign(ids = ~1, data = datl, weights = rep(1, nrow(datl)))</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Coefficients:</span></span>
-<span><span class="co">#&gt;              Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">#&gt; (Intercept) -0.078305   0.003909  -20.03   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; X           -0.097231   0.003996  -24.33   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; C           -0.087747   0.004853  -18.08   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; ---</span></span>
-<span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; (Dispersion parameter for binomial family taken to be 1.000278)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Number of Fisher Scoring iterations: 4</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_c</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Call:</span></span>
-<span><span class="co">#&gt; svyglm(formula = I(1 - Y) ~ X + C, design = svydesign(ids = ~1, </span></span>
-<span><span class="co">#&gt;     data = datl, weights = datl$wt), family = binomial(link = log), </span></span>
-<span><span class="co">#&gt;     start = c(0, -0.2, -0.05))</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Survey design:</span></span>
-<span><span class="co">#&gt; svydesign(ids = ~1, data = datl, weights = datl$wt)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Coefficients:</span></span>
-<span><span class="co">#&gt;              Estimate Std. Error t value Pr(&gt;|t|)  </span></span>
-<span><span class="co">#&gt; (Intercept)  0.010969   0.006131   1.789   0.0736 .</span></span>
-<span><span class="co">#&gt; X           -0.259692   0.145155  -1.789   0.0736 .</span></span>
-<span><span class="co">#&gt; C           -0.002446   0.001351  -1.810   0.0703 .</span></span>
-<span><span class="co">#&gt; ---</span></span>
-<span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; (Dispersion parameter for binomial family taken to be 0.07862408)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Number of Fisher Scoring iterations: 25</span></span></code></pre></div>
+<span><span class="va">mod_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>,<span class="va">Y</span><span class="op">)</span><span class="op">~</span> <span class="va">X</span> <span class="op">+</span> <span class="va">C</span>, id <span class="op">=</span> <span class="va">id</span>, data <span class="op">=</span> <span class="va">datl2</span>,</span>
+<span>                               weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">datl2</span><span class="op">)</span><span class="op">)</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
-    </nav>
-</div>
+      </div>
 
 </div>
 
@@ -351,16 +270,16 @@ correlation.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
       </footer>
 </div>
 
-  
 
 
-  
+
+
 
   </body>
 </html>

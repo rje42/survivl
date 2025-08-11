@@ -1,96 +1,54 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>/404.html</loc>
-  </url>
-  <url>
-    <loc>/LICENSE-text.html</loc>
-  </url>
-  <url>
-    <loc>/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>/articles/Causal_Survival_Analysis.html</loc>
-  </url>
-  <url>
-    <loc>/articles/Censoring.html</loc>
-  </url>
-  <url>
-    <loc>/articles/Examples.html</loc>
-  </url>
-  <url>
-    <loc>/articles/MSMs.html</loc>
-  </url>
-  <url>
-    <loc>/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>/authors.html</loc>
-  </url>
-  <url>
-    <loc>/index.html</loc>
-  </url>
-  <url>
-    <loc>/news/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/check_censoring.html</loc>
-  </url>
-  <url>
-    <loc>/reference/curr_inputs.html</loc>
-  </url>
-  <url>
-    <loc>/reference/drop_LHS.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_surv_family.html</loc>
-  </url>
-  <url>
-    <loc>/reference/glm_sim.html</loc>
-  </url>
-  <url>
-    <loc>/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/is_surv_outcome.html</loc>
-  </url>
-  <url>
-    <loc>/reference/lag_data.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ll_surv.html</loc>
-  </url>
-  <url>
-    <loc>/reference/manipulate_survival.html</loc>
-  </url>
-  <url>
-    <loc>/reference/modify_inputs.html</loc>
-  </url>
-  <url>
-    <loc>/reference/msm_samp.html</loc>
-  </url>
-  <url>
-    <loc>/reference/process_inputs.html</loc>
-  </url>
-  <url>
-    <loc>/reference/regex_extr.html</loc>
-  </url>
-  <url>
-    <loc>/reference/rmv_time.html</loc>
-  </url>
-  <url>
-    <loc>/reference/surv_family_vals.html</loc>
-  </url>
-  <url>
-    <loc>/reference/surv_samp.html</loc>
-  </url>
-  <url>
-    <loc>/reference/survivl_dat.html</loc>
-  </url>
-  <url>
-    <loc>/reference/survivl_fams.html</loc>
-  </url>
-  <url>
-    <loc>/reference/time_stamps.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/LICENSE-text.html</loc></url>
+<url><loc>/LICENSE.html</loc></url>
+<url><loc>/articles/A-Seaman-Keogh-Bivariate-Copula.html</loc></url>
+<url><loc>/articles/Causal_Survival_Analysis.html</loc></url>
+<url><loc>/articles/Censoring.html</loc></url>
+<url><loc>/articles/Complicated-Copulas.html</loc></url>
+<url><loc>/articles/Examples.html</loc></url>
+<url><loc>/articles/Longitudinal-Outcome.html</loc></url>
+<url><loc>/articles/Longitudinal-Single-Outcome.html</loc></url>
+<url><loc>/articles/MSMs.html</loc></url>
+<url><loc>/articles/Plasmode.html</loc></url>
+<url><loc>/articles/Seaman-Keogh-Bivariate-Copula.html</loc></url>
+<url><loc>/articles/index.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/news/index.html</loc></url>
+<url><loc>/reference/boot_sim.html</loc></url>
+<url><loc>/reference/check_censoring.html</loc></url>
+<url><loc>/reference/clean_tms.html</loc></url>
+<url><loc>/reference/collect_events.html</loc></url>
+<url><loc>/reference/compute_copula_quantiles.html</loc></url>
+<url><loc>/reference/curr_inputs.html</loc></url>
+<url><loc>/reference/drop_LHS.html</loc></url>
+<url><loc>/reference/empirical_cdf_bootstrap.html</loc></url>
+<url><loc>/reference/get_surv_family.html</loc></url>
+<url><loc>/reference/glm_sim.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/is_surv_outcome.html</loc></url>
+<url><loc>/reference/lag_data.html</loc></url>
+<url><loc>/reference/ll_surv.html</loc></url>
+<url><loc>/reference/manipulate_survival.html</loc></url>
+<url><loc>/reference/mod_args.html</loc></url>
+<url><loc>/reference/modify.survivl_model.html</loc></url>
+<url><loc>/reference/modify_inputs.html</loc></url>
+<url><loc>/reference/msm_samp.html</loc></url>
+<url><loc>/reference/print.survivl_model.html</loc></url>
+<url><loc>/reference/process_inputs.html</loc></url>
+<url><loc>/reference/regex_extr.html</loc></url>
+<url><loc>/reference/rmv_time.html</loc></url>
+<url><loc>/reference/sim_bootstrap_survivl.html</loc></url>
+<url><loc>/reference/sim_inversion_longitudinal.html</loc></url>
+<url><loc>/reference/sim_inversion_survivl.html</loc></url>
+<url><loc>/reference/sim_rejection_survivl.html</loc></url>
+<url><loc>/reference/sim_variable.html</loc></url>
+<url><loc>/reference/surv_family_vals.html</loc></url>
+<url><loc>/reference/surv_samp.html</loc></url>
+<url><loc>/reference/survivl_dat.html</loc></url>
+<url><loc>/reference/survivl_fams.html</loc></url>
+<url><loc>/reference/survivl_model.html</loc></url>
+<url><loc>/reference/time_stamps.html</loc></url>
 </urlset>
+

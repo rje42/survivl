@@ -1,0 +1,273 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Survival Outcomes using Risk Functions},
+  pdfauthor={Chase Mathis},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Survival Outcomes using Risk Functions}
+\author{Chase Mathis}
+\date{2025-08-05}
+
+\begin{document}
+\maketitle
+
+\section{Seaman \& Keogh's Bivariate Copula
+Framework}\label{seaman-keoghs-bivariate-copula-framework}
+
+In this vignette, we consider simulating longitudinal, survival data
+using Seaman \& Keogh's risk function method. For a refresher on the
+basics of MSMs see the Marginal Structural Model vignettes.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(survivl)}
+\FunctionTok{library}\NormalTok{(survival) }\CommentTok{\# for coxph}
+\FunctionTok{options}\NormalTok{(}\AttributeTok{digits=}\DecValTok{4}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+We define our survival model the same as the modle in the Marginal
+Structural Model Vignette. One thing that is different is that the
+copula formula is just one list entry. This formula no longer specifies
+the copula, but specifies the risk function necessary for the simulation
+technique. Similarly, the copula parameters only have a \(\rho\) entry
+as we only have one parameter.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{forms }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(W }\SpecialCharTok{\textasciitilde{}} \DecValTok{1}\NormalTok{,}
+\NormalTok{              Z }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_l1 }\SpecialCharTok{+}\NormalTok{ X\_l1,}
+\NormalTok{              X }\SpecialCharTok{\textasciitilde{}}\NormalTok{ X\_l1 }\SpecialCharTok{+}\NormalTok{ Z\_l0,}
+\NormalTok{              Y }\SpecialCharTok{\textasciitilde{}}\NormalTok{ W }\SpecialCharTok{+}\NormalTok{ X\_l0,}
+              \FunctionTok{list}\NormalTok{(Y }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_l0))}
+\NormalTok{fams }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}\DecValTok{3}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{5}\NormalTok{, }\DecValTok{0}\NormalTok{, }\FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{))}
+\NormalTok{pars }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}\AttributeTok{W =} \FunctionTok{list}\NormalTok{(}\AttributeTok{beta=}\DecValTok{0}\NormalTok{, }\AttributeTok{phi=}\DecValTok{1}\SpecialCharTok{/}\DecValTok{2}\NormalTok{),}
+             \AttributeTok{Z =} \FunctionTok{list}\NormalTok{(}\AttributeTok{beta=}\FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\FloatTok{0.7}\NormalTok{,}\FloatTok{0.2}\NormalTok{), }\AttributeTok{phi=}\DecValTok{1}\NormalTok{),}
+             \AttributeTok{X =} \FunctionTok{list}\NormalTok{(}\AttributeTok{beta=}\FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{,}\FloatTok{0.25}\NormalTok{,}\FloatTok{0.5}\NormalTok{)),}
+             \AttributeTok{Y =} \FunctionTok{list}\NormalTok{(}\AttributeTok{beta=}\FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\SpecialCharTok{{-}}\DecValTok{1}\SpecialCharTok{/}\DecValTok{10}\NormalTok{,}\SpecialCharTok{{-}}\DecValTok{1}\SpecialCharTok{/}\DecValTok{5}\NormalTok{), }\AttributeTok{phi=}\DecValTok{1}\NormalTok{),}
+             \AttributeTok{cop =}\FunctionTok{list}\NormalTok{(}\AttributeTok{Y=}\FunctionTok{list}\NormalTok{(}\AttributeTok{rho =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{)))}
+\NormalTok{link }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}\StringTok{"log"}\NormalTok{, }\StringTok{"identity"}\NormalTok{, }\StringTok{"logit"}\NormalTok{, }\StringTok{"logit"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+We put this all together and add the \texttt{method} = ``bootstrap''
+argument to calculate. Also, the default number of simulations is 5e3
+-1, but for this simulation we will do less at 2.5e2 for sake of time.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sm }\OtherTok{\textless{}{-}} \FunctionTok{survivl\_model}\NormalTok{(}\AttributeTok{formulas=}\NormalTok{forms, }\AttributeTok{family=}\NormalTok{fams,}
+                    \AttributeTok{pars=}\NormalTok{pars, }\AttributeTok{T =} \DecValTok{7}\NormalTok{,}
+                    \AttributeTok{link =}\NormalTok{ link, }\AttributeTok{method =} \StringTok{"bootstrap"}\NormalTok{,}
+                    \AttributeTok{control =} \FunctionTok{list}\NormalTok{(}\AttributeTok{bootsims =} \FloatTok{2.5e2}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 13
+\end{verbatim}
+
+We can now simulate \(n=10^4\) observations from the model over 10 time
+points. You can see the bootstrap simulations printing out. We note this
+method takes a bit longer than the h-function methods.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{n }\OtherTok{\textless{}{-}} \FloatTok{1e4}
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{124}\NormalTok{)}
+\NormalTok{dat }\OtherTok{\textless{}{-}} \FunctionTok{rmsm}\NormalTok{(n, sm)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174175176177178179180181182183184185186187188189190191192193194195196197198199200201202203204205206207208209210211212213214215216217218219220221222223224225226227228229230231232233234235236237238239240241242243244245246247248249250
+## 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174175176177178179180181182183184185186187188189190191192193194195196197198199200201202203204205206207208209210211212213214215216217218219220221222223224225226227228229230231232233234235236237238239240241242243244245246247248249250
+## 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174175176177178179180181182183184185186187188189190191192193194195196197198199200201202203204205206207208209210211212213214215216217218219220221222223224225226227228229230231232233234235236237238239240241242243244245246247248249250
+## 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174175176177178179180181182183184185186187188189190191192193194195196197198199200201202203204205206207208209210211212213214215216217218219220221222223224225226227228229230231232233234235236237238239240241242243244245246247248249250
+## 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174175176177178179180181182183184185186187188189190191192193194195196197198199200201202203204205206207208209210211212213214215216217218219220221222223224225226227228229230231232233234235236237238239240241242243244245246247248249250
+## 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174175176177178179180181182183184185186187188189190191192193194195196197198199200201202203204205206207208209210211212213214215216217218219220221222223224225226227228229230231232233234235236237238239240241242243244245246247248249250
+## 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174175176177178179180181182183184185186187188189190191192193194195196197198199200201202203204205206207208209210211212213214215216217218219220221222223224225226227228229230231232233234235236237238239240241242243244245246247248249250
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{datl }\OtherTok{\textless{}{-}} \FunctionTok{surv\_to\_long}\NormalTok{(dat)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Estimating the Causal
+Effect}\label{estimating-the-causal-effect}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{temp }\OtherTok{\textless{}{-}}\NormalTok{ ipw}\SpecialCharTok{::}\FunctionTok{ipwtm}\NormalTok{(}
+  \AttributeTok{exposure =}\NormalTok{ X, }
+  \AttributeTok{family =} \StringTok{"binomial"}\NormalTok{,}
+  \AttributeTok{link =} \StringTok{"logit"}\NormalTok{,}
+  \AttributeTok{numerator =} \SpecialCharTok{\textasciitilde{}}\NormalTok{ W,}
+  \AttributeTok{denominator =} \SpecialCharTok{\textasciitilde{}}\NormalTok{Z,}
+  \AttributeTok{id =}\NormalTok{ id,}
+  \AttributeTok{timevar =}\NormalTok{ t,}
+  \AttributeTok{type =} \StringTok{"all"}\NormalTok{,}
+  \AttributeTok{data =}\NormalTok{ datl}
+\NormalTok{)}
+\NormalTok{datl}\SpecialCharTok{$}\NormalTok{wt }\OtherTok{\textless{}{-}}\NormalTok{ temp}\SpecialCharTok{$}\NormalTok{ipw.weights}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(}\FunctionTok{glm}\NormalTok{(Y }\SpecialCharTok{\textasciitilde{}}\NormalTok{ W }\SpecialCharTok{+}\NormalTok{ X, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{), }\AttributeTok{data =}\NormalTok{ datl,}
+                    \AttributeTok{weights =}\NormalTok{ wt))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## glm(formula = Y ~ W + X, family = binomial(link = "logit"), data = datl, 
+##     weights = wt)
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(>|z|)    
+## (Intercept)   0.8744     0.0246   35.52  < 2e-16 ***
+## W            -0.0964     0.0179   -5.39  7.2e-08 ***
+## X            -0.2166     0.0254   -8.53  < 2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 36163  on 28225  degrees of freedom
+## Residual deviance: 36063  on 28223  degrees of freedom
+## AIC: 37837
+## 
+## Number of Fisher Scoring iterations: 4
+\end{verbatim}
+
+We recover the causal effect by using the ipw estimator. If we had not
+use the weights, then our estimate would be very far from the truth we
+had specified showing the strength of the \(Z\) variable confounding on
+the effect of \(X\) on \(Y\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{glm}\NormalTok{(Y }\SpecialCharTok{\textasciitilde{}}\NormalTok{ W }\SpecialCharTok{+}\NormalTok{ X, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link =} \StringTok{"logit"}\NormalTok{), }\AttributeTok{data =}\NormalTok{ datl)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:  glm(formula = Y ~ W + X, family = binomial(link = "logit"), data = datl)
+## 
+## Coefficients:
+## (Intercept)            W            X  
+##      0.8056      -0.0943      -0.0376  
+## 
+## Degrees of Freedom: 28225 Total (i.e. Null);  28223 Residual
+## Null Deviance:       35900 
+## Residual Deviance: 35900     AIC: 35900
+\end{verbatim}
+
+\end{document}
