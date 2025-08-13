@@ -12,24 +12,32 @@
 ##' and if not specified default links will be used.
 ##'
 ##' @export
-survivl_model <- function (formulas, family, pars, link, T = T, dat=NULL, qtls = NULL, method="inversion",
-                         kwd="cop", control=list()) {
-
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0,
-             pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,
-             quan_tol = 1e3*.Machine$double.eps,
-             risk_h = \(row) sum(row), risk_form = NULL, bootsims = 1e3)
-  matches = match(names(control), names(con))
+survivl_model <- function(formulas, family, pars, link, T = T, dat = NULL, qtls = NULL, method = "inversion",
+                          kwd = "cop", control = list()) {
+  con <- list(
+    verbose = FALSE, max_wt = 1, warn = 1, cop = "cop", censor = "Cen", start_at = 0,
+    pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,
+    quan_tol = 1e3 * .Machine$double.eps,
+    risk_h = \(row) sum(row), risk_form = NULL, bootsims = 1e3
+  )
+  matches <- match(names(control), names(con))
   print(matches)
-  con[matches] = control[!is.na(matches)]
-  if (any(is.na(matches))) warning("Some names in control not matched: ",
-                                   paste(names(control[is.na(matches)]),
-                                         sep = ", "))
-  out <- process_inputs(formulas=formulas, family=family, pars=pars,
-                        link=link, dat=dat, control=con, method=method, T = T, 
-                        qtls = qtls)
+  con[matches] <- control[!is.na(matches)]
+  if (any(is.na(matches))) {
+    warning(
+      "Some names in control not matched: ",
+      paste(names(control[is.na(matches)]),
+        sep = ", "
+      )
+    )
+  }
+  out <- process_inputs(
+    formulas = formulas, family = family, pars = pars,
+    link = link, dat = dat, control = con, method = method, T = T,
+    qtls = qtls
+  )
   class(out) <- "survivl_model"
-  
+
   return(out)
 }
 
@@ -40,20 +48,20 @@ survivl_model <- function (formulas, family, pars, link, T = T, dat=NULL, qtls =
 ##' @param ... additional arguments (not used)
 ##'
 ##' @exportS3Method base::print
-print.survivl_model <- function (x, ...) {
+print.survivl_model <- function(x, ...) {
   forms <- unlist(x$formulas)
-  cat("Frugal survivl model with variables ", paste(unique(rmv_time(x$vars[1:(length(x$vars)-1)])), collapse=", "),"\n")
-  
+  cat("Frugal survivl model with variables ", paste(unique(rmv_time(x$vars[1:(length(x$vars) - 1)])), collapse = ", "), "\n")
+
   invisible(x)
 }
 
 ##' @export
-modify <- function (x, ...) {
+modify <- function(x, ...) {
   UseMethod("modify")
 }
 
 ##' @export
-modify.default <- function (x, ...) {
+modify.default <- function(x, ...) {
   args <- list(...)
   for (i in seq_along(args)) x[[names(args)[i]]] <- args[[i]]
 }
@@ -69,17 +77,20 @@ modify.default <- function (x, ...) {
 ##' This function can be used to modify
 ##'
 ##' @exportS3Method
-modify.survivl_model <- function (x, over=FALSE, formulas, family, pars, 
-                                  T, link, dat, method,qtls,
-                                kwd) {
+modify.survivl_model <- function(x, over = FALSE, formulas, family, pars,
+                                 T, link, dat, method, qtls,
+                                 kwd) {
   if (!is(x, "survivl_model")) stop("Must include an object of class 'survivl_model'")
-  
+
   if (missing(formulas) && missing(family) && missing(pars) && missing(link) &&
-      missing(dat) && missing(method) && missing(kwd)) return(x)
+    missing(dat) && missing(method) && missing(kwd)) {
+    return(x)
+  }
   if (missing(formulas)) formulas <- x$formulas
   if (missing(family)) family <- x$family
-  if (missing(pars)) pars <- x$pars
-  else {
+  if (missing(pars)) {
+    pars <- x$pars
+  } else {
     cpars <- x$pars
     cpars[names(pars)] <- pars
     pars <- cpars
@@ -88,18 +99,22 @@ modify.survivl_model <- function (x, over=FALSE, formulas, family, pars,
   if (missing(dat)) dat <- x$dat
   if (missing(method)) method <- x$method
   if (missing(kwd)) kwd <- x$kwd
-  if(missing(T)) T <- x$T
-  if(missing(qtls)) qtls <- x$qtls
-  con = list(verbose=FALSE, max_wt=1, warn=1, cop="cop", censor="Cen", start_at=0,
-             pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,
-             quan_tol = 1e3*.Machine$double.eps,
-             risk_h = x$risk$risk_h, risk_form = x$risk$risk_form, 
-             bootsims = x$bootsims)
-  
-  out <- process_inputs(formulas=formulas, family=family, pars=pars,
-                        link=link, dat=dat, method=method, T = T, control = con,
-                        qtls = qtls)
-  
+  if (missing(T)) T <- x$T
+  if (missing(qtls)) qtls <- x$qtls
+  con <- list(
+    verbose = FALSE, max_wt = 1, warn = 1, cop = "cop", censor = "Cen", start_at = 0,
+    pm_cond = TRUE, pm_nlevs = 5, pm_cor_thresh = 0.25,
+    quan_tol = 1e3 * .Machine$double.eps,
+    risk_h = x$risk$risk_h, risk_form = x$risk$risk_form,
+    bootsims = x$bootsims
+  )
+
+  out <- process_inputs(
+    formulas = formulas, family = family, pars = pars,
+    link = link, dat = dat, method = method, T = T, control = con,
+    qtls = qtls
+  )
+
   return(out)
 }
 

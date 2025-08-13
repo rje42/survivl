@@ -1,3 +1,21 @@
+## survivl 0.4.1
+-------------------------------------------------------------------------------
+
+CHANGES
+
+ * Created `survivl_model`, a mirror image of the `causl_model` object.
+
+ * New method inspired by the empirical rank technique from `causl` package and 
+ the linear regression to residualize away correlations.
+ 
+ * Switched all `msm_samp` to `survivl_model` and then calling `rmsm(n, surv_model)`
+
+ * Switched some ipw calculations from by hand to using `ipw::ipwtm`.
+ 
+ * Using `coxph` instead of `svyglm`.
+
+
+
 ## survivl 0.3.2
 -------------------------------------------------------------------------------
 

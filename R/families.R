@@ -12,15 +12,19 @@
 ##' @format `surv_family_vals` is a `data.frame` with 2 rows and 2 columns
 ##'
 ##' @export
-surv_family_vals <- data.frame(val=1:3,
-                               family=c("exp", "weibull", "lnorm"))
+surv_family_vals <- data.frame(
+  val = 1:3,
+  family = c("exp", "weibull", "lnorm")
+)
 
 ##' @describeIn surv_family_vals List of links for each family
 ##' @format `surv_links_list` is a list of length 2
 ##' @export
-surv_links_list <- list(exp=c("inverse", "log", "identity"),
-                        weibull=c("log"),
-                        lnorm = c("identity", "log"))
+surv_links_list <- list(
+  exp = c("inverse", "log", "identity"),
+  weibull = c("log"),
+  lnorm = c("identity", "log")
+)
 
 ##' Families for survival distributions
 ##'
@@ -47,14 +51,13 @@ NULL
 ##'
 ##' @seealso [family_vals]
 ##'
-get_surv_family <- function (val) {
+get_surv_family <- function(val) {
   surv <- FALSE
 
   if (is.numeric(val)) {
     fm <- match(val, causl::family_vals$val)
     if (is.na(fm)) stop("Invalid family value")
-  }
-  else if (is.character(val)) {
+  } else if (is.character(val)) {
     fm <- pmatch(val, causl::family_vals$family)
     if (is.na(fm)) {
       fm <- pmatch(val, surv_family_vals$family)
@@ -63,12 +66,18 @@ get_surv_family <- function (val) {
     if (is.na(fm)) stop("Family not recognized")
   }
 
-  if (surv) fmly <- surv_family_vals[fm,]$family
-  else fmly <- causl::family_vals[fm,]$family
+  if (surv) {
+    fmly <- surv_family_vals[fm, ]$family
+  } else {
+    fmly <- causl::family_vals[fm, ]$family
+  }
   if (is.numeric(val) && val > 5) stop("No function defined yet for this family")
 
-  if (surv) out <- get(paste0(fmly, "_surv_fam"))
-  else out <- get(paste0(fmly, "_causl_fam"))
+  if (surv) {
+    out <- get(paste0(fmly, "_surv_fam"))
+  } else {
+    out <- get(paste0(fmly, "_causl_fam"))
+  }
 
   return(out)
 }
@@ -76,48 +85,48 @@ get_surv_family <- function (val) {
 
 ##' @describeIn survivl_fams Weibull distribution
 ##' @export
-weibull_surv_fam <- function (link) {
+weibull_surv_fam <- function(link) {
   if (missing(link)) link <- "log"
 
-  dens <- function (x, mu, scale, shape, med, log=FALSE, par="PH") {
-
+  dens <- function(x, mu, scale, shape, med, log = FALSE, par = "PH") {
     if (!missing(scale)) {
       if (par == "AFT") {
         stop("Fill this in!")
-      }
-      else if (par == "PH") {
-        scale <- scale^(-1/shape)*mu
-      }
-      else if (par == "R") {
+      } else if (par == "PH") {
+        scale <- scale^(-1 / shape) * mu
+      } else if (par == "R") {
         stop("Fill this in!")
+      } else {
+        stop("'par' should be either \"PH\", \"AFT\", or \"R\"")
       }
-      else stop("'par' should be either \"PH\", \"AFT\", or \"R\"")
+    } else if (!missing(med)) {
+      scale <- med / (log(2)^(1 / shape))
+    } else {
+      stop("Must supply 'med' or 'scale' parameter")
     }
-    else if (!missing(med)) scale <- med/(log(2)^(1/shape))
-    else stop("Must supply 'med' or 'scale' parameter")
 
-    return(dweibull(x, shape=shape, scale=scale, log=log))
+    return(dweibull(x, shape = shape, scale = scale, log = log))
   }
-  quan <- function (p, x, mu, shape, scale, med, par="PH") {
-
+  quan <- function(p, x, mu, shape, scale, med, par = "PH") {
     if (!missing(scale)) {
       if (par == "AFT") {
         stop("Fill this in!")
-      }
-      else if (par == "PH") {
-        scale <- scale^(-1/shape)*mu
-      }
-      else if (par != "R") stop("'par' should be either \"PH\", \"AFT\", or \"R\"")
+      } else if (par == "PH") {
+        scale <- scale^(-1 / shape) * mu
+      } else if (par != "R") stop("'par' should be either \"PH\", \"AFT\", or \"R\"")
+    } else if (!missing(med)) {
+      scale <- med / (log(2)^(1 / shape))
+    } else {
+      stop("Must supply 'med' or 'scale' parameter")
     }
-    else if (!missing(med)) scale <- med/(log(2)^(1/shape))
-    else stop("Must supply 'med' or 'scale' parameter")
 
-    if (missing(x)) return(qweibull(p, shape=shape, scale=scale))
-    else {
-      qcweib <- function (p, x, shape, scale) {
-        (x^shape - scale^shape*log(1-p))^(1/shape) - x
+    if (missing(x)) {
+      return(qweibull(p, shape = shape, scale = scale))
+    } else {
+      qcweib <- function(p, x, shape, scale) {
+        (x^shape - scale^shape * log(1 - p))^(1 / shape) - x
       }
-      return(qcweib(p, x=x, shape=shape, scale=scale))
+      return(qcweib(p, x = x, shape = shape, scale = scale))
     }
   }
   # csim <- function (n, x, mu, shape, scale, par="PH") {
@@ -139,51 +148,52 @@ weibull_surv_fam <- function (link) {
   #
   #   return(rcweib(n, x, shape, scale))
   # }
-  sim <- function (n, x, mu, shape, scale, med, par="PH") {
-
+  sim <- function(n, x, mu, shape, scale, med, par = "PH") {
     if (!missing(scale)) {
       if (par == "AFT") {
         stop("Fill this in!")
-      }
-      else if (par == "PH") {
-        scale <- scale^(-1/shape)*mu
-      }
-      else if (par != "R") stop("'par' should be either \"PH\", \"AFT\", or \"R\"")
+      } else if (par == "PH") {
+        scale <- scale^(-1 / shape) * mu
+      } else if (par != "R") stop("'par' should be either \"PH\", \"AFT\", or \"R\"")
+    } else if (!missing(med)) {
+      scale <- med / (log(2)^(1 / shape))
+    } else {
+      stop("Must supply 'med' or 'scale' parameter")
     }
-    else if (!missing(med)) scale <- med/(log(2)^(1/shape))
-    else stop("Must supply 'med' or 'scale' parameter")
 
-    if (missing(x)) return(rweibull(n, shape=shape, scale=scale))
-    else {
-      rcweib <- function (n, x, shape, scale) {
+    if (missing(x)) {
+      return(rweibull(n, shape = shape, scale = scale))
+    } else {
+      rcweib <- function(n, x, shape, scale) {
         u <- runif(n)
-        (x^shape - scale^shape*log(u))^(1/shape) - x
+        (x^shape - scale^shape * log(u))^(1 / shape) - x
       }
 
-      return(rcweib(n, x=x, shape=shape, scale=scale))
+      return(rcweib(n, x = x, shape = shape, scale = scale))
     }
   }
-  probs <- function (x, mu, shape, scale, med, par="PH") {
-
+  probs <- function(x, mu, shape, scale, med, par = "PH") {
     if (!missing(scale)) {
       if (par == "AFT") {
         stop("Fill this in!")
-      }
-      else if (par == "PH") {
-        scale <- scale^(-1/shape)*mu
-      }
-      else if (par != "R") stop("'par' should be either \"PH\", \"AFT\", or \"R\"")
+      } else if (par == "PH") {
+        scale <- scale^(-1 / shape) * mu
+      } else if (par != "R") stop("'par' should be either \"PH\", \"AFT\", or \"R\"")
+    } else if (!missing(med)) {
+      scale <- med / (log(2)^(1 / shape))
+    } else {
+      stop("Must supply 'med' or 'scale' parameter")
     }
-    else if (!missing(med)) scale <- med/(log(2)^(1/shape))
-    else stop("Must supply 'med' or 'scale' parameter")
 
-    return(pweibull(x, shape=shape, scale=scale))
+    return(pweibull(x, shape = shape, scale = scale))
   }
 
-  default <- function(theta) list(x=1, shape=1, scale=1, p=0.5)
+  default <- function(theta) list(x = 1, shape = 1, scale = 1, p = 0.5)
 
-  out <- list(name="weibull", ddist=dens, qdist=quan, rdist=sim, #rcdist=csim,
-              pdist=probs, pars=c("mu", "shape", "scale"), default=default, link=link)
+  out <- list(
+    name = "weibull", ddist = dens, qdist = quan, rdist = sim, # rcdist=csim,
+    pdist = probs, pars = c("mu", "shape", "scale"), default = default, link = link
+  )
   class(out) <- c("surv_family", "causl_family")
 
   return(out)
@@ -192,26 +202,28 @@ weibull_surv_fam <- function (link) {
 
 ##' @describeIn survivl_fams Exponential distribution
 ##' @export
-exp_surv_fam <- function (link) {
+exp_surv_fam <- function(link) {
   if (missing(link)) link <- "inverse"
 
-  dens <- function (x, mu, log=FALSE) {
-    return(dexp(x, rate = 1/mu, log=log))
+  dens <- function(x, mu, log = FALSE) {
+    return(dexp(x, rate = 1 / mu, log = log))
   }
-  quan <- function (p, x, mu) {
-    return(qexp(p, rate = 1/mu))
+  quan <- function(p, x, mu) {
+    return(qexp(p, rate = 1 / mu))
   }
-  sim <- function (n, x, mu) {
-    return(rexp(n, rate = 1/mu))
+  sim <- function(n, x, mu) {
+    return(rexp(n, rate = 1 / mu))
   }
-  probs <- function (x, mu) {
-    return(pexp(x, rate = 1/mu))
+  probs <- function(x, mu) {
+    return(pexp(x, rate = 1 / mu))
   }
 
-  default <- function(theta) list(x=1, mu=1)
+  default <- function(theta) list(x = 1, mu = 1)
 
-  out <- list(name="exp", ddist=dens, qdist=quan, rdist=sim, pdist=probs,
-              pars=c("mu"), default=default, link=link)
+  out <- list(
+    name = "exp", ddist = dens, qdist = quan, rdist = sim, pdist = probs,
+    pars = c("mu"), default = default, link = link
+  )
   class(out) <- c("surv_family", "causl_family")
 
   return(out)
@@ -219,28 +231,30 @@ exp_surv_fam <- function (link) {
 
 ##' @describeIn survivl_fams Log-normal distribution
 ##' @export
-lnorm_surv_fam <- function (link) {
+lnorm_surv_fam <- function(link) {
   if (missing(link)) link <- "identity"
-  
-  dens <- function (x, mu, phi, log=FALSE) {
-    return(dlnorm(x, meanlog = mu, sdlog = phi, log=log))
+
+  dens <- function(x, mu, phi, log = FALSE) {
+    return(dlnorm(x, meanlog = mu, sdlog = phi, log = log))
   }
-  quan <- function (p, mu, phi) {
-    return(qlnorm(p, meanlog =mu, sdlog = phi))
+  quan <- function(p, mu, phi) {
+    return(qlnorm(p, meanlog = mu, sdlog = phi))
   }
-  sim <- function (n, mu, phi) {
-    return(rlnorm(n, meanlog = mu, sdlog =phi))
+  sim <- function(n, mu, phi) {
+    return(rlnorm(n, meanlog = mu, sdlog = phi))
   }
-  probs <- function (x, mu, phi) {
+  probs <- function(x, mu, phi) {
     return(plnorm(x, meanlog = mu, sdlog = phi))
   }
-  
-  default <- function(theta) list(x=1, mu=0, phi = 1)
-  
-  out <- list(name="lognormal", ddist=dens, qdist=quan, rdist=sim, pdist=probs,
-              pars=c("mu", "phi"), default=default, link=link)
+
+  default <- function(theta) list(x = 1, mu = 0, phi = 1)
+
+  out <- list(
+    name = "lognormal", ddist = dens, qdist = quan, rdist = sim, pdist = probs,
+    pars = c("mu", "phi"), default = default, link = link
+  )
   class(out) <- c("surv_family", "causl_family")
-  
+
   return(out)
 }
 
@@ -249,14 +263,17 @@ lnorm_surv_fam <- function (link) {
 ##'
 ##' @param x vector or list of families
 ##'
-is_surv_outcome <- function (x) {
+is_surv_outcome <- function(x) {
   if (is.atomic(x)) {
-    if(is.numeric(x)) return(x %in% c(3,6))
-    else if (is.character(x)) return(x %in% c("exp", "Gamma", "weibull", "lognormal"))
-  }
-  else if (methods::is(x[[1]], "causl_family")) {
+    if (is.numeric(x)) {
+      return(x %in% c(3, 6))
+    } else if (is.character(x)) {
+      return(x %in% c("exp", "Gamma", "weibull", "lognormal"))
+    }
+  } else if (methods::is(x[[1]], "causl_family")) {
     nms <- sapply(x, function(y) y$name)
     return(nms %in% c("exp", "Gamma", "weibull", "lognormal"))
+  } else {
+    stop("Not a valid family representation")
   }
-  else stop("Not a valid family representation")
 }

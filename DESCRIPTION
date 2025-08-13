@@ -1,9 +1,11 @@
 Package: survivl
 Type: Package
 Title: Package for causal survival simulation and analysis
-Version: 0.4.0
+Version: 0.4.1
 Authors@R: c(
-  person("Robin", "Evans", , "evans@stats.ox.ac.uk", role = c("aut", "cre")))
+  person("Robin", "Evans", , "evans@stats.ox.ac.uk", role = c("aut", "cre")),
+  person("Chase", "Mathis", , "cmathis@berkeley.edu", role = c("aut"))
+  )
 Description: Uses methods of Young et al. (2009) to simulate from structural
     nested accelerated failure time models.
 License: MIT + file LICENSE

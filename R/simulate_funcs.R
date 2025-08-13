@@ -111,11 +111,10 @@
 ##'
 ##' @export
 glm_ldens <- function(Y, family, eta, link, phi, other_pars) {
-
-  if (family %in% c(1,2,3,6) && missing(phi)) stop("Must specify a dispersion parameter for this family")
+  if (family %in% c(1, 2, 3, 6) && missing(phi)) stop("Must specify a dispersion parameter for this family")
   if (missing(link)) {
     ## get the default link for this family
-    link <- causl::familyVals[causl::familyVals$val==family,2]
+    link <- causl::familyVals[causl::familyVals$val == family, 2]
   }
 
   if (length(Y) != length(eta)) stop("Y and eta must have same length")
@@ -124,49 +123,46 @@ glm_ldens <- function(Y, family, eta, link, phi, other_pars) {
     if (family == 6) Y <- log(Y)
 
     if (link == "identity") {
-      lden <- dnorm(Y, mean=eta, sd=sqrt(phi), log=TRUE)
+      lden <- dnorm(Y, mean = eta, sd = sqrt(phi), log = TRUE)
+    } else if (link == "log") {
+      lden <- dnorm(Y, mean = exp(eta), sd = sqrt(phi), log = TRUE)
+    } else if (link == "inverse") {
+      lden <- dnorm(Y, mean = 1 / eta, sd = sqrt(phi), log = TRUE)
+    } else {
+      stop("invalid link function for (log)-Gaussian distribution")
     }
-    else if (link == "log") {
-      lden <- dnorm(Y, mean=exp(eta), sd=sqrt(phi), log=TRUE)
-    }
-    else if (link == "inverse") {
-      lden <- dnorm(Y, mean=1/eta, sd=sqrt(phi), log=TRUE)
-    }
-    else stop("invalid link function for (log)-Gaussian distribution")
-  }
-  else if (family == 2) {
-
+  } else if (family == 2) {
     if (link == "identity") {
-      lden <- dt((Y - eta)/sqrt(phi), df=other_pars$par2, log=TRUE)-log(sqrt(phi))
+      lden <- dt((Y - eta) / sqrt(phi), df = other_pars$par2, log = TRUE) - log(sqrt(phi))
+    } else if (link == "log") {
+      lden <- dt((Y - exp(eta)) / sqrt(phi), df = other_pars$par2, log = TRUE) - log(sqrt(phi))
+    } else if (link == "inverse") {
+      lden <- dt((Y - 1 / eta) / sqrt(phi), df = other_pars$par2, log = TRUE) - log(sqrt(phi))
+    } else {
+      stop("invalid link function for t-distribution")
     }
-    else if (link == "log") {
-      lden <- dt((Y - exp(eta))/sqrt(phi), df=other_pars$par2, log=TRUE)-log(sqrt(phi))
+  } else if (family == 3) {
+    if (link == "log") {
+      mu <- exp(eta)
+    } else if (link == "identity") {
+      mu <- eta
+    } else if (link == "inverse") {
+      mu <- 1 / eta
+    } else {
+      stop("invalid link function for Gamma distribution")
     }
-    else if (link == "inverse") {
-      lden <- dt((Y - 1/eta)/sqrt(phi), df=other_pars$par2, log=TRUE)-log(sqrt(phi))
-    }
-    else stop("invalid link function for t-distribution")
-  }
-  else if (family == 3) {
-    if (link == "log") mu <- exp(eta)
-    else if (link == "identity") mu <- eta
-    else if (link == "inverse") mu <- 1/eta
-    else stop("invalid link function for Gamma distribution")
 
-    lden <- dgamma(Y, shape=1/phi, rate=1/(mu*phi), log=TRUE)
-
-  }
-  else if (family == 4) {
-    lden <- dbeta(Y, shape1 = 1, shape2 = 1, log=TRUE)
-  }
-  else if (family == 0 || family == 5) {
+    lden <- dgamma(Y, shape = 1 / phi, rate = 1 / (mu * phi), log = TRUE)
+  } else if (family == 4) {
+    lden <- dbeta(Y, shape1 = 1, shape2 = 1, log = TRUE)
+  } else if (family == 0 || family == 5) {
     if (link == "probit") {
-      lden <- (Y==1)*pnorm(eta, log.p = TRUE) + (Y==0)*(pnorm(-eta, log.p = TRUE))
+      lden <- (Y == 1) * pnorm(eta, log.p = TRUE) + (Y == 0) * (pnorm(-eta, log.p = TRUE))
+    } else if (link == "logit") {
+      lden <- (Y == 1) * eta - log1p(exp(eta))
+    } else {
+      stop("invalid link function for binomial distribution")
     }
-    else if (link == "logit") {
-      lden <- (Y==1)*eta - log1p(exp(eta))
-    }
-    else stop("invalid link function for binomial distribution")
 
     # trunc <- other_pars$trunc
     # trnc <- 1
@@ -177,10 +173,9 @@ glm_ldens <- function(Y, family, eta, link, phi, other_pars) {
     #   mat[,j] <- 1*(U > trunc[[trnc]][j])
     # }
     # Y <- rowSums(mat)
+  } else {
+    stop("family must be between 0 and 6")
   }
-  else stop("family must be between 0 and 6")
 
   return(lden)
 }
-
-
