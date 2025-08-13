@@ -7,7 +7,6 @@ gamma3 <- 0.1
 gamma4 <- 0.3
 gamma5 <- 0.3
 
-
 rho_to_beta <- function(rho){
   x <- (rho + 1)/2
   return(log(x/(1-x)))
@@ -15,17 +14,15 @@ rho_to_beta <- function(rho){
 
 
 n <- 1e4
-qtls <- data.frame(X1 = runif(n), X2 = runif(n), B1 = runif(n),
-                   Z1_0 = runif(n), A_0 = runif(n))
-qtls[["Z2|Z1_0"]] = runif(n)
 
-dat <- data.frame(X1=qnorm(qtls$X1,mean = 0, sd = 1),
-                  X2 = qbinom(qtls$X2, size = 1, prob = 0.5))
-dat$B1 <- qnorm(qtls$B1, 0.4*dat$X2 -0.2, sd = 1)
 
-dat[["Z1_0"]] <- qnorm(qtls[["Z1_0"]], 0.2*dat$X1, sd = 1)
-dat[["Z2_0"]] <- qbinom(qtls[["Z2|Z1_0"]], 1, expit(-0.2 + 0.4 * dat$X2))
-dat[["A_0"]] = qbinom(qtls[["A_0"]], 1, expit(-1 + 0.1 * dat$X1 + 0.15*dat$X2 + 0.1*dat$B1 + 0.3*dat[["Z1_0"]] + 0.3* dat[["Z2_0"]]))
+dat <- data.frame(X1=rnorm(n,mean = 0, sd = 1),
+                  X2 = rbinom(n, size = 1, prob = 0.5))
+dat$B1 <- rnorm(n, 0.4*dat$X2 -0.2, sd = 1)
+
+dat[["Z1_0"]] <- rnorm(n, 0.2*dat$X1, sd = 1)
+dat[["Z2_0"]] <- rbinom(n, 1, expit(-0.2 + 0.4 * dat$X2))
+dat[["A_0"]] = rbinom(n, 1, expit(-1 + 0.1 * dat$X1 + 0.15*dat$X2 + 0.1*dat$B1 + 0.3*dat[["Z1_0"]] + 0.3* dat[["Z2_0"]]))
 
 
 # test where B2 is missing, but other baslines are there. 
@@ -48,13 +45,12 @@ pars <- list(B2 = list(beta = c(-0.2, 0.4), phi = 1),
              cop = list(Y = list(Z1 = list(beta= rho_to_beta(-0.6), par2 = 5),
                                  Z2 = list(beta = rho_to_beta(0.2), par2 = 5))))
 
-dat2 <- msm_samp(T = 10,dat = dat, qtls = qtls,
-                 formulas = formulas,
-                 family = family,
-                 pars = pars,
-                 link = list(list("identity"),
-                             list("identity", "logit"),
-                             "logit", "log"))
+sm <- survivl_model(formulas=formulas, family=family,
+                    pars=pars, T = 5, dat = dat, qtls = NULL, # no quantiles given
+                    link = list(list("identity"),
+                    list("identity", "logit"),
+                    "logit", "log"))
+dat2 <- rmsm(n, sm)
 
 datl <- surv_to_long(dat2)
 

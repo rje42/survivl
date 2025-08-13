@@ -1,11 +1,12 @@
-pandoc: '3.3'
-pkgdown: 2.0.9
+pandoc: '3.4'
+pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
   Causal_Survival_Analysis: Causal_Survival_Analysis.html
-  Censoring: Censoring.html
+  Complicated-Copulas: Complicated-Copulas.html
   Examples: Examples.html
+  Longitudinal-Single-Outcome: Longitudinal-Single-Outcome.html
   MSMs: MSMs.html
   Plasmode: Plasmode.html
-last_built: 2025-03-21T16:33Z
-
+  Seaman-Keogh-Bivariate-Copula: Seaman-Keogh-Bivariate-Copula.html
+last_built: 2025-08-06T19:44Z

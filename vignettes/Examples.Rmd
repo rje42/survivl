@@ -2,7 +2,7 @@
 title: "Examples"
 author: "Robin J. Evans"
 date: "24/05/2022"
-output: html_document
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Examples}
   %\VignetteEngine{knitr::rmarkdown}
@@ -13,13 +13,15 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  echo = TRUE
+  echo = TRUE,
+  warning = FALSE
 )
 ```
 
 ```{r load, message=FALSE}
 library(survivl)
 library(dplyr)
+library(ipw)
 ```
 
 ## Two Examples
@@ -29,14 +31,14 @@ formulas <- list(C ~ 1,
                  Z ~ X_l1 + C,
                  X ~ Z_l0 + C,
                  Y ~ X_l0 + C,
-                 cop ~ 1)
+                 list(Y = list(Z ~1)))
 family <- list(5,1,5,3,1)
 link <- list("logit", "identity", "logit", "inverse")
 pars <- list(C = list(beta=0),
              Z = list(beta = c(-1/2,1/2,0.25), phi=0.5),
              X = list(beta = c(0,1/2,1/10)),
-             Y = list(beta = c(0.05,0.5,0.05), phi=1),
-             cop = list(beta=0.8472979))  # gives correlation 0.4
+             Y = list(beta = c(0.25,0.5,0.05), phi=1),
+             cop = list(Y = list(Z = list(beta=0.8472979))))  # gives correlation 0.4
 ```
 
 ## Simulating Data
@@ -44,7 +46,8 @@ pars <- list(C = list(beta=0),
 ```{r sim_dat1}
 set.seed(123)
 n <- 1e4
-dat <- msm_samp(n, T=20, formulas=formulas, family=family, pars=pars, link=link)
+surv_model <- survivl_model(T=7, formulas=formulas, family=family, pars=pars, link=link)
+dat <- rmsm(n, surv_model)
 datl <- surv_to_long(dat)
 ```
 
@@ -55,35 +58,42 @@ survplot <- survfit(Surv(t, t_stop, Y) ~ C, data=datl)
 autoplot(survplot)
 ```
 
+We recommend using `ipw::ipwtm` function to calculate ipw weights for time varying confounding. 
 ```{r glms1}
-modX <- glm(X ~ Z + C, family=binomial, data=datl)
-prop_score <- predict(modX, type = "response")
-datl <- datl %>% mutate(wt=datl$X/prop_score + (1-datl$X)/(1-prop_score))
+temp <- ipwtm(
+  exposure = X,
+  family = "binomial",
+  numerator = ~ 1,
+  denominator = ~ Z,
+  link = "logit",
+  id = id,
+  timevar = t,
+  type = "all",
+  data = datl)
+
+
+datl$wt <- temp$ipw.weights
+mod_correct <- coxph(Surv(t, t_stop,Y)~X + C, id = id, data = datl,
+                               weights = datl$wt, timefix = FALSE)
+
+mod_naive <- coxph(Surv(t, t_stop,Y)~ X + C, id = id, data = datl,
+                               weights = rep(1,nrow(datl)), timefix = FALSE)
+
 ```
 
-```{r glms2a}
-library(survey)
-mod_w <- svyglm(I(1-Y) ~ X + C, family=binomial(link=log), start=c(-0.01,-.5,-.05),
-                design=svydesign(ids=~1, data=datl, weights=rep(1,nrow(datl))))
-mod_c <- svyglm(I(1-Y) ~ X + C, family=binomial(link=log), start=c(-0.01,-.5,-.05),
-                design=svydesign(ids=~1, data=datl, weights=datl$wt))
-summary(mod_w)
-summary(mod_c)
-```
-
-```{r tabs, eval=FALSE, echo=FALSE}
-tab_w <- cbind(pars$Y$beta, -mod_w$coef, summary(mod_w)$coef[,-c(1,3)])
-tab_w[,4] <- pt(abs((tab_w[,2]-tab_w[,1])/tab_w[,3]), df=n-4, lower.tail = FALSE)
-tab_c <- cbind(pars$Y$beta, -mod_c$coef, summary(mod_c)$coef[,-c(1,3)])
-tab_c[,4] <- pt(abs((tab_c[,2]-tab_c[,1])/tab_c[,3]), df=n-4, lower.tail = FALSE)
+```{r tabs, echo=FALSE}
+tab_correct <- cbind(pars$Y$beta[-c(1)], -mod_correct$coef, summary(mod_correct)$coef[,-c(1,3)])
+tab_correct[,4] <- pt(abs((tab_correct[,2]-tab_correct[,1])/tab_correct[,3]), df=n-4, lower.tail = FALSE)
+tab_naive <- cbind(pars$Y$beta[-c(1)], -mod_naive$coef, summary(mod_naive)$coef[,-c(1,3)])
+tab_naive[,4] <- pt(abs((tab_naive[,2]-tab_naive[,1])/tab_naive[,3]), df=n-4, lower.tail = FALSE)
 library(kableExtra)
-kableExtra::kbl(tab_w, digits = c(2,3,5,2), booktabs=TRUE, format="latex")  %>%  
-  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "p-value"))
-kableExtra::kbl(tab_c, digits = c(2,3,5,2), booktabs=TRUE, format="latex")  %>%  
-  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "p-value"))
+kableExtra::kbl(tab_naive, digits = c(2,3,5,2), booktabs=TRUE, format="latex")  %>%  
+  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "z", "p-value"))
+kableExtra::kbl(tab_correct, digits = c(2,3,5,2), booktabs=TRUE, format="latex")  %>%  
+  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "z", "p-value"))
 ```
 
-### Example 2 (doesn't work)
+### Example 2 (Gamma distributed requires by hand ipw calculation)
 
 We assume:
  - $C$ is a Bernoulli r.v. with parameter $1/2$;
@@ -103,38 +113,69 @@ link <- list("logit", "identity", "log", "inverse")
 pars <- list(C = list(beta=0),
              Z = list(beta = c(-1/2,1/4,1), phi=0.5),
              X = list(beta = c(0,1/4,1/20), phi=0.25),
-             Y = list(beta = c(0,0.2,0.05), phi=1),
-             cop = list(beta=1))
+             Y = list(beta = c(0.5, 0.2, 0.05), phi=1),
+             cop = list(Y = list(Z = list(beta=1))))
 ```
 
 ### Simulating Data
 
 ```{r sim_dat2}
 set.seed(123)
-dat <- msm_samp(1e4, T=20, formulas=formulas, family=family, pars=pars, link=link)
-datl <- surv_to_long(dat)
+surv_model2 <- survivl_model(T=7, formulas=formulas, family=family, pars=pars, link=link)
+dat2 <- rmsm(1e4, surv_model2)
+datl2 <- surv_to_long(dat2)
 ```
 
 ```{r plot_dat2, message=FALSE}
 library(ggfortify)
 library(survival)
-survplot <- survfit(Surv(t, t_stop, Y) ~ C, data=datl)
+survplot <- survfit(Surv(t, t_stop, Y) ~ C, data=datl2)
 autoplot(survplot)
 ```
 
+The `ipwtm` function allows for certain families, but not the gamma family. 
+Since we assume our exposure `X` is Gamma (conditional on `Z, C`), we must calcualte
+the ipw by hand.
 ```{r glms2}
-modX <- glm(X ~ Z + C, family=Gamma(link=log), data=datl)
-prop_score <- predict(modX, type = "link")
-datl <- datl %>% mutate(wt=dgamma(datl$X,shape=1/pars$X$phi, rate=1/(sum(pars$X$beta*c(1,mean(datl$Z), mean(datl$C)))*pars$X$phi))/dgamma(datl$X, shape=1/pars$X$phi, rate=1/(pars$X$phi*exp(prop_score))))
-# datl$wt[is.na(datl$wt)] <- 0
+mod_den <- glm(X ~ Z, family = Gamma(link = "log"), data = datl2)
+mu_den  <- fitted(mod_den)
+phi_den <- summary(mod_den)$dispersion
+
+## 2. Numerator model
+mod_num <- glm(X ~ 1,   family = Gamma(link = "log"), data = datl2)
+mu_num  <- fitted(mod_num)
+phi_num <- summary(mod_num)$dispersion
+
+num_dens <- dgamma(datl2$X, shape = 1/phi_num, rate = 1/(phi_num*mu_num))
+den_dens <- dgamma(datl2$X, shape = 1/phi_den, rate = 1/(phi_den*mu_den))
+
+datl2 <- datl2 %>%
+  mutate(ipw_instantaneous = num_dens / den_dens) %>%      # instantaneous weight
+  group_by(id) %>%
+  arrange(t) %>%
+  mutate(ipw = cumprod(ipw_instantaneous)) %>% 
+  ungroup()
 ```
 
-```{r glms2b}
-library(survey)
-mod_w <- svyglm(I(1-Y) ~ X + C, family=binomial(link=log), start=c(0,-.2,-.05),
-                design=svydesign(ids=~1, data=datl, weights=rep(1,nrow(datl))))
-mod_c <- svyglm(I(1-Y) ~ X + C, family=binomial(link=log), start=c(0,-.2,-.05),
-                design=svydesign(ids=~1, data=datl, weights=datl$wt))
-summary(mod_w)
-summary(mod_c)
+Fit the coxph model with and without weights, then recover estimates.
+```{r coxph2}
+mod_correct <- coxph(Surv(t, t_stop,Y)~ X + C, id = id, data = datl2,
+                               weights = ipw, timefix = FALSE)
+
+mod_naive <- coxph(Surv(t, t_stop,Y)~ X + C, id = id, data = datl2,
+                               weights = rep(1,nrow(datl2)), timefix = FALSE)
+
 ```
+
+```{r tabs2, echo=FALSE}
+tab_correct <- cbind(pars$Y$beta[-c(1)], -mod_correct$coef, summary(mod_correct)$coef[,-c(1,3)])
+tab_correct[,4] <- pt(abs((tab_correct[,2]-tab_correct[,1])/tab_correct[,3]), df=n-4, lower.tail = FALSE)
+tab_naive <- cbind(pars$Y$beta[-c(1)], -mod_naive$coef, summary(mod_naive)$coef[,-c(1,3)])
+tab_naive[,4] <- pt(abs((tab_naive[,2]-tab_naive[,1])/tab_naive[,3]), df=n-4, lower.tail = FALSE)
+library(kableExtra)
+kableExtra::kbl(tab_naive, digits = c(2,3,5,2), booktabs=TRUE, format = "latex")  %>%  
+  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "z", "p-value"))
+kableExtra::kbl(tab_correct, digits = c(2,3,5,2), booktabs=TRUE, format="latex")  %>%  
+  kableExtra::add_header_above(c("Coef","Truth","Est.", "Std. Err.", "z", "p-value"))
+```
+

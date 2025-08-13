@@ -1,0 +1,217 @@
+---
+title: "Survival Outcomes using Risk Functions"
+author: "Chase Mathis"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Seaman Keogh Bivariate Copulas}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+# Seaman & Keogh's Bivariate Copula Framework
+
+In this vignette, we consider simulating longitudinal, survival data
+using Seaman & Keogh's risk function method. For a refresher on the
+basics of MSMs see the Marginal Structural Model vignettes.
+
+```{r load}
+library(survivl)
+library(survival) # for coxph
+
+options(digits=4)
+set.seed(124)
+```
+
+We define our survival model the same as the modle in the Marginal
+Structural Model Vignette. One thing that is different is that the
+copula formula is just one list entry. This formula no longer specifies
+the copula, but specifies the risk function necessary for the simulation
+technique. Similarly, the copula parameters only have a $\rho$ entry as
+we only have one parameter.
+
+There are two ways Seaman & Keogh allow users to model the causal effect 
+in a survival marginal structural model. The first method is to directly model
+the probability risk function $P(Y_k \mid \rm{do}(\bar{A_k}), Y_{k-1} = 0)$. 
+The second method is to model the hazard through a more flexible model $\lambda(t)$.
+The package supports both and we will first describe how to directly model hazards.
+
+## Directly Modeling Hazards
+
+```{r formulas}
+forms <- list(W ~ 1,
+              Z ~ Z_l1 + X_l1,
+              X ~ X_l1 + Z_l0,
+              Y ~ W + X_l0,
+              list(Y ~ Z_l0))
+fams <- list(3, 1, 5, 0, c(1))
+pars <- list(W = list(beta=0, phi=1/2),
+             Z = list(beta=c(0,0.7,0.2), phi=1),
+             X = list(beta=c(-0.5,0.25,0.5)),
+             Y = list(beta=c(1,-1/10,-1/5), phi=1),
+             cop =list(Y=list(rho = -0.5)))
+link <- list("log", "identity", "logit", "logit")
+
+```
+Note that we put the family for our outcome to be binomial. A binomial distribution
+is not a survival distribution like exponential or weibull. If the user specifies a binomial
+family in `survivl` the computer understands that the user wants to directly model
+the risk. To keep numbers in a [0,1] scale, we use the logit link function.
+
+Below, note that we add the `method` = "bootstrap" argument to
+calculate. Also, the default number of simulations is 5e3 -1, but for
+this simulation we will do less at 2.5e2 for sake of time.
+
+```{r build-model}
+
+sm <- survivl_model(formulas=forms, family=fams,
+                    pars=pars, T = 7,
+                    link = link, method = "bootstrap",
+                    control = list(bootsims = 2.5e2))
+```
+
+We can now simulate $n=10^4$ observations from the model over 10 time
+points. You can see the bootstrap simulations printing out. We note this
+method takes a bit longer than the h-function methods.
+
+```{r sim_data, include=FALSE}
+n <- 1e4
+dat <- rmsm(n, sm)
+datl <- surv_to_long(dat)
+```
+
+### Estimating the Causal Effect
+
+```{r ipw-estimate}
+temp <- ipw::ipwtm(
+  exposure = X, 
+  family = "binomial",
+  link = "logit",
+  numerator = ~ W,
+  denominator = ~Z,
+  id = id,
+  timevar = t,
+  type = "all",
+  data = datl
+)
+datl$wt <- temp$ipw.weights
+```
+
+We recover the causal effect by using the IPW estimator (within 2 s.e.). If we had not
+use the weights, then our estimate would be very far from the truth we
+had specified showing the strength of the $Z$ variable confounding on
+the effect of $X$ on $Y$.
+```{r}
+mod_correct <- glm(Y ~ W + X, family = binomial(link = "logit"), data = datl,
+                    weights = wt)
+
+
+mod_incorrect <- glm(Y ~ W + X, family = binomial(link = "logit"), data = datl)
+
+# Fix: use correct model object names and ensure proper table formatting
+
+# Compute table for correct (weighted) model
+tab_correct <- cbind(
+  "Truth" = pars$Y$beta[-1],
+  "Est." = coef(mod_correct)[-1],
+  "Std. Err." = summary(mod_correct)$coef[-1, "Std. Error"]
+)
+
+# Compute table for naive (unweighted) model
+tab_naive <- cbind(
+  "Truth" = pars$Y$beta[-1],
+  "Est." = coef(mod_incorrect)[-1],
+  "Std. Err." = summary(mod_incorrect)$coef[-1, "Std. Error"]
+)
+library(kableExtra)
+kableExtra::kbl(tab_naive, digits = c(2,3,5), booktabs=TRUE, format="latex")  %>%
+  kableExtra::add_header_above(c(" " = 1, "Naive Model" = 3))
+kableExtra::kbl(tab_correct, digits = c(2,3,5), booktabs=TRUE, format="latex")  %>%
+  kableExtra::add_header_above(c(" " = 1, "IPW Model" = 3))
+```
+
+## Continuous Time Failures
+Above, we directly modeled the hazard of a single observation and do not model when
+an observation may fail but instead how likely it is to make it to the next time step.
+If we want to model time continuously, we can use the exponential or weibull distribution.
+
+```{r formulas continuous}
+
+fams2 <- list(3, 1, 5, 3, c(1))
+link2 <- list("log", "identity", "logit", "log")
+pars2 <- pars;
+pars2[["Y"]] <- list(beta=c(0,-0.45, -0.2), phi=1)
+
+sm2 <- modify(sm, family = fams2, pars = pars2)
+
+```
+Now, we model the outcome to be exponential (Gamma family is 3) and phi = 1 is exponential.
+We use the modify function to modify our survival model object. For fun, we also
+change the paramaters of $Y \mid \rm{do}(X)$
+The rest of the data generation is the same as above.
+
+
+```{r build-model continuous and sim data, include=FALSE}
+n <- 1e4
+dat <- rmsm(n, sm2)
+datl <- surv_to_long(dat)
+```
+
+
+
+### Estimating the Causal Effect
+
+```{r ipw-estimate-continuous}
+temp <- ipw::ipwtm(
+  exposure = X, 
+  family = "binomial",
+  link = "logit",
+  numerator = ~ W,
+  denominator = ~  Z,
+  id = id,
+  timevar = t,
+  type = "all",
+  data = datl
+)
+datl$wt <- temp$ipw.weights
+```
+
+```{r mod_correct continuous}
+mod_correct <- survreg(Surv(t_stop, Y) ~ W + X, 
+                        dist = "exponential",
+                        data = datl,
+                        weights = wt)
+mod_incorrect <- survreg(Surv(t_stop, Y) ~ W + X, 
+                        dist = "exponential",
+                        data = datl,
+                        weights = wt)               
+
+```
+
+```{r table output continuou}
+tab_correct <- cbind(
+  "Truth" = pars2$Y$beta[-1],
+  "Est." = coef(mod_correct)[-1],
+  "Std. Err." = summary(mod_correct)$table[-1, "Std. Error"]
+)
+
+# Compute table for naive (unweighted) model
+tab_naive <- cbind(
+  "Truth" = pars2$Y$beta[-1],
+  "Est." = coef(mod_incorrect)[-1],
+  "Std. Err." = summary(mod_incorrect)$table[-1, "Std. Error"]
+)
+
+kableExtra::kbl(tab_naive, digits = c(2,3,5), booktabs=TRUE, format="latex")  %>%
+  kableExtra::add_header_above(c(" " = 1, "Naive Model" = 3))
+kableExtra::kbl(tab_correct, digits = c(2,3,5), booktabs=TRUE, format="latex")  %>%
+  kableExtra::add_header_above(c(" " = 1, "IPW Model" = 3))
+```
+

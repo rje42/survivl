@@ -2,9 +2,22 @@
 % Please edit documentation in R/sim_variable.R
 \name{sim_variable}
 \alias{sim_variable}
-\title{Simulate a single variable using the inversion method}
+\title{Simulate a single variable using the inversion method. We note that
+in Xi et al paper notation in the paper never has Y_0, treatment at time
+t = 0 results in outcome at t = 1, Y_1. For organizational reasons, we
+assume treatment at time t = 0 results in outcome at time t = 0 and so forth.}
 \usage{
-sim_variable(n, formulas, family, pars, link, dat, quantiles, type_event)
+sim_variable(
+  n,
+  formulas,
+  family,
+  pars,
+  link,
+  dat,
+  quantiles,
+  type_event,
+  num_time_varying
+)
 }
 \arguments{
 \item{n}{sample size}
@@ -21,7 +34,9 @@ sim_variable(n, formulas, family, pars, link, dat, quantiles, type_event)
 
 \item{quantiles}{data frame of quantiles}
 
-\item{survival}{character denoting if primary or competing}
+\item{type_event}{character denoting if primary or competing}
+
+\item{num_time_varying}{number of time varying covariates}
 }
 \value{
 The data frame \code{dat} with an additional column given by the left-hand side of \code{formula[[1]]}.

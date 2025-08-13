@@ -12,14 +12,13 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="Marginal Structural Survival Models">
-<meta property="og:description" content="survivl">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -33,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
       </span>
     </div>
 
@@ -45,7 +44,7 @@
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
@@ -53,13 +52,22 @@
       <a href="../articles/Causal_Survival_Analysis.html">Causal Survival Analysis</a>
     </li>
     <li>
-      <a href="../articles/Censoring.html">Censoring</a>
+      <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
+      <a href="../articles/Longitudinal-Single-Outcome.html">Longitudinal Non-Survival Outcomes</a>
+    </li>
+    <li>
       <a href="../articles/MSMs.html">Marginal Structural Survival Models</a>
+    </li>
+    <li>
+      <a href="../articles/Plasmode.html">Plasmode</a>
+    </li>
+    <li>
+      <a href="../articles/Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
     </li>
   </ul>
 </li>
@@ -75,7 +83,7 @@
 </div>
 <!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -84,9 +92,9 @@
                         <h4 data-toc-skip class="author">Robin
 Evans</h4>
             
-            <h4 data-toc-skip class="date">2024-07-12</h4>
+            <h4 data-toc-skip class="date">2025-08-06</h4>
       
-      
+
       <div class="hidden name"><code>MSMs.Rmd</code></div>
 
     </div>
@@ -100,21 +108,30 @@ Evans</h4>
 time-to-event data. Begin by loading the library.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">survivl</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span> <span class="co"># for coxph</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>digits<span class="op">=</span><span class="fl">4</span><span class="op">)</span></span></code></pre></div>
 <p>Then we define our formulas and family variables. We will have one
 baseline variable, and a single time-varying covariate, treatment and
-outcome. More specifically, let: <span class="math display">\[\begin{align*}
+outcome. More specifically, let:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><mi>W</mi></mtd><mtd columnalign="left" style="text-align: left"><mo>∼</mo><mo>Gamma</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mi>/</mi><mn>2</mn><mo>,</mo><mspace width="0.167em"></mspace><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>Z</mi><mi>t</mi></msub><mo>∣</mo><msub><mover><mi>Z</mi><mo accent="true">¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mover><mi>X</mi><mo accent="true">¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0.7</mn><msub><mi>Z</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><mn>0.2</mn><msub><mi>X</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><mspace width="0.167em"></mspace><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>X</mi><mi>t</mi></msub><mo>∣</mo><msub><mover><mi>Z</mi><mo accent="true">¯</mo></mover><mi>t</mi></msub><mo>,</mo><msub><mover><mi>X</mi><mo accent="true">¯</mo></mover><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>∼</mo><mo>Bernoulli</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>expit</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0.5</mn><msub><mi>X</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><mn>0.25</mn><msub><mi>Z</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>t</mi></msub><mo>=</mo><mn>1</mn><mo>∣</mo><mi>d</mi><mi>o</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>X</mi><mo accent="true">¯</mo></mover><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mi>W</mi><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mo>exp</mo><mo stretchy="false" form="prefix">{</mo><mi>−</mi><msub><mi>X</mi><mi>t</mi></msub><mo>+</mo><mi>W</mi><mi>/</mi><mn>10</mn><mo stretchy="false" form="postfix">}</mo><mo>,</mo></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align*}
 W &amp;\sim \operatorname{Gamma}(1/2, \, 2)  \\
-Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1} &amp;\sim N(0.7 Z_{t-1}
-+ 0.2 X_t, \, 1)\\
-X_t \mid \overline{Z}_{t}, \overline{X}_{t-1} &amp;\sim
-\operatorname{Bernoulli}(\operatorname{expit}(0.5 X_t + 0.25 Z_{t-1}))\\
+Z_t \mid \overline{Z}_{t-1}, \overline{X}_{t-1} &amp;\sim N(0.7 Z_{t-1} + 0.2 X_{t-1}, \, 1)\\
+X_t \mid \overline{Z}_{t}, \overline{X}_{t-1} &amp;\sim \operatorname{Bernoulli}(\operatorname{expit}(0.5 X_{t-1} + 0.25 Z_t))\\ 
 P(Y_t = 1 \mid do(\overline{X}_{t}), W) &amp;= \exp\{ - X_t + W/10\},
-\end{align*}\]</span> and assume that there is a Gaussian pair-copula
-linking <span class="math inline">\(Y_t\)</span> with <span class="math inline">\(Z_{t-1},Z_t\)</span>, which also depends upon
-<span class="math inline">\(W\)</span>. We assume that the parameter for
-the <span class="math inline">\(Y_t\)</span>-<span class="math inline">\(Z_{t-1}\)</span> interaction is 0.2, and that for
-<span class="math inline">\(Y_t\)</span>-<span class="math inline">\(Z_{t}\)</span> given <span class="math inline">\(Z_{t-1}\)</span> is 0.3.</p>
+\end{align*}</annotation></semantics></math> and assume that there is a
+Gaussian pair-copula linking
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>
+with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Z</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>Z</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">Z_{t-1},Z_t</annotation></semantics></math>,
+which also depends upon
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>.
+We assume that the parameter for the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">Z_{t-1}</annotation></semantics></math>
+interaction is 0.2, and that for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Z_{t}</annotation></semantics></math>
+given
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Z</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">Z_{t-1}</annotation></semantics></math>
+is 0.3.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">forms</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">W</span> <span class="op">~</span> <span class="fl">1</span>,</span>
 <span>              <span class="va">Z</span> <span class="op">~</span> <span class="va">Z_l1</span> <span class="op">+</span> <span class="va">X_l1</span>,</span>
@@ -124,75 +141,98 @@ the <span class="math inline">\(Y_t\)</span>-<span class="math inline">\(Z_{t-1}
 <span><span class="va">fams</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">3</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>W <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fl">0</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span>,</span>
 <span>             Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0.7</span>,<span class="fl">0.2</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
-<span>             X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.5</span>,<span class="fl">0.25</span>,<span class="fl">0.5</span><span class="op">)</span><span class="op">)</span>, </span>
+<span>             X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.5</span>,<span class="fl">0.25</span>,<span class="fl">0.5</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="op">-</span><span class="fl">1</span><span class="op">/</span><span class="fl">10</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">5</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
 <span>             cop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">link</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"log"</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"inverse"</span><span class="op">)</span></span></code></pre></div>
-<p>We can now simulate <span class="math inline">\(n=10^5\)</span>
+<span><span class="va">link</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"log"</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"log"</span><span class="op">)</span></span>
+<span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T <span class="op">=</span> <span class="fl">10</span>, formulas <span class="op">=</span> <span class="va">forms</span>, family <span class="op">=</span> <span class="va">fams</span>, pars <span class="op">=</span> <span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## integer(0)</span></span></code></pre>
+<p>We can now simulate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><msup><mn>10</mn><mn>4</mn></msup></mrow><annotation encoding="application/x-tex">n=10^4</annotation></semantics></math>
 observations from the model over 10 time points.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">1e5</span></span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">1e4</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">124</span><span class="op">)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/msm_samp.html">msm_samp</a></span><span class="op">(</span><span class="va">n</span>, T <span class="op">=</span> <span class="fl">10</span>, formulas <span class="op">=</span> <span class="va">forms</span>, family <span class="op">=</span> <span class="va">fams</span>, pars <span class="op">=</span> <span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span> </span>
-<span>                <span class="co"># method = "rejection")</span></span>
-<span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span>, lag<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## 012345678</span></span></code></pre>
+<pre><code><span><span class="co">## 9</span></span></code></pre>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span>, lag<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <div class="section level4">
 <h4 id="checking-the-fit">Checking the fit<a class="anchor" aria-label="anchor" href="#checking-the-fit"></a>
 </h4>
 <p>We can check that our simulation has the correct parametric
 distributions. We use a Kolmogorov-Smirnov test to check the
-distribution of <span class="math inline">\(W\)</span>, and then
-regressions to test the distributions of the <span class="math inline">\(Z\)</span>s and <span class="math inline">\(X\)</span>s.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+distribution of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>,
+and then regressions to test the distributions of the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Z</mi><annotation encoding="application/x-tex">Z</annotation></semantics></math>s
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>s.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/ks.test.html" class="external-link">ks.test</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">W</span>, <span class="st">"pgamma"</span>, scale<span class="op">=</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span>, shape<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">##  Asymptotic one-sample Kolmogorov-Smirnov test</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## data:  dat$W</span></span>
-<span><span class="co">## D = 0.0032, p-value = 0.3</span></span>
+<span><span class="co">## D = 0.0072, p-value = 0.7</span></span>
 <span><span class="co">## alternative hypothesis: two-sided</span></span></code></pre>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Z</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">Z_l1</span> <span class="op">+</span> <span class="va">X_l1</span>, data<span class="op">=</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span></code></pre></div>
-<pre><code><span><span class="co">##              Estimate Std. Error  t value   Pr(&gt;|t|)</span></span>
-<span><span class="co">## (Intercept) -0.003757   0.007639  -0.4918  6.228e-01</span></span>
-<span><span class="co">## W           -0.002179   0.005153  -0.4229  6.724e-01</span></span>
-<span><span class="co">## Z_l1         0.702495   0.003785 185.6214  0.000e+00</span></span>
-<span><span class="co">## X_l1         0.198876   0.008608  23.1034 1.384e-117</span></span></code></pre>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z</span>, data<span class="op">=</span><span class="va">datl</span>, family<span class="op">=</span><span class="va">binomial</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span></code></pre></div>
-<pre><code><span><span class="co">##               Estimate Std. Error   z value   Pr(&gt;|z|)</span></span>
-<span><span class="co">## (Intercept) -0.4911393   0.016312 -30.10820 3.784e-199</span></span>
-<span><span class="co">## W           -0.0003152   0.010943  -0.02881  9.770e-01</span></span>
-<span><span class="co">## X_l1         0.2422572   0.017882  13.54788  8.155e-42</span></span>
-<span><span class="co">## Z            0.4916998   0.007465  65.87003  0.000e+00</span></span></code></pre>
+<pre><code><span><span class="co">##             Estimate Std. Error t value  Pr(&gt;|t|)</span></span>
+<span><span class="co">## (Intercept) -0.01676   0.013718  -1.222 2.217e-01</span></span>
+<span><span class="co">## W            0.01598   0.010402   1.536 1.244e-01</span></span>
+<span><span class="co">## Z_l1         0.69978   0.005809 120.462 0.000e+00</span></span>
+<span><span class="co">## X_l1         0.20279   0.014349  14.132 3.863e-45</span></span></code></pre>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z</span>, data<span class="op">=</span><span class="va">datl</span>, family<span class="op">=</span><span class="va">binomial</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span></code></pre></div>
+<pre><code><span><span class="co">##             Estimate Std. Error z value   Pr(&gt;|z|)</span></span>
+<span><span class="co">## (Intercept)  -0.4972    0.02057 -24.164 5.369e-129</span></span>
+<span><span class="co">## X_l1          0.2296    0.02976   7.716  1.204e-14</span></span>
+<span><span class="co">## Z             0.5062    0.01224  41.366  0.000e+00</span></span></code></pre>
 <p>Indeed, each of these variables is consistent with the parameters we
 used. For the survival outcome, we can use inverse probability
-weighting. The <code>survey</code> package can account for the
-additional uncertainty introduced by weighting.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://r-survey.r-forge.r-project.org/survey/" class="external-link">survey</a></span><span class="op">)</span></span></code></pre></div>
-<p>Now we estimate the propensity scores, and fit the IPW model.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z</span>, data<span class="op">=</span><span class="va">datl</span>, family<span class="op">=</span><span class="va">binomial</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
-<span><span class="va">wt</span> <span class="op">&lt;-</span> <span class="va">datl</span><span class="op">$</span><span class="va">X</span><span class="op">/</span><span class="va">ps</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">datl</span><span class="op">$</span><span class="va">X</span><span class="op">)</span><span class="op">/</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">ps</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X</span>, family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="va">log</span><span class="op">)</span>, start<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">10</span>,<span class="op">-</span><span class="fl">1</span><span class="op">/</span><span class="fl">5</span><span class="op">)</span>, </span>
-<span>               design<span class="op">=</span><span class="fu"><a href="https://rdrr.io/pkg/survey/man/svydesign.html" class="external-link">svydesign</a></span><span class="op">(</span><span class="op">~</span><span class="fl">1</span>, data<span class="op">=</span><span class="va">datl</span>, weights<span class="op">=</span><span class="va">wt</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning in eval(family$initialize): non-integer #successes in a binomial glm!</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: step size truncated due to divergence</span></span></code></pre>
-<pre><code><span><span class="co">##             Estimate Std. Error t value  Pr(&gt;|t|)</span></span>
-<span><span class="co">## (Intercept) -1.01108   0.010266  -98.49 0.000e+00</span></span>
-<span><span class="co">## W            0.09779   0.006154   15.89 9.634e-57</span></span>
-<span><span class="co">## X           -0.18834   0.011382  -16.55 2.296e-61</span></span></code></pre>
+weighting. The <code>ipw</code> package can estimate ipw weights for
+time varying confounders like <code>Z</code>.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">ipw</span><span class="op">)</span></span>
+<span><span class="va">temp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ipw/man/ipwtm.html" class="external-link">ipwtm</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  family <span class="op">=</span> <span class="st">"binomial"</span>,</span>
+<span>  link <span class="op">=</span> <span class="st">"logit"</span>,</span>
+<span>  numerator <span class="op">=</span> <span class="op">~</span><span class="fl">1</span>,</span>
+<span>  denominator <span class="op">=</span> <span class="op">~</span> <span class="va">Z</span>,</span>
+<span>  id <span class="op">=</span> <span class="va">id</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  timevar <span class="op">=</span> <span class="va">t</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">datl</span>,</span>
+<span><span class="op">)</span></span>
+<span><span class="va">datl</span><span class="op">$</span><span class="va">wt</span> <span class="op">&lt;-</span> <span class="va">temp</span><span class="op">$</span><span class="va">ipw.weights</span></span>
+<span><span class="va">mod_correct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>, <span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X</span>, weights <span class="op">=</span> <span class="va">wt</span>, data <span class="op">=</span> <span class="va">datl</span>,</span>
+<span>                     timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">mod_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>, <span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X</span>, weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">datl</span>,</span>
+<span>                   timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tab_correct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pars</span><span class="op">$</span><span class="va">Y</span><span class="op">$</span><span class="va">beta</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">]</span>, <span class="op">-</span><span class="va">mod_correct</span><span class="op">$</span><span class="va">coef</span>, <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_correct</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span><span class="op">[</span>,<span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">tab_correct</span><span class="op">[</span>,<span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="op">(</span><span class="va">tab_correct</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span><span class="op">-</span><span class="va">tab_correct</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">/</span><span class="va">tab_correct</span><span class="op">[</span>,<span class="fl">3</span><span class="op">]</span><span class="op">)</span>, df<span class="op">=</span><span class="va">n</span><span class="op">-</span><span class="fl">4</span>, lower.tail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">tab_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pars</span><span class="op">$</span><span class="va">Y</span><span class="op">$</span><span class="va">beta</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">]</span>, <span class="op">-</span><span class="va">mod_naive</span><span class="op">$</span><span class="va">coef</span>, <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_naive</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span><span class="op">[</span>,<span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">tab_naive</span><span class="op">[</span>,<span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="op">(</span><span class="va">tab_naive</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span><span class="op">-</span><span class="va">tab_naive</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">/</span><span class="va">tab_naive</span><span class="op">[</span>,<span class="fl">3</span><span class="op">]</span><span class="op">)</span>, df<span class="op">=</span><span class="va">n</span><span class="op">-</span><span class="fl">4</span>, lower.tail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://haozhu233.github.io/kableExtra/" class="external-link">kableExtra</a></span><span class="op">)</span></span>
+<span><span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/kbl.html" class="external-link">kbl</a></span><span class="op">(</span><span class="va">tab_naive</span>, digits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span>,<span class="fl">5</span>,<span class="fl">2</span><span class="op">)</span>, booktabs<span class="op">=</span><span class="cn">TRUE</span>, format<span class="op">=</span><span class="st">"latex"</span><span class="op">)</span>  <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>  </span>
+<span>  <span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/add_header_above.html" class="external-link">add_header_above</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Coef"</span>,<span class="st">"Truth"</span>,<span class="st">"Est."</span>, <span class="st">"Std. Err."</span>, <span class="st">"p-value"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/kbl.html" class="external-link">kbl</a></span><span class="op">(</span><span class="va">tab_correct</span>, digits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span>,<span class="fl">5</span>,<span class="fl">2</span><span class="op">)</span>, booktabs<span class="op">=</span><span class="cn">TRUE</span>, format<span class="op">=</span><span class="st">"latex"</span><span class="op">)</span>  <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>  </span>
+<span>  <span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/add_header_above.html" class="external-link">add_header_above</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Coef"</span>,<span class="st">"Truth"</span>,<span class="st">"Est."</span>, <span class="st">"Std. Err."</span>, <span class="st">"p-value"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="multiple-time-varying-covariates">Multiple time-varying covariates<a class="anchor" aria-label="anchor" href="#multiple-time-varying-covariates"></a>
 </h2>
 <p>We may well be interested in simulating more than one time-varying
-covariate. We can easily allow for this, first by simply specifying
-another formula in the second element of our list…</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+covariate. A new update allows us to update our <code>surv_model</code>
+object without redefining it.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">forms2</span> <span class="op">&lt;-</span> <span class="va">forms</span></span>
 <span><span class="va">forms2</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">Z1</span> <span class="op">~</span> <span class="va">Z1_l1</span> <span class="op">+</span> <span class="va">Z2_l1</span> <span class="op">+</span> <span class="va">X_l1</span>, </span>
 <span>                    <span class="va">Z2</span> <span class="op">~</span> <span class="va">Z2_l1</span> <span class="op">+</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z1_l0</span><span class="op">)</span></span>
@@ -206,62 +246,63 @@ another formula in the second element of our list…</p>
 <span><span class="va">pars2</span><span class="op">$</span><span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0.25</span>,<span class="fl">0.1</span>,<span class="fl">0.3</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">link</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"identity"</span>, <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p>… and then by modifying the elements relating to the copula.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">forms2</span><span class="op">[[</span><span class="fl">5</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">Z1</span> <span class="op">~</span> <span class="va">W</span>, <span class="va">Z2</span> <span class="op">~</span> <span class="va">W</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">fams2</span><span class="op">[[</span><span class="fl">5</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">pars2</span><span class="op">$</span><span class="va">cop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z1<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>,<span class="fl">0.2</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>                         Z2<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.25</span>,<span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>                         Z2<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.25</span>,<span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># should be able to just use modify</span></span>
+<span><span class="va">surv_model2</span> <span class="op">&lt;-</span> <span class="fu">modify</span><span class="op">(</span><span class="va">surv_model</span>, formulas <span class="op">=</span> <span class="va">forms2</span>,</span>
+<span>                                    family <span class="op">=</span> <span class="va">fams2</span>,</span>
+<span>                                    pars <span class="op">=</span> <span class="va">pars2</span>, link <span class="op">=</span> <span class="va">link</span><span class="op">)</span></span></code></pre></div>
 <p>We can then simulate as before.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat2</span> <span class="op">&lt;-</span>  <span class="fu"><a href="../reference/msm_samp.html">msm_samp</a></span><span class="op">(</span><span class="va">n</span>, T <span class="op">=</span> <span class="fl">10</span>, formulas <span class="op">=</span> <span class="va">forms2</span>, family <span class="op">=</span> <span class="va">fams2</span>, pars <span class="op">=</span> <span class="va">pars2</span>, </span>
-<span>                  link <span class="op">=</span> <span class="va">link</span>, method <span class="op">=</span> <span class="st">"inversion"</span><span class="op">)</span></span>
-<span><span class="va">dat2l</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat2</span>, lag<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<p>Checking the distributions, these all seem fine.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Z1</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">Z1_l1</span> <span class="op">+</span> <span class="va">Z2_l1</span> <span class="op">+</span> <span class="va">X_l1</span>, data<span class="op">=</span><span class="va">dat2l</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span></span></code></pre></div>
-<pre><code><span><span class="co">##               Estimate Std. Error  t value   Pr(&gt;|t|)</span></span>
-<span><span class="co">## (Intercept) -8.593e-05   0.008344  -0.0103  9.918e-01</span></span>
-<span><span class="co">## W            1.300e-03   0.005538   0.2348  8.144e-01</span></span>
-<span><span class="co">## Z1_l1        7.070e-01   0.003678 192.2254  0.000e+00</span></span>
-<span><span class="co">## Z2_l1        2.991e-01   0.003980  75.1490  0.000e+00</span></span>
-<span><span class="co">## X_l1         2.082e-01   0.008523  24.4283 3.965e-131</span></span></code></pre>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Z2</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">Z2_l1</span> <span class="op">+</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z1</span>, data<span class="op">=</span><span class="va">dat2l</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span></span></code></pre></div>
-<pre><code><span><span class="co">##               Estimate Std. Error   t value   Pr(&gt;|t|)</span></span>
-<span><span class="co">## (Intercept) -0.0008266   0.008333  -0.09919  9.210e-01</span></span>
-<span><span class="co">## W            0.0008448   0.005549   0.15223  8.790e-01</span></span>
-<span><span class="co">## Z2_l1        0.4949865   0.004181 118.39399  0.000e+00</span></span>
-<span><span class="co">## X_l1         0.2074983   0.008597  24.13656 4.457e-128</span></span>
-<span><span class="co">## Z1           0.1034376   0.003259  31.74011 3.345e-219</span></span></code></pre>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dat2</span> <span class="op">&lt;-</span>  <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model2</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## 012345678</span></span></code></pre>
+<pre><code><span><span class="co">## 9</span></span></code></pre>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z1</span> <span class="op">+</span> <span class="va">Z2</span>, data<span class="op">=</span><span class="va">dat2l</span>, family<span class="op">=</span><span class="va">binomial</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span></span></code></pre></div>
-<pre><code><span><span class="co">##             Estimate Std. Error z value   Pr(&gt;|z|)</span></span>
-<span><span class="co">## (Intercept)  0.02104   0.017402  1.2088  2.267e-01</span></span>
-<span><span class="co">## W            0.23572   0.012022 19.6076  1.332e-85</span></span>
-<span><span class="co">## X_l1        -0.01234   0.017900 -0.6893  4.907e-01</span></span>
-<span><span class="co">## Z1           0.10434   0.006681 15.6168  5.598e-55</span></span>
-<span><span class="co">## Z2           0.29840   0.007970 37.4393 8.976e-307</span></span></code></pre>
+<code class="sourceCode R"><span><span class="va">dat2l</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat2</span>, lag <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<p>Checking the distributions, these all seem fine.</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Z1</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">Z1_l1</span> <span class="op">+</span> <span class="va">Z2_l1</span> <span class="op">+</span> <span class="va">X_l1</span>, data<span class="op">=</span><span class="va">dat2l</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Z2</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">Z2_l1</span> <span class="op">+</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z1</span>, data<span class="op">=</span><span class="va">dat2l</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">Z1</span> <span class="op">+</span> <span class="va">Z2</span>, data<span class="op">=</span><span class="va">dat2l</span>, family<span class="op">=</span><span class="va">binomial</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span></span></code></pre></div>
 <p>For the outcome, we again apply IPW, and obtain:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">X</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X_l1</span> <span class="op">+</span> <span class="va">Z1</span> <span class="op">+</span> <span class="va">Z2</span>, data<span class="op">=</span><span class="va">dat2l</span>, family<span class="op">=</span><span class="va">binomial</span><span class="op">)</span>, type<span class="op">=</span><span class="st">"response"</span><span class="op">)</span></span>
-<span><span class="va">wt</span> <span class="op">&lt;-</span> <span class="va">dat2l</span><span class="op">$</span><span class="va">X</span><span class="op">/</span><span class="va">ps</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">dat2l</span><span class="op">$</span><span class="va">X</span><span class="op">)</span><span class="op">/</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">ps</span><span class="op">)</span></span>
-<span><span class="va">glmY</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X</span>, family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="va">log</span><span class="op">)</span>, start<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">/</span><span class="fl">10</span>,<span class="op">-</span><span class="fl">1</span><span class="op">/</span><span class="fl">5</span><span class="op">)</span>, </span>
-<span>               design<span class="op">=</span><span class="fu"><a href="https://rdrr.io/pkg/survey/man/svydesign.html" class="external-link">svydesign</a></span><span class="op">(</span><span class="op">~</span><span class="fl">1</span>, weights<span class="op">=</span><span class="va">wt</span>, data<span class="op">=</span><span class="va">dat2l</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning in eval(family$initialize): non-integer #successes in a binomial glm!</span></span></code></pre>
+<code class="sourceCode R"><span><span class="va">temp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ipw/man/ipwtm.html" class="external-link">ipwtm</a></span><span class="op">(</span></span>
+<span>  exposure <span class="op">=</span> <span class="va">X</span>,</span>
+<span>  family <span class="op">=</span> <span class="st">"binomial"</span>,</span>
+<span>  link <span class="op">=</span> <span class="st">"logit"</span>,</span>
+<span>  numerator <span class="op">=</span> <span class="op">~</span><span class="va">W</span>,</span>
+<span>  denominator <span class="op">=</span> <span class="op">~</span><span class="va">Z1</span> <span class="op">+</span> <span class="va">Z2</span> <span class="op">+</span> <span class="va">X_l1</span>,</span>
+<span>  id <span class="op">=</span> <span class="va">id</span>,</span>
+<span>  timevar <span class="op">=</span> <span class="va">t</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">dat2l</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">dat2l</span><span class="op">$</span><span class="va">wt</span> <span class="op">&lt;-</span> <span class="va">temp</span><span class="op">$</span><span class="va">ipw.weights</span></span>
+<span></span>
+<span><span class="va">mod_correct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>, <span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X</span>,  weights <span class="op">=</span> <span class="va">dat2l</span><span class="op">$</span><span class="va">wt</span>,</span>
+<span>                     data <span class="op">=</span> <span class="va">dat2l</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">mod_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">t_stop</span>, <span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">W</span> <span class="op">+</span> <span class="va">X</span>, weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">dat2l</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                     data <span class="op">=</span> <span class="va">dat2l</span>, timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tab_correct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pars</span><span class="op">$</span><span class="va">Y</span><span class="op">$</span><span class="va">beta</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">]</span>, <span class="op">-</span><span class="va">mod_correct</span><span class="op">$</span><span class="va">coef</span>, <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_correct</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span><span class="op">[</span>,<span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">tab_correct</span><span class="op">[</span>,<span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="op">(</span><span class="va">tab_correct</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span><span class="op">-</span><span class="va">tab_correct</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">/</span><span class="va">tab_correct</span><span class="op">[</span>,<span class="fl">3</span><span class="op">]</span><span class="op">)</span>, df<span class="op">=</span><span class="va">n</span><span class="op">-</span><span class="fl">4</span>, lower.tail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">tab_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pars</span><span class="op">$</span><span class="va">Y</span><span class="op">$</span><span class="va">beta</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">]</span>, <span class="op">-</span><span class="va">mod_naive</span><span class="op">$</span><span class="va">coef</span>, <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_naive</span><span class="op">)</span><span class="op">$</span><span class="va">coef</span><span class="op">[</span>,<span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">tab_naive</span><span class="op">[</span>,<span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="op">(</span><span class="va">tab_naive</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span><span class="op">-</span><span class="va">tab_naive</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">/</span><span class="va">tab_naive</span><span class="op">[</span>,<span class="fl">3</span><span class="op">]</span><span class="op">)</span>, df<span class="op">=</span><span class="va">n</span><span class="op">-</span><span class="fl">4</span>, lower.tail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://haozhu233.github.io/kableExtra/" class="external-link">kableExtra</a></span><span class="op">)</span></span>
+<span><span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/kbl.html" class="external-link">kbl</a></span><span class="op">(</span><span class="va">tab_naive</span>, digits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span>,<span class="fl">5</span>,<span class="fl">2</span><span class="op">)</span>, booktabs<span class="op">=</span><span class="cn">TRUE</span>, format<span class="op">=</span><span class="st">"latex"</span><span class="op">)</span>  <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>  </span>
+<span>  <span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/add_header_above.html" class="external-link">add_header_above</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Coef"</span>,<span class="st">"Truth"</span>,<span class="st">"Est."</span>, <span class="st">"Std. Err."</span>, <span class="st">"p-value"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">glmY</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span></code></pre></div>
-<pre><code><span><span class="co">##             Estimate Std. Error t value  Pr(&gt;|t|)</span></span>
-<span><span class="co">## (Intercept) -0.97576   0.011202  -87.11 0.000e+00</span></span>
-<span><span class="co">## W            0.09397   0.007376   12.74 3.953e-37</span></span>
-<span><span class="co">## X           -0.21462   0.011094  -19.34 4.148e-83</span></span></code></pre>
+<code class="sourceCode R"><span><span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/kbl.html" class="external-link">kbl</a></span><span class="op">(</span><span class="va">tab_correct</span>, digits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span>,<span class="fl">5</span>,<span class="fl">2</span><span class="op">)</span>, booktabs<span class="op">=</span><span class="cn">TRUE</span>, format<span class="op">=</span><span class="st">"latex"</span><span class="op">)</span>  <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>  </span>
+<span>  <span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/add_header_above.html" class="external-link">add_header_above</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Coef"</span>,<span class="st">"Truth"</span>,<span class="st">"Est."</span>, <span class="st">"Std. Err."</span>, <span class="st">"p-value"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
-    </nav>
-</div>
+      </div>
 
 </div>
 
@@ -274,16 +315,16 @@ another formula in the second element of our list…</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
       </footer>
 </div>
 
-  
 
 
-  
+
+
 
   </body>
 </html>

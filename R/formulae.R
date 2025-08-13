@@ -1,25 +1,24 @@
 ##' @importFrom purrr pluck_depth list_flatten
-standardize_formulae <- function (formulas, static=character(0)) {
-
+standardize_formulae <- function(formulas, static = character(0)) {
   var_nms_Z <- var_nms_X <- var_nms_Y <- var_nms_cop <- list()
 
-  var_nms_Z <- stand2(formulas[[2]], static=static)
-  var_nms_X <- stand2(formulas[[3]], static=static)
-  var_nms_Y <- stand2(formulas[[4]], static=static)
+  var_nms_Z <- stand2(formulas[[2]], static = static)
+  var_nms_X <- stand2(formulas[[3]], static = static)
+  var_nms_Y <- stand2(formulas[[4]], static = static)
   if (length(formulas) > 4) {
     cop <- TRUE
-    var_nms_cop <- stand2(unlist(formulas[[5]]), static=static)
+    var_nms_cop <- stand2(unlist(formulas[[5]]), static = static)
+  } else {
+    cop <- FALSE
   }
-  else cop <- FALSE
 
-  out <- list(var_nms_Z=var_nms_Z, var_nms_X=var_nms_X, var_nms_Y=var_nms_Y)
+  out <- list(var_nms_Z = var_nms_Z, var_nms_X = var_nms_X, var_nms_Y = var_nms_Y)
   if (cop) out$var_nms_cop <- var_nms_cop
 
   return(out)
 }
 
-stand2 <- function (formulas, static=character(0)) {
-
+stand2 <- function(formulas, static = character(0)) {
   if ("formula" %in% class(formulas)) formulas <- list(formulas)
   var_nms <- vector("list", length(formulas))
 
@@ -35,12 +34,12 @@ stand2 <- function (formulas, static=character(0)) {
     var_stem <- vars
     var_stem[is.na(lags)] <- vars[is.na(lags)]
     var_lag <- vars[!is.na(lags)]
-    var_stem[!is.na(lags)] <- substr(var_lag, 1, nchar(var_lag) - nchar(ends[!is.na(lags)])-1)
+    var_stem[!is.na(lags)] <- substr(var_lag, 1, nchar(var_lag) - nchar(ends[!is.na(lags)]) - 1)
 
     ## now set variables without lags to be current
     lags[is.na(lags)] <- 0
 
-    var_nms[[i]] <- data.frame(var=var_stem, lag=lags)
+    var_nms[[i]] <- data.frame(var = var_stem, lag = lags)
 
     ## now set lags for static variables to NA
     var_nms[[i]]$lag[var_nms[[i]]$var %in% static] <- NA
@@ -52,7 +51,6 @@ stand2 <- function (formulas, static=character(0)) {
 
 ## replace variables in a formula
 replace_vars <- function(formula, replace) {
-
   tmp <- as.character(formula)
   R <- ifelse(length(tmp) == 2, 2, 3)
 
@@ -63,8 +61,11 @@ replace_vars <- function(formula, replace) {
     ## need to be more careful about partial words here
     tmp[R] <- gsub(old, new, tmp[R])
   }
-  if (R == 2) form <- paste(tmp[1], tmp[2])
-  else form <- paste(tmp[2], tmp[1], tmp[3])
+  if (R == 2) {
+    form <- paste(tmp[1], tmp[2])
+  } else {
+    form <- paste(tmp[2], tmp[1], tmp[3])
+  }
 
   as.formula(form)
   formula
@@ -82,6 +83,79 @@ replace_vars <- function(formula, replace) {
 #   as.formula(form, env = NULL)
 # }
 
+##' Modify conditional specified lagged formuals to correct formulas
+##'
+##' @param form The conditional specified formulas with V_lk
+##' @param beta the parameters specified
+##' @param t the time point we are at currently
+##' @param modLHS should we modify the left hand side variables in the formula?
+##'
+##' @export
+mod_args <- function(form, beta, t, modLHS = FALSE) {
+  start_at <- 0
+  trms <- terms(form)
+  LHS <- lhs(form)
+  trm_labs <- attr(trms, "term.labels")
+
+  if (modLHS) {
+    # LHSn <- paste0(regex_extr("_l([0-9]+)", LHS), "_", t)
+    rgx <- regex_extr("_l([0-9]+)$", LHS)[[1]] # obtain lag
+    if (nchar(rgx[[1]]) > 0) {
+      LHS_lag <- as.numeric(substr(rgx, 3, nchar(rgx)))
+      if (LHS_lag > t - start_at) {
+        ## CODE TO DROP THIS FORMULA
+        return(list(form = NA, beta = NA))
+      } else {
+        LHS_new <- sub("_l([0-9]+)$", paste0("_", t - LHS_lag), LHS)
+      }
+    } else {
+      LHS_new <- paste0(LHS, "_", t)
+    }
+    form <- update.formula(form, paste0(LHS_new, " ~ ."))
+  }
+  # nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
+  # form <- update.formula(form, as.formula(paste0(lhs(form), "_", t, " ~ .")))
+
+  nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
+  nos <- rapply(nos, function(x) substr(x, 3, nchar(x))) # extract lags
+  nos <- lapply(nos, as.numeric)
+  drp <- sapply(nos, function(x) any(x > t - start_at))
+  if (any(na.omit(drp))) {
+    intc <- attr(trms, "intercept")
+    if (!any(is.na(drp)) && all(drp)) {
+      if (intc > 0) {
+        form <- update.formula(form, . ~ 1)
+      } else {
+        form <- update.formula(form, . ~ 0)
+      }
+      beta <- beta[intc]
+      # attr(form, "beta") <- pars[[LHS]]$beta
+      return(list(form = form, beta = beta))
+    }
+    trms <- drop.terms(trms, which(drp), keep.response = TRUE)
+    beta <- beta[c(intc, which(!drp | is.na(drp)) + intc)]
+  }
+
+  chr <- as.character(trms)[3]
+  wh <- gregexpr("_l([0-9]+)", chr)[[1]]
+  if (wh[1] < 0) {
+    # attributes(trms) <- list(class="formula")
+    return(list(form = update.formula(form, paste0(". ~ ", chr)), beta = beta))
+  }
+  ml <- attr(wh, "match.length")
+  if (any(ml < 3)) stop("All matches should be at least three characters")
+  nos <- integer(length(wh))
+
+  for (i in seq_along(wh)) {
+    nos[i] <- as.numeric(substr(chr, wh[i] + 2, wh[i] + ml[i] - 1))
+  }
+  for (i in seq_along(wh)) {
+    chr <- sub("_l([0-9]+)", paste0("_", t - nos[i]), chr)
+  }
+
+  list(form = update.formula(form, paste0(". ~ ", chr)), beta = beta)
+}
+
 ##' Obtain reduced formulas and parameter vectors for earlier time-points
 ##'
 ##' @inheritParams process_inputs
@@ -92,71 +166,7 @@ replace_vars <- function(formula, replace) {
 ##' @param kwd keyword for the copula
 ##'
 ##'
-curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
-  start_at <- 0
-
-  ## function to modify arguments
-  mod_args <- function (form, beta, t, modLHS=FALSE) {
-    trms <- terms(form)
-    LHS <- lhs(form)
-    trm_labs <- attr(trms, "term.labels")
-
-    if (modLHS) {
-      # LHSn <- paste0(regex_extr("_l([0-9]+)", LHS), "_", t)
-      rgx <- regex_extr("_l([0-9]+)$", LHS)[[1]] # obtain lag
-      if (nchar(rgx[[1]]) > 0) {
-        LHS_lag <- as.numeric(substr(rgx, 3, nchar(rgx)))
-        if (LHS_lag > t - start_at) {
-          ## CODE TO DROP THIS FORMULA
-          return(list(form=NA, beta=NA))
-        }
-        else {
-          LHS_new <- sub("_l([0-9]+)$", paste0("_", t-LHS_lag), LHS)
-        }
-      }
-      else LHS_new <- paste0(LHS, "_", t)
-      form <- update.formula(form, paste0(LHS_new, " ~ ."))
-    }
-    # nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
-    # form <- update.formula(form, as.formula(paste0(lhs(form), "_", t, " ~ .")))
-
-    nos <- regex_extr("_l([0-9]+)$", trm_labs) # find lagged variables
-    nos <- rapply(nos, function(x) substr(x, 3, nchar(x)))  # extract lags
-    nos <- lapply(nos, as.numeric)
-    drp <- sapply(nos, function(x) any(x > t-start_at))
-    if (any(na.omit(drp))) {
-      intc <- attr(trms, "intercept")
-      if (!any(is.na(drp)) && all(drp)) {
-        if (intc > 0) form <- update.formula(form, . ~ 1)
-        else form <- update.formula(form, . ~ 0)
-        beta <- beta[intc]
-        # attr(form, "beta") <- pars[[LHS]]$beta
-        return(list(form=form, beta=beta))
-      }
-      trms <- drop.terms(trms, which(drp), keep.response=TRUE)
-      beta <- beta[c(intc, which(!drp | is.na(drp))+intc)]
-    }
-
-    chr <- as.character(trms)[3]
-    wh <- gregexpr("_l([0-9]+)", chr)[[1]]
-    if (wh[1] < 0) {
-      # attributes(trms) <- list(class="formula")
-      return(list(form=update.formula(form, paste0(". ~ ", chr)), beta=beta))
-    }
-    ml <- attr(wh, "match.length")
-    if (any(ml < 3)) stop("All matches should be at least three characters")
-    nos <- integer(length(wh))
-
-    for (i in seq_along(wh)) {
-      nos[i] <- as.numeric(substr(chr, wh[i]+2, wh[i]+ml[i]-1))
-    }
-    for (i in seq_along(wh)) {
-      chr <- sub("_l([0-9]+)", paste0("_", t-nos[i]), chr)
-    }
-
-    list(form=update.formula(form, paste0(". ~ ", chr)), beta=beta)
-  }
-
+curr_inputs <- function(formulas, pars, t, ordering, done, vars_t, kwd) {
   # for (i in seq_along(formulas)) for (j in seq_along(formulas[[i]])) {
   #   LHS <- lhs(formulas[[i]][[j]])
   #   tmp <- mod_args(formulas[[i]][[j]], pars[[LHS]]$beta, t=t, modLHS = TRUE)
@@ -188,9 +198,9 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
   ## get list element and make sure cycles correctly
   for (i in seq_along(ordering)) {
     io <- ordering[i]
-    wh <- 1 + 1*(io > dZ) + 1*(io > dZ+dX)
-    i2 <- i - dZ*(io > dZ) - dX*(io > dZ+dX)
-    norm <- dZ*(wh > 1) + dX*(wh > 2)
+    wh <- 1 + 1 * (io > dZ) + 1 * (io > dZ + dX)
+    i2 <- i - dZ * (io > dZ) - dX * (io > dZ + dX)
+    norm <- dZ * (wh > 1) + dX * (wh > 2)
 
     frm <- formulas[[wh]][[i2]]
     LHS <- lhs(frm)
@@ -206,9 +216,16 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
     LHSs <- lhs(form_copY)
 
     for (j in seq_along(form_copY)) {
-      tmp <- mod_args(form_copY[[j]], pars_copY[[LHSs[j]]]$beta, t = t, modLHS = TRUE)
-      form_copY[[j]] <- tmp$form
-      pars_copY[[LHSs[j]]]$beta <- tmp$beta
+      form_cops <- c()
+      par_cops <- list()
+      for (dt in 0:t) {
+        tmp <- mod_args(form_copY[[j]], pars_copY[[LHSs[j]]]$beta, t = dt, modLHS = TRUE)
+        form_cops <- c(form_cops, tmp$form)
+        par_cops <- c(par_cops, list(tmp$beta))
+      }
+
+      form_copY[[j]] <- form_cops
+      pars_copY[[LHSs[j]]]$beta <- par_cops
     }
     formulas[[4]][[LHS]] <- form_copY
     pars[[kwd]][[LHS]] <- pars_copY
@@ -241,7 +258,7 @@ curr_inputs <- function (formulas, pars, t, ordering, done, vars_t, kwd) {
   # betas <- rapply(forms, function(x) `attr<-`(x, "beta", ))
   # pars[lhs] <- betas
 
-  return(list(formulas=formulas, pars=pars))
+  return(list(formulas = formulas, pars = pars))
 }
 
 # ##' Adds time-points to variable names given as names of a vector

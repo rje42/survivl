@@ -49,14 +49,18 @@ NULL
 ##' Statistical Association}.
 ##'
 ##' @export
-surv_samp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
-
-  con = list(max_wt = 1, warn = 1, cop="cop")
-  matches = match(names(control), names(con))
-  con[matches] = control[!is.na(matches)]
-  if (any(is.na(matches))) warning("Some names in control not matched: ",
-                                   paste(names(control[is.na(matches)]),
-                                         sep = ", "))
+surv_samp <- function(n, T, formulas, family, pars, link = NULL, control = list()) {
+  con <- list(max_wt = 1, warn = 1, cop = "cop")
+  matches <- match(names(control), names(con))
+  con[matches] <- control[!is.na(matches)]
+  if (any(is.na(matches))) {
+    warning(
+      "Some names in control not matched: ",
+      paste(names(control[is.na(matches)]),
+        sep = ", "
+      )
+    )
+  }
 
   for (i in 1:3) if ("formula" %in% class(formulas[[i]])) formulas[[i]] <- list(formulas[[i]])
   if (is.list(formulas[[4]])) {
@@ -69,21 +73,24 @@ surv_samp <- function (n, T, formulas, family, pars, link=NULL, control=list()) 
   LHS_X <- causl::lhs(formulas[[3]])
   LHS_Y <- causl::lhs(formulas[[4]])
   nms_t <- c(LHS_Z, LHS_X, LHS_Y)
-  nms <- c(LHS_C, outer(nms_t, seq_len(T)-1, paste, sep="_"))
+  nms <- c(LHS_C, outer(nms_t, seq_len(T) - 1, paste, sep = "_"))
 
-  out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T*length(nms_t)))
+  out <- data.frame(rep(list(rep(NA, n)), length(LHS_C) + T * length(nms_t)))
   names(out) <- nms
 
   RHS_Z <- causl::rhs_vars(formulas[[1]])
   RHS_X <- causl::rhs_vars(formulas[[2]])
 
-  link <- causl::link_setup(link, family = family, vars=list(LHS_C,LHS_Z,LHS_X,LHS_Y))
+  link <- causl::link_setup(link, family = family, vars = list(LHS_C, LHS_Z, LHS_X, LHS_Y))
 
-  if (family[[4]] == 3) out[[LHS_Y]] <- rgamma(n, shape=1, rate=pars[[LHS_Y]]$lambda)
-  if (is.null(pars$gamma)) pars$gamma <- function(X, beta) X %*% beta
-  else stop("Family should be 3")
+  if (family[[4]] == 3) out[[LHS_Y]] <- rgamma(n, shape = 1, rate = pars[[LHS_Y]]$lambda)
+  if (is.null(pars$gamma)) {
+    pars$gamma <- function(X, beta) X %*% beta
+  } else {
+    stop("Family should be 3")
+  }
 
-  tmp <- standardize_formulae(formulas, static=LHS_C)
+  tmp <- standardize_formulae(formulas, static = LHS_C)
   var_nms_Z <- tmp$var_nms_Z
   var_nms_X <- tmp$var_nms_X
   var_nms_Y <- tmp$var_nms_Y
@@ -91,40 +98,45 @@ surv_samp <- function (n, T, formulas, family, pars, link=NULL, control=list()) 
   ## simulate static covariates
   for (i in seq_along(LHS_C)) {
     ## now compute etas
-    eta <- model.matrix(formulas[[1]][[i]][c(1,3)], data=out) %*% pars[[LHS_C[i]]]$beta
-    out[[LHS_C[[i]]]][] <- causl::glm_sim(family[[1]][i], eta, phi=pars[[LHS_C[[i]]]],
-                                           other_pars=pars[[LHS_C[[i]]]], link[[1]][i])
+    eta <- model.matrix(formulas[[1]][[i]][c(1, 3)], data = out) %*% pars[[LHS_C[i]]]$beta
+    out[[LHS_C[[i]]]][] <- causl::glm_sim(family[[1]][i], eta,
+      phi = pars[[LHS_C[[i]]]],
+      other_pars = pars[[LHS_C[[i]]]], link[[1]][i]
+    )
   }
 
   ## simulate time-varying covariates and survival
   for (t in seq_len(T)) {
-
     ## now simulate each variable according to formula and pars
     for (i in seq_along(LHS_Z)) {
       vZd <- var_nms_Z[[i]][!is.na(var_nms_Z[[i]]$lag), ]
       vZs <- var_nms_Z[[i]]$var[is.na(var_nms_Z[[i]]$lag)]
-      out2 <- lag_data(out, t, vZd, static=vZs)
+      out2 <- lag_data(out, t, vZd, static = vZs)
 
       ## now compute etas
-      eta <- model.matrix(formulas[[2]][[i]][c(1,3)], data=out2) %*% pars[[LHS_Z[i]]]$beta
-      vars <- paste0(LHS_Z[[i]], "_", t-1)
+      eta <- model.matrix(formulas[[2]][[i]][c(1, 3)], data = out2) %*% pars[[LHS_Z[i]]]$beta
+      vars <- paste0(LHS_Z[[i]], "_", t - 1)
 
-      out[[vars]][] <- causl::glm_sim(family[[2]][i], eta, phi=pars[[LHS_Z[[i]]]]$phi,
-                                      other_pars=pars[[LHS_Z[[i]]]], link[[2]][i])
+      out[[vars]][] <- causl::glm_sim(family[[2]][i], eta,
+        phi = pars[[LHS_Z[[i]]]]$phi,
+        other_pars = pars[[LHS_Z[[i]]]], link[[2]][i]
+      )
     }
     for (i in seq_along(LHS_X)) {
       # out2 <- lag_data(out, t, var_nms_X[[i]], static=LHS_C)
       vXd <- var_nms_X[[i]][!is.na(var_nms_X[[i]]$lag), ]
       vXs <- var_nms_X[[i]]$var[is.na(var_nms_X[[i]]$lag)]
-      out2 <- lag_data(out, t, vXd, static=vXs)
+      out2 <- lag_data(out, t, vXd, static = vXs)
 
 
       ## now compute etas
-      eta <- model.matrix(formulas[[3]][[i]][c(1,3)], data=out2) %*% pars[[LHS_X[i]]]$beta
-      vars <- paste0(LHS_X[[i]], "_", t-1)
+      eta <- model.matrix(formulas[[3]][[i]][c(1, 3)], data = out2) %*% pars[[LHS_X[i]]]$beta
+      vars <- paste0(LHS_X[[i]], "_", t - 1)
 
-      out[[vars]][] <- causl::glm_sim(family[[3]][i], eta, phi=pars[[LHS_X[[i]]]]$phi,
-                                      other_pars=pars[[LHS_X[[i]]]], link[[3]][i])
+      out[[vars]][] <- causl::glm_sim(family[[3]][i], eta,
+        phi = pars[[LHS_X[[i]]]]$phi,
+        other_pars = pars[[LHS_X[[i]]]], link[[3]][i]
+      )
     }
   }
 
@@ -138,33 +150,33 @@ surv_samp <- function (n, T, formulas, family, pars, link=NULL, control=list()) 
   ## now rescale Y to match C, Z and Xs
   ## for now just assume simple time-homogeneous exponential hazard
   for (t in seq_len(T)) {
-    na_vars <- grepl(paste0("_",t-1), names(out))
-    out[na_vars][!surv,] <- NA
+    na_vars <- grepl(paste0("_", t - 1), names(out))
+    out[na_vars][!surv, ] <- NA
 
     vYd <- var_nms_Y[[i]][!is.na(var_nms_Y[[i]]$lag), ]
     vYs <- var_nms_Y[[i]]$var[is.na(var_nms_Y[[i]]$lag)]
-    out2 <- lag_data(out, t, vYd, static=vYs)
+    out2 <- lag_data(out, t, vYd, static = vYs)
     # out2 <- lag_data(out, t, var_nms_Y[[1]], static=LHS_C)
 
     ## now compute etas
-    MM <- model.matrix(drop_LHS(formulas[[4]]), data=out2)
+    MM <- model.matrix(drop_LHS(formulas[[4]]), data = out2)
     gam_aft[surv] <- pars$gamma(MM, pars[[LHS_Y[1]]]$beta)
 
-    tmp <- out$T + surv*pmin(1, Y_res/exp(gam_aft))
+    tmp <- out$T + surv * pmin(1, Y_res / exp(gam_aft))
     out$T[!is.na(tmp)] <- na.omit(tmp)
     tmp <- Y_res - exp(gam_aft)
     Y_res[!is.na(tmp)] <- na.omit(tmp)
 
-    vars <- paste0(LHS_Y[[1]], "_", t-1)
-    out[[vars]] <- ifelse(surv, 1*(Y_res < 0), NA)
+    vars <- paste0(LHS_Y[[1]], "_", t - 1)
+    out[[vars]] <- ifelse(surv, 1 * (Y_res < 0), NA)
 
     surv <- surv & Y_res > 0
 
     # cum_haz <- cum_haz + exp(gam_aft)
   }
 
-  out <- cbind(id=seq_len(nrow(out)), out)
-  out$status <- 1*surv
+  out <- cbind(id = seq_len(nrow(out)), out)
+  out$status <- 1 * surv
   out <- out[names(out) != "Y"]
 
   class(out) <- c("survivl_dat", class(out))
@@ -174,7 +186,7 @@ surv_samp <- function (n, T, formulas, family, pars, link=NULL, control=list()) 
 
 ##' @describeIn surv_samp Old name
 ##' @export
-survSamp <- function (n, T, formulas, family, pars, link=NULL, control=list()) {
+survSamp <- function(n, T, formulas, family, pars, link = NULL, control = list()) {
   deprecate_soft(when = "0.3.1", what = "survSamp", with = "surv_samp")
-  surv_samp(n, T, formulas, family, pars, link=link, control=control)
+  surv_samp(n, T, formulas, family, pars, link = link, control = control)
 }
